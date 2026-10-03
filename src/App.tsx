@@ -538,11 +538,28 @@ export default function App() {
         const localMap = new Map<string, ArsipItem>();
         localRaw.forEach(it => localMap.set(it.id, it));
 
-        const mergedList: ArsipItem[] = supabaseItems.map(it => ({
-          ...it,
-          fileDataUrl: it.fileDataUrl || localMap.get(it.id)?.fileDataUrl
-        }));
+        // Auto-push any local items that are not yet in Supabase
+        const supaIdSet = new Set(supabaseItems.map(s => s.id));
+        const missingInSupabase = localRaw.filter(it => !supaIdSet.has(it.id));
+        if (missingInSupabase.length > 0) {
+          syncAllArsipToSupabase(missingInSupabase).catch(() => {});
+        }
 
+        // Merge: Supabase is authoritative, but keep local items until synced
+        const mergedMap = new Map<string, ArsipItem>();
+        supabaseItems.forEach(it => {
+          mergedMap.set(it.id, {
+            ...it,
+            fileDataUrl: it.fileDataUrl || localMap.get(it.id)?.fileDataUrl
+          });
+        });
+        localRaw.forEach(it => {
+          if (!mergedMap.has(it.id)) {
+            mergedMap.set(it.id, it);
+          }
+        });
+
+        const mergedList = Array.from(mergedMap.values());
         const clean = mergedList.map(it => {
           const copy = { ...it };
           delete copy.fileDataUrl;
@@ -557,6 +574,12 @@ export default function App() {
         console.error('Error syncing Supabase items:', err);
       }
     });
+
+    // Auto-seed / sync local archives to Supabase on startup
+    const rawArsipInitial = getAllRawArsip();
+    if (rawArsipInitial.length > 0) {
+      syncAllArsipToSupabase(rawArsipInitial).catch(() => {});
+    }
 
     // Auto sync/seed master siswa and master guru from/to Supabase
     fetchMasterSiswaFromSupabase().then(supaSiswa => {

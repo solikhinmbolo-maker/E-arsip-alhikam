@@ -430,84 +430,118 @@ export async function saveSingleUserToSupabase(
       saveAvatarForUser(avatarKey, publicAvatarUrl);
       if (cleanEmail === 'superadmin' || user.id === 'master-superadmin') {
         saveAvatarForUser('superadmin', publicAvatarUrl);
+        saveAvatarForUser('master-superadmin', publicAvatarUrl);
       }
     }
 
-    // 1. Cek apakah baris dengan email lama / email baru sudah ada di Supabase
-    let query = client.from('users').select('id, email, nama');
-    if (cleanOldEmail && cleanOldEmail !== cleanEmail) {
-      query = query.or(`email.ilike.${cleanOldEmail},email.ilike.${cleanEmail},email.ilike.@${cleanOldEmail},email.ilike.@${cleanEmail}`);
-    } else {
-      query = query.or(`email.ilike.${cleanEmail},email.ilike.@${cleanEmail}`);
-    }
+    // 1. Cek baris akun di tabel 'users' secara aman tanpa mengasumsikan nama kolom spesifik
+    const { data: allUsers } = await client.from('users').select('*');
+    const existing = (allUsers || []).find((u: any) => {
+      const uEmail = (u.email || u.username || '').toLowerCase().trim().replace(/^@/, '');
+      const uId = u.id;
+      return (
+        uEmail === cleanEmail ||
+        (cleanOldEmail && uEmail === cleanOldEmail) ||
+        (user.id && uId === user.id) ||
+        ((cleanEmail === 'superadmin' || cleanOldEmail === 'superadmin') && (uEmail === 'superadmin' || uId === 'master-superadmin'))
+      );
+    });
 
-    const { data: results, error: searchErr } = await query.limit(1);
-    const existing = results && results.length > 0 ? results[0] : null;
+    // Helper penyesuaian payload adaptif (otomatis hapus kolom yang tidak ada di skema database)
+    const executeAdaptiveUserWrite = async (operation: 'update' | 'insert', payload: any, targetId?: string) => {
+      let currentPayload = { ...payload };
+      let maxAttempts = 6;
+      
+      while (maxAttempts > 0) {
+        maxAttempts--;
+        let res: any;
+        if (operation === 'update' && targetId) {
+          res = await client.from('users').update(currentPayload).eq('id', targetId);
+        } else {
+          res = await client.from('users').insert([currentPayload]);
+        }
+
+        if (!res.error) {
+          return { success: true };
+        }
+
+        const msg = res.error.message || '';
+        console.warn(`Supabase user ${operation} notice:`, msg);
+
+        // Deteksi kolom yang belum ada di schema cache Supabase
+        const colMatch = msg.match(/Could not find the '(\w+)' column/i) || msg.match(/column "?(\w+)"? of relation/i);
+        if (colMatch && colMatch[1]) {
+          const badCol = colMatch[1];
+          if (currentPayload[badCol] !== undefined) {
+            delete currentPayload[badCol];
+            continue;
+          }
+        }
+
+        // Jika error UUID id
+        if (msg.includes('invalid input syntax for type uuid') || msg.includes('uuid')) {
+          if (currentPayload.id) {
+            delete currentPayload.id;
+            continue;
+          }
+        }
+
+        // Hapus kolom opsional bertahap jika error persist
+        if (currentPayload.email && (msg.includes('email') || res.error.code === '42703')) {
+          delete currentPayload.email;
+          continue;
+        }
+        if (currentPayload.nama && (msg.includes('nama') || res.error.code === '42703')) {
+          delete currentPayload.nama;
+          continue;
+        }
+        if (currentPayload.username && (msg.includes('username') || res.error.code === '42703')) {
+          delete currentPayload.username;
+          continue;
+        }
+        if (currentPayload.avatar_url && (msg.includes('avatar_url') || res.error.code === '42703')) {
+          delete currentPayload.avatar_url;
+          continue;
+        }
+
+        return { success: false, error: msg };
+      }
+      return { success: false, error: 'Gagal sinkronisasi akun pengguna' };
+    };
 
     if (existing && existing.id) {
       // Update data baris yang sudah ada
       const updateData: any = {
+        name: cleanName,
         nama: cleanName,
+        username: cleanEmail,
         email: cleanEmail,
         password: cleanPassword,
-        role: cleanRole
+        role: cleanRole,
+        status: 'Aktif'
       };
       if (publicAvatarUrl) {
         updateData.avatar_url = publicAvatarUrl;
       }
 
-      let { error: updateErr } = await client
-        .from('users')
-        .update(updateData)
-        .eq('id', existing.id);
-
-      // Jika error karena kolom avatar_url tidak ada di tabel users Supabase, coba tanpa kolom itu
-      if (updateErr && (updateErr.message.includes('avatar_url') || (updateErr as any).code === '42703')) {
-        delete updateData.avatar_url;
-        const retry = await client.from('users').update(updateData).eq('id', existing.id);
-        updateErr = retry.error;
-      }
-
-      if (updateErr) {
-        console.warn('Supabase update user error:', updateErr.message);
-        return { success: false, error: updateErr.message };
-      }
-      return { success: true };
+      return await executeAdaptiveUserWrite('update', updateData, existing.id);
     } else {
       // Insert data akun baru ke Supabase
       const insertPayload: any = {
         id: userUuid,
+        name: cleanName,
         nama: cleanName,
+        username: cleanEmail,
         email: cleanEmail,
         password: cleanPassword,
-        role: cleanRole
+        role: cleanRole,
+        status: 'Aktif'
       };
       if (publicAvatarUrl) {
         insertPayload.avatar_url = publicAvatarUrl;
       }
 
-      let { error: insertErr } = await client
-        .from('users')
-        .insert([insertPayload]);
-
-      // Jika error karena kolom avatar_url tidak ada, coba tanpa avatar_url
-      if (insertErr && (insertErr.message.includes('avatar_url') || (insertErr as any).code === '42703')) {
-        delete insertPayload.avatar_url;
-        const retry = await client.from('users').insert([insertPayload]);
-        insertErr = retry.error;
-      }
-
-      if (insertErr) {
-        console.warn('Supabase insert user notice:', insertErr.message);
-        // Coba insert tanpa ID jika Supabase auto-generate UUID
-        delete insertPayload.id;
-        const { error: retryErr } = await client.from('users').insert([insertPayload]);
-        if (retryErr) {
-          console.error('Supabase retry insert failed:', retryErr.message);
-          return { success: false, error: retryErr.message };
-        }
-      }
-      return { success: true };
+      return await executeAdaptiveUserWrite('insert', insertPayload);
     }
   } catch (err: any) {
     console.error('saveSingleUserToSupabase exception:', err);
@@ -601,8 +635,8 @@ export async function fetchUsersFromSupabase(): Promise<any[] | null> {
     }
 
     return data.map((d: any) => {
-      const email = d.email || '';
-      const name = d.nama || d.name || 'Pengguna';
+      const email = d.email || d.username || '';
+      const name = d.name || d.nama || 'Pengguna';
       const avatarUrl = (d.avatar_url && !d.avatar_url.includes('ui-avatars.com')) 
         ? d.avatar_url 
         : getAvatarForUser(email, name);
@@ -639,8 +673,8 @@ export async function authenticateFromSupabaseDirect(usernameInput: string, pass
 
       if (!error && Array.isArray(data) && data.length > 0) {
         const found = data.find((d: any) => {
-          const dEmail = (d.email || '').toLowerCase().trim().replace(/^@/, '');
-          const dNama = (d.nama || d.name || '').toLowerCase().trim();
+          const dEmail = (d.email || d.username || '').toLowerCase().trim().replace(/^@/, '');
+          const dNama = (d.name || d.nama || '').toLowerCase().trim();
           return dEmail === cleanInput || dNama === cleanInput || (cleanInput === 'superadmin' && (dEmail === 'superadmin' || dEmail === 'superadmin@01'));
         });
 
@@ -649,18 +683,20 @@ export async function authenticateFromSupabaseDirect(usernameInput: string, pass
             return { success: false, message: 'Akun Anda sedang dinonaktifkan oleh Super Administrator.' };
           }
 
-          const dbPassword = (found.password || (found.email === 'superadmin' || found.id === 'master-superadmin' ? 'superadmin123' : '')).trim();
+          const dbPassword = (found.password || ((found.email === 'superadmin' || found.username === 'superadmin' || found.id === 'master-superadmin') ? 'superadmin123' : '')).trim();
           if (cleanPass === dbPassword) {
+            const userEmail = found.email || found.username || 'superadmin';
+            const userName = found.name || found.nama || 'Solikhin Mbolo';
             return {
               success: true,
               user: {
                 id: found.id,
-                email: found.email,
-                name: found.nama || found.name,
+                email: userEmail,
+                name: userName,
                 role: found.role || 'Administrator Arsip',
                 avatarUrl: (found.avatar_url && !found.avatar_url.includes('ui-avatars.com')) 
                   ? found.avatar_url 
-                  : getAvatarForUser(found.email, found.nama || found.name)
+                  : getAvatarForUser(userEmail, userName)
               },
               message: 'Login berhasil!'
             };
@@ -1129,6 +1165,8 @@ CREATE TABLE IF NOT EXISTS public.users (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     username TEXT UNIQUE NOT NULL,
+    email TEXT,
+    nama TEXT,
     role TEXT NOT NULL DEFAULT 'Administrator Arsip',
     status TEXT NOT NULL DEFAULT 'Aktif',
     password TEXT,
@@ -1137,9 +1175,26 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- Pastikan kolom email, nama, username, avatar_url selalu ada jika tabel sudah terlanjur dibuat
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='email') THEN
+    ALTER TABLE public.users ADD COLUMN email TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='nama') THEN
+    ALTER TABLE public.users ADD COLUMN nama TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='username') THEN
+    ALTER TABLE public.users ADD COLUMN username TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='users' AND column_name='avatar_url') THEN
+    ALTER TABLE public.users ADD COLUMN avatar_url TEXT;
+  END IF;
+END $$;
+
 -- Inisialisasi Akun Super Administrator Utama
-INSERT INTO public.users (id, name, username, role, status, password)
-VALUES ('master-superadmin', 'Solikhin Mbolo', 'superadmin', 'Super Administrator', 'Aktif', 'superadmin123')
+INSERT INTO public.users (id, name, username, email, nama, role, status, password)
+VALUES ('master-superadmin', 'Solikhin Mbolo', 'superadmin', 'superadmin', 'Solikhin Mbolo', 'Super Administrator', 'Aktif', 'superadmin123')
 ON CONFLICT (username) DO NOTHING;
 
 -- 5. ATUR HAK AKSES KEAMANAN (Row Level Security)
