@@ -466,6 +466,15 @@ export default function App() {
   useEffect(() => {
     testFirestoreConnection();
 
+    let syncDebounceTimer: any = null;
+    const triggerDebouncedSync = () => {
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        setDbVersion(v => v + 1);
+        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+      }, 90);
+    };
+
     const unsubArsip = subscribeToArsip((remoteItems) => {
       try {
         if (!Array.isArray(remoteItems)) return;
@@ -504,10 +513,7 @@ export default function App() {
         });
 
         localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
-        setDbVersion(v => v + 1);
-
-        // Notify all views to re-render in unison
-        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+        triggerDebouncedSync();
       } catch (err) {
         console.error('Error syncing remote items:', err);
       }
@@ -517,7 +523,7 @@ export default function App() {
       if (Array.isArray(siswaList) && siswaList.length > 0) {
         try {
           localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(siswaList));
-          setDbVersion(v => v + 1);
+          triggerDebouncedSync();
         } catch {}
       }
     });
@@ -526,7 +532,7 @@ export default function App() {
       if (Array.isArray(guruList) && guruList.length > 0) {
         try {
           localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(guruList));
-          setDbVersion(v => v + 1);
+          triggerDebouncedSync();
         } catch {}
       }
     });
@@ -569,8 +575,7 @@ export default function App() {
 
         // Supabase is the single source of truth across all devices
         localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
-        setDbVersion(v => v + 1);
-        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+        triggerDebouncedSync();
       } catch (err) {
         console.error('Error syncing Supabase items:', err);
       }
@@ -586,7 +591,7 @@ export default function App() {
     fetchMasterSiswaFromSupabase().then(supaSiswa => {
       if (supaSiswa && supaSiswa.length > 0) {
         localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaSiswa));
-        setDbVersion(v => v + 1);
+        triggerDebouncedSync();
       } else {
         const localSiswa = getStoredMasterSiswa();
         if (localSiswa && localSiswa.length > 0) {
@@ -598,7 +603,7 @@ export default function App() {
     fetchMasterGuruFromSupabase().then(supaGuru => {
       if (supaGuru && supaGuru.length > 0) {
         localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(supaGuru));
-        setDbVersion(v => v + 1);
+        triggerDebouncedSync();
       } else {
         const localGuru = getStoredMasterGuru();
         if (localGuru && localGuru.length > 0) {
@@ -614,7 +619,7 @@ export default function App() {
       fetchConfigFromServer().then(remoteCfg => {
         if (remoteCfg && remoteCfg.anonKey) {
           setSupabaseConfig(remoteCfg);
-          setDbVersion(v => v + 1);
+          triggerDebouncedSync();
         }
       });
     } else {
@@ -623,6 +628,7 @@ export default function App() {
     }
 
     return () => {
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
       unsubArsip();
       unsubSiswa();
       unsubGuru();
@@ -1152,6 +1158,49 @@ function doGet(e) {
     setSessionExpiredNotice('');
   };
 
+  // Silky-Smooth Manual Global Refresh (Anti-Stutter, In-Place Reactive Transition)
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+
+  const handleManualGlobalRefresh = async () => {
+    if (isManualRefreshing) return;
+    setIsManualRefreshing(true);
+    try {
+      const [supaItems, supaSiswa, supaGuru, supaUsers] = await Promise.all([
+        fetchArsipFromSupabase(),
+        fetchMasterSiswaFromSupabase(),
+        fetchMasterGuruFromSupabase(),
+        fetchUsersFromSupabase()
+      ]);
+
+      if (Array.isArray(supaItems)) {
+        localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(supaItems));
+      }
+      if (Array.isArray(supaSiswa) && supaSiswa.length > 0) {
+        localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaSiswa));
+      }
+      if (Array.isArray(supaGuru) && supaGuru.length > 0) {
+        localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(supaGuru));
+      }
+      if (Array.isArray(supaUsers) && supaUsers.length > 0) {
+        localStorage.setItem('EARSIP_USER_LIST', JSON.stringify(supaUsers));
+        supaUsers.forEach(u => {
+          if (u.avatarUrl) {
+            saveAvatarForUser(u.email, u.avatarUrl);
+          }
+        });
+      }
+
+      setDbVersion(v => v + 1);
+      window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+    } catch (e) {
+      console.warn('Manual refresh notice:', e);
+    } finally {
+      setTimeout(() => {
+        setIsManualRefreshing(false);
+      }, 550);
+    }
+  };
+
   if (!currentUser) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} sessionNotice={sessionExpiredNotice} />;
   }
@@ -1480,10 +1529,22 @@ function doGet(e) {
               <h1 className="text-lg font-bold text-white tracking-tight">
                 {pageTitles[activePage]}
               </h1>
-              <p className="text-[11px] text-slate-300 font-mono flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                <LiveClock />
-              </p>
+              <div className="flex items-center gap-3 mt-0.5">
+                <p className="text-[11px] text-slate-300 font-mono flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <LiveClock />
+                </p>
+                <button
+                  type="button"
+                  onClick={handleManualGlobalRefresh}
+                  disabled={isManualRefreshing}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-[10px] font-semibold text-cyan-300 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
+                  title="Segarkan data terbaru dari database Supabase"
+                >
+                  <RefreshCw className={`w-3 h-3 text-cyan-400 ${isManualRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>{isManualRefreshing ? 'Menyinkronkan...' : 'Segarkan Data'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1579,6 +1640,15 @@ function doGet(e) {
                       E-ARSIP AL-HICAM
                     </h1>
                     <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <button
+                      type="button"
+                      onClick={handleManualGlobalRefresh}
+                      disabled={isManualRefreshing}
+                      className="ml-1 p-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-cyan-400 hover:text-white active:scale-90 transition-all cursor-pointer"
+                      title="Segarkan Data"
+                    >
+                      <RefreshCw className={`w-2.5 h-2.5 ${isManualRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                    </button>
                   </div>
                   <p className="text-[11px] text-slate-300 font-medium tracking-wide mt-1">
                     SMP Al-Hikam • Digital Portal
@@ -1632,7 +1702,7 @@ function doGet(e) {
         <div className="p-3.5 sm:p-8 pt-[calc(env(safe-area-inset-top,0px)+88px)] lg:pt-8 flex-1 w-full max-w-full overflow-x-hidden">
           {activePage === 'dashboard' && (
             <DashboardView
-              key={dbVersion}
+              dataVersion={dbVersion}
               onNavigate={(page, sub) => {
                 setActivePage(page);
                 if (sub) setActiveSubKategori(sub);

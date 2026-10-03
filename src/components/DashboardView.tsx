@@ -29,9 +29,10 @@ Chart.register(...registerables);
 
 interface DashboardViewProps {
   onNavigate: (view: 'upload' | 'unduh' | 'rekap' | 'laporan', subcategory?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya') => void;
+  dataVersion?: number;
 }
 
-export default function DashboardView({ onNavigate }: DashboardViewProps) {
+export default function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardViewProps) {
   const desktopDonutRef = useRef<HTMLCanvasElement | null>(null);
   const desktopBarRef = useRef<HTMLCanvasElement | null>(null);
   const mobileDonutRef = useRef<HTMLCanvasElement | null>(null);
@@ -55,9 +56,11 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     return () => window.removeEventListener('earsip:cloud-synced', handleUpdate);
   }, []);
 
-  // Live data reference
-  const allArsip = useMemo(() => getStoredArsip(), [dataVersion]);
-  const allSiswa = useMemo(() => getStoredMasterSiswa(), [dataVersion]);
+  const effectiveVersion = (dataVersionProp ?? 0) + dataVersion;
+
+  // Live data reference (silky-smooth reactive memo without unmounting)
+  const allArsip = useMemo(() => getStoredArsip(), [effectiveVersion]);
+  const allSiswa = useMemo(() => getStoredMasterSiswa(), [effectiveVersion]);
 
   // Calculate Metrics
   const totalArsip = allArsip.length;
@@ -275,6 +278,35 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
     };
   }, [mobileChartTab]);
 
+  // Silky-Smooth Chart Reactive Live Update (Zero Canvas Destruction)
+  useEffect(() => {
+    const labels = sortedCategories.slice(0, 6).map(e => e[0]);
+    const data = sortedCategories.slice(0, 6).map(e => e[1]);
+    const activeLabels = labels.length > 0 ? labels : ['Belum Ada'];
+    const activeData = data.length > 0 ? data : [1];
+    const activeColors = donutColors.slice(0, labels.length || 1);
+
+    [desktopDonutChart.current, mobileDonutChart.current].forEach(chart => {
+      if (chart) {
+        chart.data.labels = activeLabels;
+        chart.data.datasets[0].data = activeData;
+        chart.data.datasets[0].backgroundColor = activeColors;
+        chart.update();
+      }
+    });
+
+    const bLabels = angkatanLabels.map(th => `Th ${th}`);
+    const bData = angkatanData;
+
+    [desktopBarChart.current, mobileBarChart.current].forEach(chart => {
+      if (chart) {
+        chart.data.labels = bLabels;
+        chart.data.datasets[0].data = bData;
+        chart.update();
+      }
+    });
+  }, [allArsip, allSiswa, effectiveVersion]);
+
   const handleMobileSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!mobileQuickSearch.trim()) {
@@ -285,7 +317,7 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full overflow-x-hidden">
       
       {/* ============================================================== */}
       {/* 1. MOBILE EXECUTIVE HERO (SOPHISTICATED, OBSIDIAN-SLATE FINTECH STYLE) */}
