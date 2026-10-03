@@ -95,6 +95,7 @@ import {
   syncAllMasterGuruToSupabase,
   fetchMasterSiswaFromSupabase,
   fetchMasterGuruFromSupabase,
+  fetchArsipFromSupabase,
   subscribeToSupabaseUsers,
   fetchUsersFromSupabase,
   syncConfigToServer,
@@ -1096,7 +1097,7 @@ function doGet(e) {
     setShowSettingModal(false);
   };
 
-  const handleLoginSuccess = (user: { email: string; name: string; role: string }) => {
+  const handleLoginSuccess = async (user: { email: string; name: string; role: string; avatarUrl?: string }) => {
     setCurrentUser(user);
     const now = Date.now();
     localStorage.setItem(DB_KEYS.AUTH_USER, JSON.stringify(user));
@@ -1109,6 +1110,37 @@ function doGet(e) {
     setTimeout(() => {
       setLoginNotice('');
     }, 4500);
+
+    // KETIKA LOGIN: LANGSUNG TARIK SELURUH DATA TERBARU DARI SERVER SUPABASE CLOUD
+    try {
+      const [supaItems, supaSiswa, supaGuru, supaUsers] = await Promise.all([
+        fetchArsipFromSupabase(),
+        fetchMasterSiswaFromSupabase(),
+        fetchMasterGuruFromSupabase(),
+        fetchUsersFromSupabase()
+      ]);
+
+      if (Array.isArray(supaItems) && supaItems.length > 0) {
+        localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(supaItems));
+      }
+      if (Array.isArray(supaSiswa) && supaSiswa.length > 0) {
+        localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaSiswa));
+      }
+      if (Array.isArray(supaGuru) && supaGuru.length > 0) {
+        localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(supaGuru));
+      }
+      if (Array.isArray(supaUsers) && supaUsers.length > 0) {
+        localStorage.setItem('EARSIP_USER_LIST', JSON.stringify(supaUsers));
+        supaUsers.forEach(u => {
+          if (u.avatarUrl) {
+            saveAvatarForUser(u.email, u.avatarUrl);
+          }
+        });
+      }
+      setDbVersion(v => v + 1);
+    } catch (err) {
+      console.warn('Post-login cloud fetch notice:', err);
+    }
   };
 
   const handleLogout = () => {
@@ -2208,7 +2240,7 @@ function doGet(e) {
                         </div>
                         <input
                           type="text"
-                          placeholder="https://seklcpvakyaakgbsnlzt.supabase.co"
+                          placeholder="https://seklcpvkayaakgbsnlzt.supabase.co"
                           value={supabaseConfig.url}
                           onChange={(e) => handleSaveSupabaseConfig(e.target.value, supabaseConfig.anonKey)}
                           onBlur={() => {
@@ -2351,7 +2383,7 @@ function doGet(e) {
                   </div>
 
                   <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 space-y-2 leading-relaxed">
-                    <p><strong>Database Cloud:</strong> Supabase PostgreSQL Database (<code className="text-emerald-700 font-mono">seklcpvakyaakgbsnlzt.supabase.co</code>)</p>
+                    <p><strong>Database Cloud:</strong> Supabase PostgreSQL Database (<code className="text-emerald-700 font-mono">seklcpvkayaakgbsnlzt.supabase.co</code>)</p>
                     <p><strong>Penyimpanan Berkas Fisik:</strong> Supabase Storage Bucket ('arsip')</p>
                     <p><strong>Keterangan Pendukung:</strong> Aplikasi E-Arsip Digital SMP Al-Hikam Sendang Mulyo dirancang khusus untuk mempermudah tata kelola administrasi sekolah, pengarsipan berkas siswa (Ijazah, SKL, SPMB), pendataan kepegawaian guru/tendik, serta verifikasi dokumen resmi secara digital, aman, dan efisien.</p>
                     <p><strong>Lisensi:</strong> Hak Cipta Terpelihara © 2026 SMP Al-Hikam Sendang Mulyo</p>

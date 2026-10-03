@@ -11,12 +11,17 @@ const STORAGE_KEY_SUPABASE = 'EARSIP_SUPABASE_CONFIG';
 
 // Helper to sanitize Supabase URL
 export function sanitizeSupabaseUrl(rawUrl: string): string {
-  const DEFAULT_FALLBACK = 'https://seklcpvakyaakgbsnlzt.supabase.co';
+  const DEFAULT_FALLBACK = 'https://seklcpvkayaakgbsnlzt.supabase.co';
   if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
-    return '';
+    return DEFAULT_FALLBACK;
   }
   
   let cleaned = rawUrl.trim();
+
+  // Auto-correct typo where 'vakya' was typed instead of 'vkaya'
+  if (cleaned.includes('seklcpvakyaakgbsnlzt')) {
+    cleaned = cleaned.replace('seklcpvakyaakgbsnlzt', 'seklcpvkayaakgbsnlzt');
+  }
 
   try {
     if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
@@ -30,22 +35,28 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
     if (hostname.endsWith('.supabase.com')) {
       hostname = hostname.replace(/\.supabase\.com$/, '.supabase.co');
     }
+    if (hostname.includes('seklcpvakyaakgbsnlzt')) {
+      hostname = hostname.replace('seklcpvakyaakgbsnlzt', 'seklcpvkayaakgbsnlzt');
+    }
     return `${parsed.protocol}//${hostname}`;
   } catch {
     return cleaned;
   }
 }
 
-export const DEFAULT_SUPABASE_URL = 'https://seklcpvakyaakgbsnlzt.supabase.co';
+export const DEFAULT_SUPABASE_URL = 'https://seklcpvkayaakgbsnlzt.supabase.co';
 export const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNla2xjcHZrYXlhYWtnYnNubHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNDMwNjgsImV4cCI6MjEwNjYxOTA2OH0.p2SGTN1Qr-BR5I4qy4wPVM_GoydQNqr4BoUZfLI5nPM';
 
-// Default Supabase configuration (fallback to permanent default, env, or localStorage)
+// Default Supabase configuration (fallback to permanent hardcoded default, env, or localStorage)
 export function getStoredSupabaseConfig(): SupabaseConfig {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
     if (saved) {
       const parsed = JSON.parse(saved);
-      const rawUrl = parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+      let rawUrl = parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+      if (rawUrl.includes('seklcpvakyaakgbsnlzt')) {
+        rawUrl = rawUrl.replace('seklcpvakyaakgbsnlzt', 'seklcpvkayaakgbsnlzt');
+      }
       const rawKey = (parsed.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY).trim();
       return {
         url: sanitizeSupabaseUrl(rawUrl) || DEFAULT_SUPABASE_URL,

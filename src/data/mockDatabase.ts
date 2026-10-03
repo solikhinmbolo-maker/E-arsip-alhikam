@@ -953,7 +953,7 @@ export function sanitizeUserStorageKey(input: string): string {
 
 export function getPublicStorageAvatarUrl(emailOrUsername: string): string {
   const key = sanitizeUserStorageKey(emailOrUsername);
-  return `https://seklcpvakyaakgbsnlzt.supabase.co/storage/v1/object/public/arsip/pp_${key}_avatar_${key}.jpg`;
+  return `https://seklcpvkayaakgbsnlzt.supabase.co/storage/v1/object/public/arsip/pp_${key}_avatar_${key}.jpg`;
 }
 
 export function getAvatarForUser(emailOrUsername: string, name?: string): string {
@@ -964,7 +964,7 @@ export function getAvatarForUser(emailOrUsername: string, name?: string): string
     const raw = localStorage.getItem('EARSIP_AVATARS_MAP');
     if (raw) {
       const map = JSON.parse(raw);
-      const isBadUrl = (url: string) => !url || url.includes('ui-avatars.com') || url.includes('ynlcaasuybwscbikjmzt');
+      const isBadUrl = (url: string) => !url || url.includes('ui-avatars.com') || url.includes('ynlcaasuybwscbikjmzt') || url.includes('vakya');
 
       if (map[key] && !isBadUrl(map[key])) {
         return map[key];
