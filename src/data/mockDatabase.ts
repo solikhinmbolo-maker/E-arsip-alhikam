@@ -953,7 +953,7 @@ export function sanitizeUserStorageKey(input: string): string {
 
 export function getPublicStorageAvatarUrl(emailOrUsername: string): string {
   const key = sanitizeUserStorageKey(emailOrUsername);
-  return `https://ynlcaasuybwscbikjmzt.supabase.co/storage/v1/object/public/arsip/pp_${key}_avatar_${key}.jpg`;
+  return `https://seklcpvakyaakgbsnlzt.supabase.co/storage/v1/object/public/arsip/pp_${key}_avatar_${key}.jpg`;
 }
 
 export function getAvatarForUser(emailOrUsername: string, name?: string): string {
@@ -964,11 +964,16 @@ export function getAvatarForUser(emailOrUsername: string, name?: string): string
     const raw = localStorage.getItem('EARSIP_AVATARS_MAP');
     if (raw) {
       const map = JSON.parse(raw);
-      if (map[key] && !map[key].includes('ui-avatars.com')) {
+      const isBadUrl = (url: string) => !url || url.includes('ui-avatars.com') || url.includes('ynlcaasuybwscbikjmzt');
+
+      if (map[key] && !isBadUrl(map[key])) {
         return map[key];
       }
-      if (map[emailOrUsername] && !map[emailOrUsername].includes('ui-avatars.com')) {
+      if (map[emailOrUsername] && !isBadUrl(map[emailOrUsername])) {
         return map[emailOrUsername];
+      }
+      if ((key === 'superadmin' || emailOrUsername.includes('superadmin')) && map['superadmin'] && !isBadUrl(map['superadmin'])) {
+        return map['superadmin'];
       }
     }
   } catch {}

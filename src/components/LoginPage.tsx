@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ShieldAlert, ArrowRight, CheckCircle2, KeyRound, Clock, ShieldCheck, HelpCircle, Send, User, ArrowLeft } from 'lucide-react';
 import { getStoredUserList, saveStoredUserList } from './UserManagementModal';
 import { fetchUsersFromSupabase, authenticateFromSupabaseDirect } from '../supabase';
+import { saveAvatarForUser } from '../data/mockDatabase';
 
 interface LoginPageProps {
   onLoginSuccess: (user: { email: string; name: string; role: string; avatarUrl?: string }) => void;
@@ -78,6 +79,13 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
     }
 
     if (directResult.success && directResult.user) {
+      if (directResult.user.avatarUrl) {
+        saveAvatarForUser(directResult.user.email, directResult.user.avatarUrl);
+        if (directResult.user.email === 'superadmin' || directResult.user.id === 'master-superadmin') {
+          saveAvatarForUser('superadmin', directResult.user.avatarUrl);
+          saveAvatarForUser('master-superadmin', directResult.user.avatarUrl);
+        }
+      }
       setLoadingStatus('Mengalihkan...');
       await new Promise(r => setTimeout(r, 400));
       setLoading(false);
@@ -92,6 +100,9 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
       if (cloudUsers && cloudUsers.length > 0) {
         const merged = [...userList];
         cloudUsers.forEach(cu => {
+          if (cu.avatarUrl) {
+            saveAvatarForUser(cu.email, cu.avatarUrl);
+          }
           const idx = merged.findIndex(m => m.email.toLowerCase() === cu.email.toLowerCase() || m.id === cu.id);
           if (idx >= 0) {
             merged[idx] = { ...merged[idx], ...cu };

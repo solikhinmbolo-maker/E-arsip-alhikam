@@ -2328,7 +2328,7 @@ function doGet(e) {
                   </div>
 
                   <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 space-y-2 leading-relaxed">
-                    <p><strong>Database Cloud:</strong> Supabase PostgreSQL Database (<code className="text-emerald-700 font-mono">ynlcaasuybwscbikjmzt.supabase.co</code>)</p>
+                    <p><strong>Database Cloud:</strong> Supabase PostgreSQL Database (<code className="text-emerald-700 font-mono">seklcpvakyaakgbsnlzt.supabase.co</code>)</p>
                     <p><strong>Penyimpanan Berkas Fisik:</strong> Supabase Storage Bucket ('arsip')</p>
                     <p><strong>Keterangan Pendukung:</strong> Aplikasi E-Arsip Digital SMP Al-Hikam Sendang Mulyo dirancang khusus untuk mempermudah tata kelola administrasi sekolah, pengarsipan berkas siswa (Ijazah, SKL, SPMB), pendataan kepegawaian guru/tendik, serta verifikasi dokumen resmi secara digital, aman, dan efisien.</p>
                     <p><strong>Lisensi:</strong> Hak Cipta Terpelihara © 2026 SMP Al-Hikam Sendang Mulyo</p>

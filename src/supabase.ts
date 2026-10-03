@@ -36,26 +36,28 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
   }
 }
 
-// Default Supabase configuration (fallback to env or localStorage)
-export function getStoredSupabaseConfig(): SupabaseConfig {
-  const DEFAULT_URL = 'https://seklcpvakyaakgbsnlzt.supabase.co';
+export const DEFAULT_SUPABASE_URL = 'https://seklcpvakyaakgbsnlzt.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNla2xjcHZrYXlhYWtnYnNubHp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNDMwNjgsImV4cCI6MjEwNjYxOTA2OH0.p2SGTN1Qr-BR5I4qy4wPVM_GoydQNqr4BoUZfLI5nPM';
 
+// Default Supabase configuration (fallback to permanent default, env, or localStorage)
+export function getStoredSupabaseConfig(): SupabaseConfig {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
     if (saved) {
       const parsed = JSON.parse(saved);
-      const rawUrl = parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_URL;
+      const rawUrl = parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
+      const rawKey = (parsed.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY).trim();
       return {
-        url: sanitizeSupabaseUrl(rawUrl) || DEFAULT_URL,
-        anonKey: (parsed.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim(),
+        url: sanitizeSupabaseUrl(rawUrl) || DEFAULT_SUPABASE_URL,
+        anonKey: rawKey || DEFAULT_SUPABASE_ANON_KEY,
         isEnabled: parsed.isEnabled !== false
       };
     }
   } catch {}
 
   return {
-    url: DEFAULT_URL,
-    anonKey: ((import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '').trim(),
+    url: DEFAULT_SUPABASE_URL,
+    anonKey: ((import.meta.env.VITE_SUPABASE_ANON_KEY as string) || DEFAULT_SUPABASE_ANON_KEY).trim(),
     isEnabled: true
   };
 }
