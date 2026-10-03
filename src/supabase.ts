@@ -13,6 +13,12 @@ const STORAGE_KEY_SUPABASE = 'EARSIP_SUPABASE_CONFIG';
 export function sanitizeSupabaseUrl(rawUrl: string): string {
   if (!rawUrl) return 'https://seklcpvakyaakgbsnlzt.supabase.co';
   let cleaned = rawUrl.trim();
+
+  // Strip trailing subpaths if user accidentally copied API endpoint URL
+  cleaned = cleaned.replace(/\/rest\/v1\/?$/i, '');
+  cleaned = cleaned.replace(/\/auth\/v1\/?$/i, '');
+  cleaned = cleaned.replace(/\/storage\/v1\/?$/i, '');
+
   if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
     cleaned = 'https://' + cleaned;
   }
@@ -22,6 +28,10 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
   if (cleaned.endsWith('.supabase.com/')) {
     cleaned = cleaned.replace(/\.supabase\.com\/$/, '.supabase.co');
   }
+
+  // Strip trailing slashes
+  cleaned = cleaned.replace(/\/+$/, '');
+
   return cleaned;
 }
 
@@ -69,10 +79,17 @@ export function getSupabaseClient(): SupabaseClient | null {
 
   try {
     const validUrl = sanitizeSupabaseUrl(config.url);
-    cachedClient = createClient(validUrl, config.anonKey.trim(), {
+    const cleanKey = config.anonKey.trim();
+    cachedClient = createClient(validUrl, cleanKey, {
       auth: {
         persistSession: false,
         autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          'apikey': cleanKey,
+          'Authorization': `Bearer ${cleanKey}`
+        }
       }
     });
     return cachedClient;
@@ -86,11 +103,39 @@ export function getSupabaseClient(): SupabaseClient | null {
  * Test Supabase connectivity
  */
 export async function testSupabaseConnection(): Promise<{ success: boolean; message: string }> {
+  const config = getStoredSupabaseConfig();
+  if (!config.url || !config.anonKey) {
+    return {
+      success: false,
+      message: 'Supabase URL atau Anon Key belum dikonfigurasi.'
+    };
+  }
+
+  const validUrl = sanitizeSupabaseUrl(config.url);
+  const cleanKey = config.anonKey.trim();
+
+  // 1. Direct Ping test to Supabase REST endpoint to verify network reachability
+  let serverReachable = false;
+  try {
+    const pingRes = await fetch(`${validUrl}/rest/v1/`, {
+      method: 'GET',
+      headers: {
+        'apikey': cleanKey,
+        'Authorization': `Bearer ${cleanKey}`
+      }
+    });
+    if (pingRes.ok || pingRes.status === 200 || pingRes.status === 400 || pingRes.status === 401 || pingRes.status === 404) {
+      serverReachable = true;
+    }
+  } catch (pingErr) {
+    console.warn('Direct ping notice:', pingErr);
+  }
+
   const client = getSupabaseClient();
   if (!client) {
     return {
       success: false,
-      message: 'Supabase URL atau Anon Key belum dikonfigurasi.'
+      message: 'Gagal inisialisasi Supabase client.'
     };
   }
 
@@ -98,15 +143,15 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
     const { data, error } = await client.from('arsip').select('id').limit(1);
     if (error) {
       // If table doesn't exist yet, mention SQL schema
-      if (error.code === '42P01' || error.message.includes('relation "arsip" does not exist')) {
+      if (error.code === '42P01' || error.message?.includes('relation "arsip" does not exist') || error.message?.includes('does not exist')) {
         return {
           success: false,
-          message: 'Koneksi berhasil, namun tabel "arsip" belum dibuat di Supabase. Silakan jalankan script SQL yang tersedia.'
+          message: '⚠️ Server Terhubung! Namun tabel "arsip" belum dibuat. Klik tombol "📋 Salin Script SQL Schema" lalu Paste & Run di SQL Editor Supabase Anda.'
         };
       }
       return {
         success: false,
-        message: `Gagal query: ${error.message} (Kode: ${error.code})`
+        message: `⚠️ Terhubung ke Server, namun query tabel gagal: ${error.message} (Kode: ${error.code})`
       };
     }
 
@@ -114,10 +159,16 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
       success: true,
       message: '✓ Berhasil terhubung ke Supabase PostgreSQL Cloud!'
     };
-  } catch (err) {
+  } catch (err: any) {
+    if (serverReachable) {
+      return {
+        success: false,
+        message: '⚠️ Server Supabase TERHUBUNG! Namun tabel "arsip" belum dibuat. Klik tombol "📋 Salin Script SQL Schema" lalu Run di SQL Editor Supabase.'
+      };
+    }
     return {
       success: false,
-      message: `Error koneksi: ${err instanceof Error ? err.message : String(err)}`
+      message: `Gagal koneksi: ${err?.message || 'Memuat...'} Silakan pastikan Anda sudah menjalankan script SQL di Supabase SQL Editor.`
     };
   }
 }
