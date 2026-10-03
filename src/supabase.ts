@@ -11,8 +11,11 @@ const STORAGE_KEY_SUPABASE = 'EARSIP_SUPABASE_CONFIG';
 
 // Helper to sanitize Supabase URL
 export function sanitizeSupabaseUrl(rawUrl: string): string {
-  if (!rawUrl) return 'https://ynlcaasuybwscbikjmzt.supabase.co';
+  if (!rawUrl) return 'https://seklcpvakyaakgbsnlzt.supabase.co';
   let cleaned = rawUrl.trim();
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    cleaned = 'https://' + cleaned;
+  }
   if (cleaned.endsWith('.supabase.com')) {
     cleaned = cleaned.replace(/\.supabase\.com$/, '.supabase.co');
   }
@@ -24,7 +27,7 @@ export function sanitizeSupabaseUrl(rawUrl: string): string {
 
 // Default Supabase configuration (fallback to env or localStorage)
 export function getStoredSupabaseConfig(): SupabaseConfig {
-  const DEFAULT_URL = 'https://ynlcaasuybwscbikjmzt.supabase.co';
+  const DEFAULT_URL = 'https://seklcpvakyaakgbsnlzt.supabase.co';
 
   try {
     const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
