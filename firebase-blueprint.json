@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "ArsipItem": {
+      "title": "ArsipItem",
+      "description": "Document archive record for student, teacher, and school administrative documents",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "tanggal": { "type": "string", "maxLength": 64 },
+        "tahun": { "type": "string", "maxLength": 16 },
+        "identitas": { "type": "string", "maxLength": 64 },
+        "subjek": { "type": "string", "maxLength": 256 },
+        "kategori": { "type": "string", "maxLength": 128 },
+        "kategoriUtama": { "type": "string", "maxLength": 64 },
+        "namaFileAsli": { "type": "string", "maxLength": 256 },
+        "ukuran": { "type": "string", "maxLength": 64 },
+        "uploader": { "type": "string", "maxLength": 128 },
+        "linkDrive": { "type": "string", "maxLength": 1024 },
+        "fileDataUrl": { "type": "string", "maxLength": 10485760 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "subjek", "kategori", "kategoriUtama"]
+    },
+    "MasterSiswa": {
+      "title": "MasterSiswa",
+      "description": "Student master profile record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "nisn": { "type": "string", "maxLength": 64 },
+        "nama": { "type": "string", "maxLength": 256 },
+        "tahun": { "type": "string", "maxLength": 16 },
+        "kelas": { "type": "string", "maxLength": 64 },
+        "tanggalTerdaftar": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["nisn", "nama", "tahun"]
+    },
+    "MasterGuru": {
+      "title": "MasterGuru",
+      "description": "Teacher and staff master profile record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "nuptk": { "type": "string", "maxLength": 64 },
+        "nama": { "type": "string", "maxLength": 256 },
+        "jabatan": { "type": "string", "maxLength": 128 },
+        "tanggalTerdaftar": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["nuptk", "nama", "jabatan"]
+    }
+  },
+  "firestore": {
+    "/arsip/{arsipId}": {
+      "schema": { "$ref": "#/entities/ArsipItem" },
+      "description": "Public school archive records synchronized across all authorized staff"
+    },
+    "/master_siswa/{siswaId}": {
+      "schema": { "$ref": "#/entities/MasterSiswa" },
+      "description": "Student registry records"
+    },
+    "/master_guru/{guruId}": {
+      "schema": { "$ref": "#/entities/MasterGuru" },
+      "description": "Teacher registry records"
+    }
+  }
+}

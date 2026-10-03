@@ -1,0 +1,8 @@
+{
+  "name": "Remix E-Arsip Al-Hicam",
+  "description": "Sistem Informasi Manajemen E-Arsip Digital SMP Al-Hikam dengan fitur Dashboard Executive, Upload Kolektif \u0026 Individual, Unduh Berkas, Rekap Kelengkapan, dan Statistik Laporan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

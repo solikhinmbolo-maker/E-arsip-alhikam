@@ -1,0 +1,1048 @@
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { ArsipItem, MasterSiswaItem, MasterGuruItem, getAvatarForUser, saveAvatarForUser, sanitizeUserStorageKey, getPublicStorageAvatarUrl } from './data/mockDatabase';
+
+export interface SupabaseConfig {
+  url: string;
+  anonKey: string;
+  isEnabled: boolean;
+}
+
+const STORAGE_KEY_SUPABASE = 'EARSIP_SUPABASE_CONFIG';
+
+// Helper to sanitize Supabase URL
+export function sanitizeSupabaseUrl(rawUrl: string): string {
+  if (!rawUrl) return 'https://ynlcaasuybwscbikjmzt.supabase.co';
+  let cleaned = rawUrl.trim();
+  if (cleaned.endsWith('.supabase.com')) {
+    cleaned = cleaned.replace(/\.supabase\.com$/, '.supabase.co');
+  }
+  if (cleaned.endsWith('.supabase.com/')) {
+    cleaned = cleaned.replace(/\.supabase\.com\/$/, '.supabase.co');
+  }
+  return cleaned;
+}
+
+// Default Supabase configuration (fallback to env or localStorage)
+export function getStoredSupabaseConfig(): SupabaseConfig {
+  const DEFAULT_URL = 'https://ynlcaasuybwscbikjmzt.supabase.co';
+
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        url: sanitizeSupabaseUrl(parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_URL),
+        anonKey: parsed.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+        isEnabled: parsed.isEnabled !== false
+      };
+    }
+  } catch {}
+
+  return {
+    url: sanitizeSupabaseUrl((import.meta.env.VITE_SUPABASE_URL as string) || DEFAULT_URL),
+    anonKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '',
+    isEnabled: true
+  };
+}
+
+export function saveStoredSupabaseConfig(config: SupabaseConfig) {
+  try {
+    localStorage.setItem(STORAGE_KEY_SUPABASE, JSON.stringify(config));
+    cachedClient = null; // Reset client instance
+  } catch (err) {
+    console.warn('Failed to save Supabase config to localStorage:', err);
+  }
+}
+
+let cachedClient: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient | null {
+  if (cachedClient) return cachedClient;
+
+  const config = getStoredSupabaseConfig();
+  if (!config.url || !config.anonKey) {
+    return null;
+  }
+
+  try {
+    const validUrl = sanitizeSupabaseUrl(config.url);
+    cachedClient = createClient(validUrl, config.anonKey.trim(), {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+    return cachedClient;
+  } catch (err) {
+    console.error('Failed to initialize Supabase client:', err);
+    return null;
+  }
+}
+
+/**
+ * Test Supabase connectivity
+ */
+export async function testSupabaseConnection(): Promise<{ success: boolean; message: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return {
+      success: false,
+      message: 'Supabase URL atau Anon Key belum dikonfigurasi.'
+    };
+  }
+
+  try {
+    const { data, error } = await client.from('arsip').select('id').limit(1);
+    if (error) {
+      // If table doesn't exist yet, mention SQL schema
+      if (error.code === '42P01' || error.message.includes('relation "arsip" does not exist')) {
+        return {
+          success: false,
+          message: 'Koneksi berhasil, namun tabel "arsip" belum dibuat di Supabase. Silakan jalankan script SQL yang tersedia.'
+        };
+      }
+      return {
+        success: false,
+        message: `Gagal query: ${error.message} (Kode: ${error.code})`
+      };
+    }
+
+    return {
+      success: true,
+      message: '✓ Berhasil terhubung ke Supabase PostgreSQL Cloud!'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: `Error koneksi: ${err instanceof Error ? err.message : String(err)}`
+    };
+  }
+}
+
+/**
+ * Fetch all archives from Supabase
+ */
+export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from('arsip')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.warn('Supabase fetch error:', error);
+      return null;
+    }
+
+    if (!Array.isArray(data)) return [];
+
+    return data.map((row: any) => ({
+      id: row.id,
+      tanggal: row.tanggal || '',
+      tahun: row.tahun || '',
+      identitas: row.identitas || '-',
+      subjek: row.subjek || '',
+      kategori: row.kategori || '',
+      kategoriUtama: row.kategori_utama || 'Arsip Siswa',
+      namaFileAsli: row.nama_file_asli || '',
+      ukuran: row.ukuran || '',
+      linkDrive: row.link_drive || '',
+      uploader: row.uploader || 'admin@alhicam.sch.id',
+      isTrash: Boolean(row.is_trash),
+      deletedAt: row.deleted_at || undefined
+    }));
+  } catch (err) {
+    console.warn('Supabase fetch failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Save / Upsert an archive item to Supabase
+ */
+export async function saveArsipToSupabase(item: ArsipItem): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const row = {
+      id: item.id,
+      tanggal: item.tanggal || '',
+      tahun: item.tahun || '',
+      identitas: item.identitas || '-',
+      subjek: item.subjek || '',
+      kategori: item.kategori || '',
+      kategori_utama: item.kategoriUtama,
+      nama_file_asli: item.namaFileAsli,
+      ukuran: item.ukuran || '',
+      link_drive: item.linkDrive || '',
+      uploader: item.uploader || 'admin@alhicam.sch.id',
+      is_trash: Boolean(item.isTrash),
+      deleted_at: item.isTrash ? (item.deletedAt || new Date().toISOString()) : null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await client
+      .from('arsip')
+      .upsert(row, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Supabase upsert error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Supabase save exception:', err);
+    return false;
+  }
+}
+
+/**
+ * Bulk save / sync all local archives to Supabase
+ */
+export async function syncAllArsipToSupabase(items: ArsipItem[]): Promise<{ success: boolean; count: number }> {
+  const client = getSupabaseClient();
+  if (!client || !Array.isArray(items) || items.length === 0) {
+    return { success: false, count: 0 };
+  }
+
+  try {
+    const rows = items.map(item => ({
+      id: item.id,
+      tanggal: item.tanggal || '',
+      tahun: item.tahun || '',
+      identitas: item.identitas || '-',
+      subjek: item.subjek || '',
+      kategori: item.kategori || '',
+      kategori_utama: item.kategoriUtama,
+      nama_file_asli: item.namaFileAsli,
+      ukuran: item.ukuran || '',
+      link_drive: item.linkDrive || '',
+      uploader: item.uploader || 'admin@alhicam.sch.id',
+      is_trash: Boolean(item.isTrash),
+      deleted_at: item.isTrash ? (item.deletedAt || new Date().toISOString()) : null,
+      updated_at: new Date().toISOString()
+    }));
+
+    const { error } = await client
+      .from('arsip')
+      .upsert(rows, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Supabase bulk sync error:', error);
+      return { success: false, count: 0 };
+    }
+
+    return { success: true, count: rows.length };
+  } catch (err) {
+    console.error('Supabase bulk sync exception:', err);
+    return { success: false, count: 0 };
+  }
+}
+export async function deleteArsipFromSupabase(id: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const { error } = await client
+      .from('arsip')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Supabase delete error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Supabase delete exception:', err);
+    return false;
+  }
+}
+
+/**
+ * Save / update individual user directly in Supabase 'users' table (matches schema: id (uuid), nama, email, password, role)
+ */
+export async function saveSingleUserToSupabase(
+  user: { id?: string; name: string; email: string; role?: string; password?: string; avatarUrl?: string },
+  oldEmail?: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client) return { success: false, error: 'Koneksi Supabase belum aktif' };
+
+  const cleanEmail = (user.email || '').trim().toLowerCase().replace(/^@/, '');
+  const cleanOldEmail = (oldEmail || '').trim().toLowerCase().replace(/^@/, '');
+  const cleanName = user.name || 'Pengguna';
+  const cleanRole = user.role || 'Administrator Arsip';
+  const cleanPassword = user.password || 'superadmin123';
+
+  // UUID v4 format generator
+  const isUuid = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+  const userUuid = isUuid(user.id) ? user.id! : (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '60f357d6-b7f8-49a8-8ec4-' + Date.now().toString(16).padEnd(12, '0'));
+
+  try {
+    // Auto-upload photo profile base64 to Supabase Storage bucket 'arsip' to get public HTTP link for cross-device sync
+    const avatarKey = sanitizeUserStorageKey(cleanEmail);
+    let publicAvatarUrl = user.avatarUrl || getPublicStorageAvatarUrl(avatarKey);
+
+    if (user.avatarUrl && user.avatarUrl.startsWith('data:image')) {
+      try {
+        const uploadRes = await uploadFileToSupabaseStorage(`pp_${avatarKey}`, `avatar_${avatarKey}.jpg`, user.avatarUrl);
+        if (uploadRes.success && uploadRes.publicUrl) {
+          publicAvatarUrl = uploadRes.publicUrl;
+        }
+      } catch (e) {
+        console.warn('Avatar storage upload warning:', e);
+      }
+    }
+
+    if (publicAvatarUrl) {
+      saveAvatarForUser(cleanEmail, publicAvatarUrl);
+      saveAvatarForUser(avatarKey, publicAvatarUrl);
+      if (cleanEmail === 'superadmin' || user.id === 'master-superadmin') {
+        saveAvatarForUser('superadmin', publicAvatarUrl);
+      }
+    }
+
+    // 1. Cek apakah baris dengan email lama / email baru sudah ada di Supabase
+    let query = client.from('users').select('id, email, nama');
+    if (cleanOldEmail && cleanOldEmail !== cleanEmail) {
+      query = query.or(`email.ilike.${cleanOldEmail},email.ilike.${cleanEmail},email.ilike.@${cleanOldEmail},email.ilike.@${cleanEmail}`);
+    } else {
+      query = query.or(`email.ilike.${cleanEmail},email.ilike.@${cleanEmail}`);
+    }
+
+    const { data: results, error: searchErr } = await query.limit(1);
+    const existing = results && results.length > 0 ? results[0] : null;
+
+    if (existing && existing.id) {
+      // Update data baris yang sudah ada
+      const updateData: any = {
+        nama: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        role: cleanRole
+      };
+      if (publicAvatarUrl) {
+        updateData.avatar_url = publicAvatarUrl;
+      }
+
+      let { error: updateErr } = await client
+        .from('users')
+        .update(updateData)
+        .eq('id', existing.id);
+
+      // Jika error karena kolom avatar_url tidak ada di tabel users Supabase, coba tanpa kolom itu
+      if (updateErr && (updateErr.message.includes('avatar_url') || (updateErr as any).code === '42703')) {
+        delete updateData.avatar_url;
+        const retry = await client.from('users').update(updateData).eq('id', existing.id);
+        updateErr = retry.error;
+      }
+
+      if (updateErr) {
+        console.warn('Supabase update user error:', updateErr.message);
+        return { success: false, error: updateErr.message };
+      }
+      return { success: true };
+    } else {
+      // Insert data akun baru ke Supabase
+      const insertPayload: any = {
+        id: userUuid,
+        nama: cleanName,
+        email: cleanEmail,
+        password: cleanPassword,
+        role: cleanRole
+      };
+      if (publicAvatarUrl) {
+        insertPayload.avatar_url = publicAvatarUrl;
+      }
+
+      let { error: insertErr } = await client
+        .from('users')
+        .insert([insertPayload]);
+
+      // Jika error karena kolom avatar_url tidak ada, coba tanpa avatar_url
+      if (insertErr && (insertErr.message.includes('avatar_url') || (insertErr as any).code === '42703')) {
+        delete insertPayload.avatar_url;
+        const retry = await client.from('users').insert([insertPayload]);
+        insertErr = retry.error;
+      }
+
+      if (insertErr) {
+        console.warn('Supabase insert user notice:', insertErr.message);
+        // Coba insert tanpa ID jika Supabase auto-generate UUID
+        delete insertPayload.id;
+        const { error: retryErr } = await client.from('users').insert([insertPayload]);
+        if (retryErr) {
+          console.error('Supabase retry insert failed:', retryErr.message);
+          return { success: false, error: retryErr.message };
+        }
+      }
+      return { success: true };
+    }
+  } catch (err: any) {
+    console.error('saveSingleUserToSupabase exception:', err);
+    return { success: false, error: err?.message || String(err) };
+  }
+}
+
+/**
+ * Save user profile data to Supabase 'users' table
+ */
+export async function saveUserProfileToSupabase(user: { email: string; name: string; role?: string; avatarUrl?: string; password?: string }): Promise<boolean> {
+  const res = await saveSingleUserToSupabase(user);
+  return res.success;
+}
+
+/**
+ * Delete user directly from Supabase 'users' table
+ */
+export async function deleteUserFromSupabase(email: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const cleanEmail = email.trim().toLowerCase().replace(/^@/, '');
+    const { error } = await client.from('users').delete().or(`email.ilike.${cleanEmail},email.ilike.@${cleanEmail}`);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sync entire user list to Supabase 'users' table
+ */
+export async function syncAllUsersToSupabase(users: Array<{ id?: string; name: string; email: string; role: string; status?: string; password?: string; avatarUrl?: string }>): Promise<{ success: boolean; count: number; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client || !Array.isArray(users) || users.length === 0) return { success: false, count: 0 };
+
+  let successCount = 0;
+  let lastError = '';
+
+  for (const u of users) {
+    const res = await saveSingleUserToSupabase(u);
+    if (res.success) {
+      successCount++;
+    } else if (res.error) {
+      lastError = res.error;
+    }
+  }
+
+  return { success: successCount > 0, count: successCount, error: lastError || undefined };
+}
+
+/**
+ * Fetch all users directly from Supabase 'users' table (with auto-seed if empty)
+ */
+export async function fetchUsersFromSupabase(): Promise<any[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const { data, error } = await client
+      .from('users')
+      .select('*');
+
+    if (error) {
+      console.warn('Supabase fetch users warning:', error.message);
+      return null;
+    }
+
+    // Jika tabel users di Supabase masih kosong melompong (seperti di screenshot user),
+    // otomatis MASUKKAN akun master Solikhin Mbolo ke Supabase!
+    if (!Array.isArray(data) || data.length === 0) {
+      await saveSingleUserToSupabase({
+        name: 'Solikhin Mbolo',
+        email: 'superadmin',
+        password: 'superadmin123',
+        role: 'Super Administrator'
+      });
+
+      return [
+        {
+          id: 'master-superadmin',
+          name: 'Solikhin Mbolo',
+          email: 'superadmin',
+          role: 'Super Administrator',
+          status: 'Aktif',
+          password: 'superadmin123',
+          isSuperAdmin: true
+        }
+      ];
+    }
+
+    return data.map((d: any) => {
+      const email = d.email || '';
+      const name = d.nama || d.name || 'Pengguna';
+      const avatarUrl = (d.avatar_url && !d.avatar_url.includes('ui-avatars.com')) 
+        ? d.avatar_url 
+        : getAvatarForUser(email, name);
+
+      return {
+        id: d.id || `usr-${email}`,
+        name,
+        email,
+        role: d.role || 'Administrator Arsip',
+        status: d.status || 'Aktif',
+        password: d.password || 'superadmin123',
+        avatarUrl,
+        isSuperAdmin: (d.role || '').toLowerCase().includes('super') || email.toLowerCase() === 'superadmin'
+      };
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Direct Live Authentication against Supabase 'users' table
+ */
+export async function authenticateFromSupabaseDirect(usernameInput: string, passwordInput: string): Promise<{ success: boolean; user?: any; message: string }> {
+  const cleanInput = usernameInput.trim().toLowerCase().replace(/^@/, '');
+  const cleanPass = passwordInput.trim();
+
+  const client = getSupabaseClient();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from('users')
+        .select('*');
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const found = data.find((d: any) => {
+          const dEmail = (d.email || '').toLowerCase().trim().replace(/^@/, '');
+          const dNama = (d.nama || d.name || '').toLowerCase().trim();
+          return dEmail === cleanInput || dNama === cleanInput || (cleanInput === 'superadmin' && (dEmail === 'superadmin' || dEmail === 'superadmin@01'));
+        });
+
+        if (found) {
+          if (found.status === 'Nonaktif') {
+            return { success: false, message: 'Akun Anda sedang dinonaktifkan oleh Super Administrator.' };
+          }
+
+          const dbPassword = (found.password || (found.email === 'superadmin' || found.id === 'master-superadmin' ? 'superadmin123' : '')).trim();
+          if (cleanPass === dbPassword) {
+            return {
+              success: true,
+              user: {
+                id: found.id,
+                email: found.email,
+                name: found.nama || found.name,
+                role: found.role || 'Administrator Arsip',
+                avatarUrl: (found.avatar_url && !found.avatar_url.includes('ui-avatars.com')) 
+                  ? found.avatar_url 
+                  : getAvatarForUser(found.email, found.nama || found.name)
+              },
+              message: 'Login berhasil!'
+            };
+          } else {
+            return { success: false, message: 'Username / Paswword tidak sesuai, silahkan coba lagi..!' };
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Supabase auth fallback:', err);
+    }
+  }
+
+  return { success: false, message: 'Username / Paswword tidak sesuai, silahkan coba lagi..!' };
+}
+
+/**
+ * Save / Upsert single Siswa to Supabase
+ */
+export async function saveSiswaToSupabase(item: MasterSiswaItem): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const row = {
+      id: item.id,
+      nisn: item.nisn || '',
+      nama: item.nama || '',
+      kelas: item.kelas || '',
+      angkatan: item.tahun || ''
+    };
+    const { error } = await client
+      .from('master_siswa')
+      .upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('Supabase save siswa error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase save siswa exception:', err);
+    return false;
+  }
+}
+
+/**
+ * Save / Upsert single Guru to Supabase
+ */
+export async function saveGuruToSupabase(item: MasterGuruItem): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const row = {
+      id: item.id,
+      nuptk: item.nuptk || '',
+      nama: item.nama || '',
+      jabatan: item.jabatan || ''
+    };
+    const { error } = await client
+      .from('master_guru')
+      .upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('Supabase save guru error:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase save guru exception:', err);
+    return false;
+  }
+}
+
+/**
+ * Delete single Siswa from Supabase
+ */
+export async function deleteMasterSiswaFromSupabase(id: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const { error } = await client.from('master_siswa').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Delete single Guru from Supabase
+ */
+export async function deleteMasterGuruFromSupabase(id: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const { error } = await client.from('master_guru').delete().eq('id', id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Bulk sync all Siswa to Supabase
+ */
+export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Promise<{ success: boolean; count: number; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client || !Array.isArray(items) || items.length === 0) {
+    return { success: false, count: 0 };
+  }
+  try {
+    const rows = items.map(s => ({
+      id: s.id,
+      nisn: s.nisn || '',
+      nama: s.nama || '',
+      kelas: s.kelas || '',
+      angkatan: s.tahun || ''
+    }));
+
+    const { error } = await client
+      .from('master_siswa')
+      .upsert(rows, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Supabase bulk sync siswa error:', error);
+      return { success: false, count: 0, error: error.message };
+    }
+    return { success: true, count: rows.length };
+  } catch (err: any) {
+    console.error('Supabase bulk sync siswa exception:', err);
+    return { success: false, count: 0, error: err?.message };
+  }
+}
+
+/**
+ * Bulk sync all Guru to Supabase
+ */
+export async function syncAllMasterGuruToSupabase(items: MasterGuruItem[]): Promise<{ success: boolean; count: number; error?: string }> {
+  const client = getSupabaseClient();
+  if (!client || !Array.isArray(items) || items.length === 0) {
+    return { success: false, count: 0 };
+  }
+  try {
+    const rows = items.map(g => ({
+      id: g.id,
+      nuptk: g.nuptk || '',
+      nama: g.nama || '',
+      jabatan: g.jabatan || ''
+    }));
+
+    const { error } = await client
+      .from('master_guru')
+      .upsert(rows, { onConflict: 'id' });
+
+    if (error) {
+      console.error('Supabase bulk sync guru error:', error);
+      return { success: false, count: 0, error: error.message };
+    }
+    return { success: true, count: rows.length };
+  } catch (err: any) {
+    console.error('Supabase bulk sync guru exception:', err);
+    return { success: false, count: 0, error: err?.message };
+  }
+}
+
+/**
+ * Fetch all Siswa from Supabase
+ */
+export async function fetchMasterSiswaFromSupabase(): Promise<MasterSiswaItem[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  try {
+    const { data, error } = await client
+      .from('master_siswa')
+      .select('*')
+      .order('nama', { ascending: true });
+    if (error) {
+      console.warn('Supabase fetch master_siswa error:', error);
+      return null;
+    }
+    if (!Array.isArray(data)) return [];
+    return data.map((row: any) => ({
+      id: row.id,
+      nisn: row.nisn || '',
+      nama: row.nama || '',
+      kelas: row.kelas || '',
+      tahun: row.angkatan || ''
+    }));
+  } catch (err) {
+    console.warn('Supabase fetch master_siswa exception:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetch all Guru from Supabase
+ */
+export async function fetchMasterGuruFromSupabase(): Promise<MasterGuruItem[] | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+  try {
+    const { data, error } = await client
+      .from('master_guru')
+      .select('*')
+      .order('nama', { ascending: true });
+    if (error) {
+      console.warn('Supabase fetch master_guru error:', error);
+      return null;
+    }
+    if (!Array.isArray(data)) return [];
+    return data.map((row: any) => ({
+      id: row.id,
+      nuptk: row.nuptk || '',
+      nama: row.nama || '',
+      jabatan: row.jabatan || ''
+    }));
+  } catch (err) {
+    console.warn('Supabase fetch master_guru exception:', err);
+    return null;
+  }
+}
+
+/**
+ * Upload file base64 directly to Supabase Storage bucket 'arsip'
+ */
+export async function uploadFileToSupabaseStorage(
+  id: string,
+  fileName: string,
+  base64OrBlob: string | Blob
+): Promise<{ success: boolean; publicUrl?: string; message?: string }> {
+  const client = getSupabaseClient();
+  if (!client || !base64OrBlob) {
+    return { success: false, message: 'Supabase client belum aktif atau file kosong' };
+  }
+
+  try {
+    let blob: Blob;
+    let mimeType = 'application/octet-stream';
+
+    if (base64OrBlob instanceof Blob) {
+      blob = base64OrBlob;
+      mimeType = blob.type || 'application/octet-stream';
+    } else {
+      const parts = base64OrBlob.split(',');
+      if (parts.length > 1) {
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        if (mimeMatch) mimeType = mimeMatch[1];
+        const binary = atob(parts[1]);
+        const array = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          array[i] = binary.charCodeAt(i);
+        }
+        blob = new Blob([array], { type: mimeType });
+      } else {
+        blob = new Blob([base64OrBlob], { type: mimeType });
+      }
+    }
+
+    const safeExt = mimeType.includes('pdf') ? '.pdf' : mimeType.includes('png') ? '.png' : '.jpg';
+    const cleanName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${id}_${cleanName}${cleanName.includes('.') ? '' : safeExt}`;
+
+    const { error } = await client.storage
+      .from('arsip')
+      .upload(storagePath, blob, {
+        contentType: mimeType,
+        upsert: true
+      });
+
+    if (error) {
+      console.warn('Supabase storage upload error:', error);
+      let errorMsg = error.message;
+      if (error.message.includes('Bucket not found') || (error as any).statusCode === 404) {
+        errorMsg = 'Bucket "arsip" belum dibuat di Supabase Storage.';
+      } else if (error.message.includes('row-level security') || (error as any).statusCode === 403 || (error as any).statusCode === '403') {
+        errorMsg = 'Izin upload ditolak (Storage RLS Policy). Jalankan script SQL izin storage di Supabase.';
+      }
+      return { success: false, message: errorMsg };
+    }
+
+    const { data: publicUrlData } = client.storage
+      .from('arsip')
+      .getPublicUrl(storagePath);
+
+    return {
+      success: true,
+      publicUrl: publicUrlData.publicUrl,
+      message: 'File berhasil diunggah ke Supabase Storage!'
+    };
+  } catch (err: any) {
+    console.warn('Supabase storage exception:', err);
+    return { success: false, message: err.message || 'Gagal upload ke Supabase Storage' };
+  }
+}
+
+/**
+ * Live test to verify Supabase Storage bucket 'arsip' and RLS permission
+ */
+export async function testSupabaseStorage(): Promise<{ success: boolean; message: string }> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { success: false, message: 'Koneksi Supabase belum aktif.' };
+  }
+
+  try {
+    const testBlob = new Blob(['PING_SMP_ALHICAM'], { type: 'text/plain' });
+    const testPath = `_test_ping_${Date.now()}.txt`;
+
+    const { error } = await client.storage
+      .from('arsip')
+      .upload(testPath, testBlob, { upsert: true });
+
+    if (error) {
+      if (error.message.includes('Bucket not found') || (error as any).statusCode === 404) {
+        return { 
+          success: false, 
+          message: '❌ Bucket "arsip" BELUM DIBUAT di Supabase Storage! Klik "+ New bucket" ➔ nama: "arsip" ➔ centang "Public bucket".' 
+        };
+      }
+      if (error.message.includes('row-level security') || error.message.includes('RLS') || (error as any).statusCode === 403 || (error as any).statusCode === '403') {
+        return { 
+          success: false, 
+          message: '❌ Izin Upload Ditolak (RLS Policy). Jalankan script SQL Storage di menu SQL Editor Supabase.' 
+        };
+      }
+      return { success: false, message: `❌ Gagal akses Storage: ${error.message}` };
+    }
+
+    // Bersihkan file ping
+    await client.storage.from('arsip').remove([testPath]);
+
+    return { 
+      success: true, 
+      message: '✓ Berhasil! Bucket "arsip" aktif & siap menerima file foto/PDF!' 
+    };
+  } catch (err: any) {
+    return { success: false, message: `Error Storage: ${err?.message || String(err)}` };
+  }
+}
+
+/**
+ * Subscribe to realtime changes on Supabase 'arsip' table
+ */
+export function subscribeToSupabaseArsip(onUpdate: (items: ArsipItem[]) => void) {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  // Initial fetch
+  fetchArsipFromSupabase().then(items => {
+    if (items) onUpdate(items);
+  });
+
+  const channel = client
+    .channel('arsip_changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'arsip' },
+      () => {
+        fetchArsipFromSupabase().then(items => {
+          if (items) onUpdate(items);
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+/**
+ * Subscribe to realtime changes on Supabase 'users' table
+ */
+export function subscribeToSupabaseUsers(onUpdate: (users: any[]) => void) {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  fetchUsersFromSupabase().then(users => {
+    if (users && users.length > 0) onUpdate(users);
+  });
+
+  const channel = client
+    .channel('users_realtime_channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'users' },
+      () => {
+        fetchUsersFromSupabase().then(users => {
+          if (users && users.length > 0) onUpdate(users);
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+/**
+ * Ready-to-use SQL Schema for Supabase SQL Editor
+ */
+export const SUPABASE_SQL_SCHEMA = `-- =========================================================
+-- SKEMA DATABASE E-ARSIP SMP AL-HIKAM JOMBANG (SUPABASE SQL)
+-- Salin dan jalankan script ini di menu "SQL Editor" pada Supabase
+-- =========================================================
+
+-- 1. TABEL ARSIP DOKUMEN DIGITAL (Terhubung ke Google Drive)
+CREATE TABLE IF NOT EXISTS public.arsip (
+    id TEXT PRIMARY KEY,
+    tanggal TEXT,
+    tahun TEXT,
+    identitas TEXT DEFAULT '-',
+    subjek TEXT NOT NULL,
+    kategori TEXT NOT NULL,
+    kategori_utama TEXT NOT NULL,
+    nama_file_asli TEXT,
+    ukuran TEXT,
+    link_drive TEXT,
+    uploader TEXT DEFAULT 'superadmin',
+    is_trash BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Indeks untuk pencarian super cepat
+CREATE INDEX IF NOT EXISTS idx_arsip_subjek ON public.arsip (subjek);
+CREATE INDEX IF NOT EXISTS idx_arsip_identitas ON public.arsip (identitas);
+CREATE INDEX IF NOT EXISTS idx_arsip_kategori ON public.arsip (kategori_utama, kategori);
+CREATE INDEX IF NOT EXISTS idx_arsip_is_trash ON public.arsip (is_trash);
+
+-- 2. TABEL MASTER DATA SISWA (Buku Induk Siswa)
+CREATE TABLE IF NOT EXISTS public.master_siswa (
+    id TEXT PRIMARY KEY,
+    nisn TEXT,
+    nama TEXT NOT NULL,
+    kelas TEXT,
+    angkatan TEXT,
+    jk TEXT,
+    status TEXT DEFAULT 'Aktif',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 3. TABEL MASTER DATA GURU & PEGAWAI
+CREATE TABLE IF NOT EXISTS public.master_guru (
+    id TEXT PRIMARY KEY,
+    nuptk TEXT,
+    nip TEXT,
+    nama TEXT NOT NULL,
+    jabatan TEXT,
+    tugas TEXT,
+    jk TEXT,
+    status TEXT DEFAULT 'Aktif',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 4. TABEL USERS (MANAJEMEN PENGGUNA SISTEM)
+CREATE TABLE IF NOT EXISTS public.users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL DEFAULT 'Administrator Arsip',
+    status TEXT NOT NULL DEFAULT 'Aktif',
+    password TEXT,
+    avatar_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Inisialisasi Akun Super Administrator Utama
+INSERT INTO public.users (id, name, username, role, status, password)
+VALUES ('master-superadmin', 'Solikhin Mbolo', 'superadmin', 'Super Administrator', 'Aktif', 'superadmin123')
+ON CONFLICT (username) DO NOTHING;
+
+-- 5. ATUR HAK AKSES KEAMANAN (Row Level Security)
+ALTER TABLE public.arsip ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.master_siswa ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.master_guru ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- Izinkan akses baca dan tulis penuh untuk Anon Key (Frontend Web)
+DROP POLICY IF EXISTS "Public Full Access Arsip" ON public.arsip;
+CREATE POLICY "Public Full Access Arsip" ON public.arsip FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Full Access Siswa" ON public.master_siswa;
+CREATE POLICY "Public Full Access Siswa" ON public.master_siswa FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Full Access Guru" ON public.master_guru;
+CREATE POLICY "Public Full Access Guru" ON public.master_guru FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Full Access Users" ON public.users;
+CREATE POLICY "Public Full Access Users" ON public.users FOR ALL USING (true) WITH CHECK (true);
+
+-- 6. AKTIFKAN REALTIME REPLICATION SUPABASE
+ALTER PUBLICATION supabase_realtime ADD TABLE public.arsip;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.master_siswa;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.master_guru;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+
+-- 7. IZIN AKSES STORAGE BUCKET 'arsip' (Upload & Baca Berkas Fisik)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('arsip', 'arsip', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Public Storage Upload" ON storage.objects;
+CREATE POLICY "Public Storage Upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'arsip');
+
+DROP POLICY IF EXISTS "Public Storage Read" ON storage.objects;
+CREATE POLICY "Public Storage Read" ON storage.objects FOR SELECT USING (bucket_id = 'arsip');
+
+DROP POLICY IF EXISTS "Public Storage Update" ON storage.objects;
+CREATE POLICY "Public Storage Update" ON storage.objects FOR UPDATE USING (bucket_id = 'arsip');
+`;
