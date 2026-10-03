@@ -247,10 +247,22 @@ export async function deleteArsipFromSupabase(id: string): Promise<boolean> {
   if (!client) return false;
 
   try {
+    // 1. Hapus baris data dari tabel PostgreSQL public.arsip
     const { error } = await client
       .from('arsip')
       .delete()
       .eq('id', id);
+
+    // 2. Hapus berkas fisik langsung dari Supabase Storage Bucket 'arsip'
+    try {
+      const { data: fileList } = await client.storage.from('arsip').list('', { search: id });
+      if (Array.isArray(fileList) && fileList.length > 0) {
+        const filesToRemove = fileList.map(f => f.name);
+        await client.storage.from('arsip').remove(filesToRemove);
+      }
+    } catch (e) {
+      console.warn('Supabase storage file deletion notice:', e);
+    }
 
     if (error) {
       console.error('Supabase delete error:', error);

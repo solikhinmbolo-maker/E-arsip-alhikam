@@ -282,8 +282,9 @@ export default function FormUploadView({
     if (!selectedFile) return;
 
     setIsUploading(true);
-    setProgressPercent(20);
-    setProgressStatus(replaceExistingId ? 'Memperbarui dokumen arsip...' : 'Membaca & memverifikasi dokumen...');
+    setProgressPercent(15);
+    setProgressStatus(replaceExistingId ? 'Memperbarui...' : 'Membaca berkas...');
+    await new Promise(r => setTimeout(r, 600));
 
     const prefix = jenisArsip === 'Arsip Siswa' ? 'SSW' : jenisArsip === 'Arsip Guru' ? 'GRU' : 'LYN';
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -294,8 +295,9 @@ export default function FormUploadView({
     let optimizedBase64 = fileBase64 || '';
     let finalUkuran = `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`;
 
+    setProgressPercent(45);
     if (fileBase64 && selectedFile.size > 850 * 1024) {
-      setProgressStatus('Mengompres cerdas ke ~1.0 MB (Kualitas HD teks & stempel tetap tajam)...');
+      setProgressStatus('Mengompresi HD...');
       const comp = await compressDocumentHighQuality(selectedFile, fileBase64, 1024 * 1024);
       optimizedBase64 = comp.compressedDataUrl;
       const compMB = (comp.compressedSize / (1024 * 1024)).toFixed(1);
@@ -303,6 +305,10 @@ export default function FormUploadView({
       if (comp.compressedSize < comp.originalSize) {
         finalUkuran = `${compMB} MB (HD kompresi dari ${origMB} MB)`;
       }
+      await new Promise(r => setTimeout(r, 600));
+    } else {
+      setProgressStatus('Menyiapkan file...');
+      await new Promise(r => setTimeout(r, 500));
     }
 
     const updatedArsip: ArsipItem = {
@@ -320,8 +326,8 @@ export default function FormUploadView({
       fileDataUrl: optimizedBase64
     };
 
-    setProgressPercent(60);
-    setProgressStatus('Menyimpan dokumen & menyinkronkan ke Supabase Cloud...');
+    setProgressPercent(80);
+    setProgressStatus('Mengunggah ke Cloud...');
 
     let activeWorkingUrl = '';
 
@@ -349,8 +355,10 @@ export default function FormUploadView({
       saveArsipItem(updatedArsip);
     }
 
+    await new Promise(r => setTimeout(r, 700));
     setProgressPercent(100);
-    setProgressStatus('Selesai tersimpan di Supabase Cloud Database!');
+    setProgressStatus('Selesai!');
+    await new Promise(r => setTimeout(r, 400));
 
     setStoredArsipList(getStoredArsip());
     setIsUploading(false);
@@ -378,7 +386,7 @@ export default function FormUploadView({
 
     setIsUploading(true);
     setProgressPercent(15);
-    setProgressStatus(`Mempersiapkan pengunggahan ${count} berkas...`);
+    setProgressStatus(`Menyiapkan ${count} file...`);
 
     const categories = Object.keys(kolektifFiles);
     const todayStr = new Date().toLocaleDateString('id-ID');
@@ -396,7 +404,7 @@ export default function FormUploadView({
 
       const percent = Math.min(95, Math.round(((idx + 1) / count) * 90));
       setProgressPercent(percent);
-      setProgressStatus(`Menyimpan berkas (${idx + 1}/${count}): ${katKey} ke Supabase Cloud...`);
+      setProgressStatus(`Mengunggah (${idx + 1}/${count})...`);
 
       const randomNum = Math.floor(1000 + Math.random() * 9000) + idx;
       const newId = (replaceDuplicates && existing) ? existing.id : `${prefix}-${randomNum}`;
@@ -1038,13 +1046,13 @@ export default function FormUploadView({
 
         {/* Upload Progress Bar */}
         {isUploading && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-fadeIn space-y-2">
-            <div className="flex justify-between items-center text-xs font-semibold text-blue-950">
-              <span className="flex items-center gap-2">
-                <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span className="truncate">{progressStatus}</span>
-              </span>
-              <span className="text-blue-700 font-bold">{progressPercent}%</span>
+          <div className="p-3.5 sm:p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-fadeIn space-y-2 overflow-hidden">
+            <div className="flex items-center justify-between gap-2 text-xs font-semibold text-blue-950">
+              <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span className="truncate text-xs font-semibold text-blue-950">{progressStatus}</span>
+              </div>
+              <span className="text-blue-700 font-bold font-mono text-xs flex-shrink-0">{progressPercent}%</span>
             </div>
             <div className="w-full h-2 bg-blue-200 rounded-full overflow-hidden">
               <div 

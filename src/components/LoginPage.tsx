@@ -46,6 +46,8 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
     }).catch(() => {});
   }, []);
 
+  const [loadingStatus, setLoadingStatus] = useState('Memverifikasi...');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -60,10 +62,24 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
     }
 
     setLoading(true);
+    setLoadingStatus('Menghubungkan...');
+
+    // Smooth professional 2.5s loading experience as requested
+    const startTime = Date.now();
 
     // 1. Cek langsung ke database Supabase Cloud
     const directResult = await authenticateFromSupabaseDirect(email, password);
+    
+    // Ensure min 2200ms delay for professional loading feel
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 2200) {
+      setLoadingStatus('Memverifikasi...');
+      await new Promise(r => setTimeout(r, 2200 - elapsed));
+    }
+
     if (directResult.success && directResult.user) {
+      setLoadingStatus('Mengalihkan...');
+      await new Promise(r => setTimeout(r, 400));
       setLoading(false);
       onLoginSuccess(directResult.user);
       return;
@@ -304,7 +320,7 @@ _# Digital E Arsip Alhicam_`;
             {loading ? (
               <span className="flex items-center gap-2">
                 <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Memverifikasi...
+                <span>{loadingStatus}</span>
               </span>
             ) : (
               <>

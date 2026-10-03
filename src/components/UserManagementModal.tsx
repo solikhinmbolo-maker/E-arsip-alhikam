@@ -390,7 +390,9 @@ export default function UserManagementModal({
     setUsers(updatedList);
     saveStoredUserList(updatedList);
     setIsSaving(true);
-    setMessage({ type: 'success', text: `Menyimpan ${cleanName} ke database Supabase...` });
+    setMessage({ type: 'success', text: 'Menyimpan akun...' });
+
+    const startTime = Date.now();
 
     // Simpan langsung ke Supabase Cloud (tabel public.users)
     const supaRes = await saveSingleUserToSupabase({
@@ -403,6 +405,12 @@ export default function UserManagementModal({
 
     // Sinkronkan seluruh list ke database Supabase
     await syncAllUsersToSupabase(updatedList);
+
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 2000) {
+      await new Promise(r => setTimeout(r, 2000 - elapsed));
+    }
+
     setIsSaving(false);
 
     // Broadcast ke semua tab

@@ -642,30 +642,39 @@ export default function DashboardView({ onNavigate }: DashboardViewProps) {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-6 my-2">
-            <div className="relative w-48 h-48 flex-shrink-0 flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-around gap-6 my-auto py-2">
+            <div className="relative w-44 h-44 sm:w-48 sm:h-48 flex-shrink-0 flex items-center justify-center mx-auto sm:mx-0">
               <canvas ref={desktopDonutRef} />
             </div>
 
-            <div className="flex-1 w-full space-y-2 max-h-48 overflow-y-auto pr-2">
-              {sortedCategories.slice(0, 5).map(([label, count], i) => {
-                const pct = totalArsip > 0 ? ((count / totalArsip) * 100).toFixed(1) : '0';
-                return (
-                  <div key={label} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span 
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: donutColors[i % donutColors.length] }} 
-                      />
-                      <span className="font-medium text-slate-700 truncate max-w-[130px]">{label}</span>
+            <div className="flex-1 w-full space-y-2 max-h-48 overflow-y-auto pr-1">
+              {sortedCategories.length > 0 ? (
+                sortedCategories.slice(0, 5).map(([label, count], i) => {
+                  const pct = totalArsip > 0 ? ((count / totalArsip) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={label} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span 
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: donutColors[i % donutColors.length] }} 
+                        />
+                        <span className="font-medium text-slate-700 truncate max-w-[130px]">{label}</span>
+                      </div>
+                      <div className="text-right">
+                        <strong className="text-slate-900">{pct}%</strong>
+                        <span className="text-slate-400 text-[10px] ml-1">({count})</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <strong className="text-slate-900">{pct}%</strong>
-                      <span className="text-slate-400 text-[10px] ml-1">({count})</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="text-center py-6 px-3 bg-slate-50/80 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-xs font-bold text-slate-700">Belum Ada Berkas Terunggah</p>
+                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    Data grafik akan terisi otomatis setelah Anda mengunggah dokumen pertama.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

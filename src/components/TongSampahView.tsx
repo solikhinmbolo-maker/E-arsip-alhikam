@@ -44,25 +44,40 @@ export default function TongSampahView() {
     );
   }, [trashData, searchTerm]);
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMsg, setProcessingMsg] = useState('');
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 4000);
   };
 
   const handleRestore = async (item: ArsipItem) => {
+    setIsProcessing(true);
+    setProcessingMsg(`Memulihkan berkas...`);
+    await new Promise(r => setTimeout(r, 1800));
     await restoreFromTrashArsipItem(item.id);
+    setIsProcessing(false);
     showToast(`✓ Berkas "${item.subjek}" berhasil dipulihkan ke arsip aktif.`);
   };
 
   const handleConfirmDeletePermanent = async () => {
     if (!deleteTargetItem) return;
+    setIsProcessing(true);
+    setProcessingMsg(`Menghapus permanen...`);
+    await new Promise(r => setTimeout(r, 1800));
     await deletePermanentlyArsipItem(deleteTargetItem.id);
+    setIsProcessing(false);
     showToast(`🗑️ Berkas "${deleteTargetItem.subjek}" telah dihapus secara permanen dari Database & Cloud.`);
     setDeleteTargetItem(null);
   };
 
   const handleConfirmEmptyTrash = async () => {
+    setIsProcessing(true);
+    setProcessingMsg('Membersihkan sampah...');
+    await new Promise(r => setTimeout(r, 2000));
     await emptyTrashArsip();
+    setIsProcessing(false);
     showToast('🗑️ Seluruh berkas di folder Sampah telah dibersihkan secara permanen.');
     setShowEmptyConfirm(false);
   };
@@ -70,6 +85,14 @@ export default function TongSampahView() {
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/80 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
       
+      {/* Processing Loader Banner */}
+      {isProcessing && (
+        <div className="mb-4 p-3.5 bg-blue-600 text-white rounded-2xl text-xs font-semibold flex items-center gap-2.5 shadow-md animate-fadeIn">
+          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
+          <span>{processingMsg}</span>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {toastMessage && (
         <div className="mb-4 p-3.5 bg-slate-900 text-white rounded-2xl text-xs font-semibold flex items-center justify-between shadow-lg animate-fadeIn">

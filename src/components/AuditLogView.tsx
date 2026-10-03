@@ -115,8 +115,56 @@ export default function AuditLogView() {
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
       
-      {/* Header Banner */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
+      {/* Mobile-Minimalist Header (Saves vertical screen space) */}
+      <div className="block sm:hidden pb-3 mb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-slate-900 text-cyan-400 flex items-center justify-center flex-shrink-0">
+              <History className="w-4 h-4" />
+            </div>
+            <h2 className="text-xs font-bold text-slate-900 leading-tight truncate">Log & Jejak Audit</h2>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => window.print()}
+              className="p-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold"
+              title="Cetak Berita Acara"
+            >
+              <Printer className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center gap-1 shadow-xs"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Micro 4-Card Strip on Mobile */}
+        <div className="grid grid-cols-4 gap-1.5 text-center mt-2">
+          <div className="p-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span className="text-[9px] text-slate-500 block">Total</span>
+            <strong className="text-xs font-bold text-slate-900">{totalLogs}</strong>
+          </div>
+          <div className="p-1.5 rounded-xl bg-blue-50/80 border border-blue-200/80">
+            <span className="text-[9px] text-blue-700 block">Upload</span>
+            <strong className="text-xs font-bold text-blue-900">{totalUploads}</strong>
+          </div>
+          <div className="p-1.5 rounded-xl bg-amber-50/80 border border-amber-200/80">
+            <span className="text-[9px] text-amber-800 block">Timpa</span>
+            <strong className="text-xs font-bold text-amber-900">{totalUpdates}</strong>
+          </div>
+          <div className="p-1.5 rounded-xl bg-purple-50/80 border border-purple-200/80">
+            <span className="text-[9px] text-purple-800 block">Legalisir</span>
+            <strong className="text-xs font-bold text-purple-900">{totalLegalisir}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Header Banner (Preserved Full Layout on Desktop) */}
+      <div className="hidden sm:flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-950 text-cyan-400 flex items-center justify-center shadow-lg shadow-slate-900/30 flex-shrink-0 border border-cyan-500/20">
             <History className="w-6 h-6" />
@@ -155,8 +203,8 @@ export default function AuditLogView() {
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      {/* KPI Cards Grid (Hidden on Mobile) */}
+      <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
           <div className="flex items-center justify-between text-slate-500 text-xs mb-1 font-medium">
             <span>Total Jejak Audit</span>

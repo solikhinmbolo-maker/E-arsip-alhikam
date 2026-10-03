@@ -213,19 +213,23 @@ export default function App() {
     fetchUsersFromSupabase().then(cloudUsers => {
       if (cloudUsers && cloudUsers.length > 0) {
         localStorage.setItem('EARSIP_USER_LIST', JSON.stringify(cloudUsers));
-        if (currentUser) {
-          const currentUsername = currentUser.email.toLowerCase().replace(/^@/, '');
+        setCurrentUser(prev => {
+          if (!prev) return prev;
+          const currentUsername = prev.email.toLowerCase().replace(/^@/, '');
           const me = cloudUsers.find(u => (u.email || '').toLowerCase().replace(/^@/, '') === currentUsername || (currentUsername === 'superadmin' && u.id === 'master-superadmin'));
           if (me) {
             const avatar = getAvatarForUser(me.email, me.name);
-            setCurrentUser({
-              email: me.email,
-              name: me.name,
-              role: me.role,
-              avatarUrl: avatar
-            });
+            if (prev.name !== me.name || prev.role !== me.role || prev.avatarUrl !== avatar) {
+              return {
+                email: me.email,
+                name: me.name,
+                role: me.role,
+                avatarUrl: avatar
+              };
+            }
           }
-        }
+          return prev;
+        });
       }
     }).catch(() => {});
 
@@ -233,19 +237,23 @@ export default function App() {
     const unsubscribe = subscribeToSupabaseUsers((updatedCloudUsers) => {
       if (updatedCloudUsers && updatedCloudUsers.length > 0) {
         localStorage.setItem('EARSIP_USER_LIST', JSON.stringify(updatedCloudUsers));
-        if (currentUser) {
-          const currentUsername = currentUser.email.toLowerCase().replace(/^@/, '');
+        setCurrentUser(prev => {
+          if (!prev) return prev;
+          const currentUsername = prev.email.toLowerCase().replace(/^@/, '');
           const me = updatedCloudUsers.find(u => (u.email || '').toLowerCase().replace(/^@/, '') === currentUsername || (currentUsername === 'superadmin' && u.id === 'master-superadmin'));
           if (me) {
             const avatar = getAvatarForUser(me.email, me.name);
-            setCurrentUser({
-              email: me.email,
-              name: me.name,
-              role: me.role,
-              avatarUrl: avatar
-            });
+            if (prev.name !== me.name || prev.role !== me.role || prev.avatarUrl !== avatar) {
+              return {
+                email: me.email,
+                name: me.name,
+                role: me.role,
+                avatarUrl: avatar
+              };
+            }
           }
-        }
+          return prev;
+        });
       }
     });
 
@@ -268,7 +276,7 @@ export default function App() {
       unsubscribe();
       window.removeEventListener('storage', handleStorage);
     };
-  }, [currentUser?.email]);
+  }, []);
 
   // Navigation State
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');

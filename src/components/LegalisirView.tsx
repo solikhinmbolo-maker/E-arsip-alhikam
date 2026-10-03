@@ -52,10 +52,16 @@ export default function LegalisirView() {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
   // Submit Legalisir Baru
-  const handleCreateLegalisir = (e: React.FormEvent) => {
+  const handleCreateLegalisir = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSiswaNama) return;
+
+    setIsSubmitting(true);
+    await new Promise(r => setTimeout(r, 2200));
 
     const s = masterSiswa.find(m => m.nama === selectedSiswaNama);
     const nisn = s ? s.nisn : '-';
@@ -80,6 +86,7 @@ export default function LegalisirView() {
 
     const updated = saveLegalisirRecord(newRecord);
     setRecords(updated);
+    setIsSubmitting(false);
     setShowCreateModal(false);
     setSelectedSiswaNama('');
     setNomorSeri('');
@@ -87,9 +94,14 @@ export default function LegalisirView() {
   };
 
   // Check verification
-  const handleVerify = (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!verifyInput.trim()) return;
+
+    setIsVerifying(true);
+    setVerificationResult(null);
+    await new Promise(r => setTimeout(r, 2000));
+
     const q = verifyInput.toLowerCase().trim();
     const found = records.find(r => 
       r.nomorRegistrasi.toLowerCase().includes(q) ||
@@ -98,6 +110,7 @@ export default function LegalisirView() {
       r.nomorSeriIjazah.toLowerCase().includes(q) ||
       r.namaAlumni.toLowerCase().includes(q)
     );
+    setIsVerifying(false);
     setVerificationResult(found || 'NOT_FOUND');
   };
 
@@ -111,8 +124,28 @@ export default function LegalisirView() {
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
       
-      {/* Header Banner */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
+      {/* Mobile-Minimalist Header (Saves vertical screen height) */}
+      <div className="block sm:hidden pb-3 mb-3 border-b border-slate-100">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex items-center justify-center flex-shrink-0">
+              <Stamp className="w-4 h-4" />
+            </div>
+            <h2 className="text-xs font-bold text-slate-900 leading-tight truncate">Verifikasi & Legalisir</h2>
+          </div>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold flex items-center gap-1 shadow-xs flex-shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Terbitkan Legalisir</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Header Banner */}
+      <div className="hidden sm:flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 mb-6 border-b border-slate-100">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 flex-shrink-0">
             <Stamp className="w-6 h-6" />
@@ -139,36 +172,50 @@ export default function LegalisirView() {
         </button>
       </div>
 
-      {/* Quick Validation Check Card */}
-      <div className="mb-8 p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl relative overflow-hidden">
+      {/* Quick Validation Check Card - Compact on Mobile */}
+      <div className="mb-4 sm:mb-8 p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-2">
+          <div className="hidden sm:flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-2">
             <ShieldCheck className="w-4 h-4" />
             <span>Pemeriksaan Validitas Dokumen Arsip</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-white mb-2 leading-tight">
-            Cek Keaslian Berkas Ijazah & Token Legalisir
+          
+          <h3 className="text-xs sm:text-lg font-bold text-white mb-1.5 sm:mb-2 leading-tight flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-cyan-400 sm:hidden flex-shrink-0" />
+            <span>Cek Keaslian Berkas & QR Token</span>
           </h3>
-          <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+
+          <p className="hidden sm:block text-xs text-slate-300 mb-4 leading-relaxed">
             Masukkan Nomor Registrasi Legalisir, NISN, atau Kode Token QR untuk mengonfirmasi keaslian dokumen di pangkalan data resmi SMP Al-Hikam Jombang.
           </p>
 
-          <form onSubmit={handleVerify} className="flex flex-col sm:flex-row gap-2">
+          <form onSubmit={handleVerify} className="flex flex-row gap-2 mt-2 sm:mt-0">
             <input
               type="text"
               value={verifyInput}
               onChange={(e) => setVerifyInput(e.target.value)}
-              placeholder="Contoh: LEG/2026/SMP-AH/001 atau 0071829301..."
-              className="flex-1 px-4 py-2.5 sm:py-3 bg-white/10 border border-white/20 rounded-2xl text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:bg-white/20 focus:border-cyan-400 transition-all font-mono"
+              placeholder="Nomor Legalisir / NISN / Token..."
+              className="flex-1 px-3 py-2 sm:px-4 sm:py-3 bg-white/10 border border-white/20 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:bg-white/20 focus:border-cyan-400 transition-all font-mono"
             />
             <button
               type="submit"
-              className="px-6 py-2.5 sm:py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm rounded-2xl transition-all shadow-md shadow-cyan-500/30 flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0"
+              disabled={isVerifying}
+              className="px-4 py-2 sm:px-6 sm:py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl transition-all shadow-md shadow-cyan-500/30 flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0 disabled:opacity-60"
             >
-              <Search className="w-4 h-4" />
-              <span>Verifikasi</span>
+              {isVerifying ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                  <span className="hidden sm:inline">Memeriksa Keaslian...</span>
+                  <span className="sm:hidden">Cek...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>Verifikasi</span>
+                </>
+              )}
             </button>
           </form>
 
