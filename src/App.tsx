@@ -1043,7 +1043,7 @@ function doGet(e) {
     upload: `Upload Dokumen (${activeSubKategori})`,
     unduh: `Unduh Dokumen (${activeSubKategori})`,
     rekap: 'Matriks Rekap Kelengkapan Berkas',
-    'buku-induk': 'Buku Induk Digital (Siswa & Guru)',
+    'buku-induk': 'Master Data (Siswa & Guru)',
     legalisir: 'Verifikasi & Legalisir Digital',
     'audit-log': 'Log & Jejak Audit Pengarsipan',
     laporan: 'Statistik & Laporan Arsip',
@@ -1106,6 +1106,22 @@ function doGet(e) {
           >
             <LayoutDashboard className="w-4 h-4" />
             <span>Dashboard</span>
+          </button>
+
+          {/* Master Data (Siswa & Guru) */}
+          <button
+            onClick={() => {
+              setActivePage('buku-induk');
+              setMobileSidebarOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activePage === 'buku-induk'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Master Data</span>
           </button>
 
           {/* Upload Dokumen Accordion */}
@@ -1202,22 +1218,6 @@ function doGet(e) {
           >
             <CheckSquare className="w-4 h-4" />
             <span>Rekap Arsip</span>
-          </button>
-
-          {/* Buku Induk Digital (Siswa & Guru) */}
-          <button
-            onClick={() => {
-              setActivePage('buku-induk');
-              setMobileSidebarOpen(false);
-            }}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-              activePage === 'buku-induk'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Buku Induk Digital</span>
           </button>
 
           {/* Verifikasi & Legalisir */}
@@ -1338,7 +1338,7 @@ function doGet(e) {
                 setShowLogoutModal(true);
                 setMobileSidebarOpen(false);
               }}
-              className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-all cursor-pointer flex items-center justify-center flex-shrink-0 active:scale-95 shadow-sm"
+              className="lg:hidden p-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-all cursor-pointer flex items-center justify-center flex-shrink-0 active:scale-95 shadow-sm"
               title="Keluar dari Sistem (Logout)"
             >
               <Power className="w-4 h-4" />
@@ -2058,36 +2058,24 @@ function doGet(e) {
                 </div>
               )}
 
-              {/* TAB 4: STATUS SERVER & CLOUD (SUPABASE + GOOGLE DRIVE) */}
+              {/* TAB 4: STATUS SERVER & CLOUD (SUPABASE CLOUD PRO) */}
               {settingTab === 'cloud' && (
                 <div className="space-y-5 animate-fadeIn">
                   
                   {/* Status Banner */}
-                  <div className="space-y-2">
-                    <div className="p-4 bg-gradient-to-r from-blue-900/60 via-slate-900 to-indigo-950 border border-cyan-500/40 rounded-2xl flex items-start gap-3 shadow-md">
-                      <ShieldCheck className="w-6 h-6 text-cyan-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold text-white">Database Utama: Firebase Firestore Cloud</h4>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            ONLINE & ACTIVE
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                          Sistem E-Arsip SMP Al-Hikam terhubung ke <strong>Firebase Firestore Cloud</strong> (Project: <code className="font-mono text-cyan-300">lyrical-yarn-tsmzh</code>). Semua data tersimpan aman dan ter-sync otomatis antar perangkat.
-                        </p>
+                  <div className="p-4 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/40 rounded-2xl flex items-start gap-3 shadow-md">
+                    <Database className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold text-white">Server Utama & Database Cloud: Supabase PostgreSQL</h4>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          SUPABASE CLOUD ACTIVE
+                        </span>
                       </div>
-                    </div>
-
-                    <div className="p-4 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-300/80 rounded-2xl flex items-start gap-3">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">Database Cadangan: Supabase PostgreSQL (Opsional)</h4>
-                        <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                          Supabase dapat diaktifkan sebagai database cadangan kedua. Masukkan <strong>Supabase Anon Key</strong> di bawah ini jika Anda ingin mengaktifkan sinkronisasi ganda.
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                        Sistem E-Arsip SMP Al-Hikam terhubung secara eksklusif ke <strong>Supabase PostgreSQL Cloud</strong> dan <strong>Supabase Storage Bucket ('arsip')</strong>. Semua data dan berkas tersimpan di satu server terpadu.
+                      </p>
                     </div>
                   </div>
 
@@ -2097,12 +2085,12 @@ function doGet(e) {
                       <div className="flex items-center gap-2.5">
                         <Database className="w-5 h-5 text-emerald-400" />
                         <div>
-                          <h4 className="text-xs font-bold text-white">Konfigurasi Supabase PostgreSQL</h4>
-                          <p className="text-[10px] text-slate-400">Masukkan Project URL & Anon Key dari Dashboard Supabase Anda</p>
+                          <h4 className="text-xs font-bold text-white">Konfigurasi Server Supabase Cloud</h4>
+                          <p className="text-[10px] text-slate-400">Project URL & Anon Key dari Dashboard Supabase</p>
                         </div>
                       </div>
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
-                        PostgreSQL Cloud
+                        PostgreSQL & Storage
                       </span>
                     </div>
 
@@ -2113,7 +2101,7 @@ function doGet(e) {
                         </label>
                         <input
                           type="text"
-                          placeholder="https://xyzxyz.supabase.co"
+                          placeholder="https://ynlcaasuybwscbikjmzt.supabase.co"
                           value={supabaseConfig.url}
                           onChange={(e) => handleSaveSupabaseConfig(e.target.value, supabaseConfig.anonKey)}
                           className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 placeholder-slate-600"
@@ -2126,7 +2114,7 @@ function doGet(e) {
                             Supabase Anon Key / Public Key
                           </label>
                           {!supabaseConfig.anonKey && (
-                            <span className="text-[10px] text-amber-400 font-bold">⚠️ Kunci Belum Diisi</span>
+                            <span className="text-[10px] text-amber-400 font-bold">⚠️ Masukkan Anon Key</span>
                           )}
                         </div>
                         <input
@@ -2138,7 +2126,7 @@ function doGet(e) {
                         />
                         {!supabaseConfig.anonKey && (
                           <p className="text-[11px] text-amber-300/90 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50 mt-2 leading-relaxed">
-                            💡 <strong>Petunjuk:</strong> Supabase memerlukan <strong>Anon Key</strong> agar dapat terhubung. Dapatkan Anon Key dari akun Supabase Anda: <code>https://supabase.com/dashboard/project/.../settings/api</code>, lalu tempelkan (*paste*) di kotak teks di atas.
+                            💡 <strong>Petunjuk:</strong> Tempelkan <strong>Anon Key</strong> dari akun Supabase Anda: <code>https://supabase.com/dashboard/project/ynlcaasuybwscbikjmzt/settings/api</code>, lalu klik <strong>Uji Database</strong> di bawah.
                           </p>
                         )}
                       </div>
@@ -2213,113 +2201,6 @@ function doGet(e) {
                     )}
                   </div>
 
-                  {/* Google Drive Status Section */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <HardDrive className="w-4 h-4 text-blue-600" />
-                          Google Drive (Arsip Fisik)
-                        </span>
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" title="Online" />
-                      </div>
-                      <p className="text-[11px] text-slate-500 mb-2 font-mono truncate">ID Folder: {syncConfig.folderId}</p>
-                      <a
-                        href={`https://drive.google.com/drive/folders/${syncConfig.folderId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
-                      >
-                        <span>Buka Folder Drive</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-
-                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <FileText className="w-4 h-4 text-emerald-600" />
-                          Google Spreadsheet (Backup)
-                        </span>
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" title="Online" />
-                      </div>
-                      <p className="text-[11px] text-slate-500 mb-2 font-mono truncate">ID Sheet: {syncConfig.spreadsheetId}</p>
-                      <a
-                        href={`https://docs.google.com/spreadsheets/d/${syncConfig.spreadsheetId}/edit`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
-                      >
-                        <span>Buka Spreadsheet</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Google Apps Script Webhook Manager & Live Tester */}
-                  <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl border border-indigo-900/50 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <Cloud className="w-5 h-5 text-cyan-400" />
-                        <div>
-                          <h4 className="text-xs font-bold text-white">Integrasi Webhook Google Apps Script</h4>
-                          <p className="text-[10px] text-slate-400">Jembatan otomatis penyimpanan file fisik ke Google Drive</p>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold border border-cyan-500/30">
-                        Drive Webhook V3.0
-                      </span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-[11px] font-semibold text-slate-300">
-                        URL Webhook Google Apps Script (/exec)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="https://script.google.com/macros/s/.../exec"
-                        value={syncConfig.webhookUrl}
-                        onChange={(e) => handleSaveWebhookUrl(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleTestGAS}
-                        disabled={isTestingConn}
-                        className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${isTestingConn ? 'animate-spin' : ''}`} />
-                        <span>{isTestingConn ? 'Menguji...' : '⚡ Uji Koneksi Google Apps Script'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(GOOGLE_APPS_SCRIPT_ROBUST_CODE);
-                          setCopiedGAS(true);
-                          setTimeout(() => setCopiedGAS(false), 3000);
-                        }}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        {copiedGAS ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                        <span>{copiedGAS ? '✓ Script V3.0 Tersalin!' : '📋 Salin Kode Apps Script V3.0'}</span>
-                      </button>
-                    </div>
-
-                    {testConnStatus && (
-                      <div className={`p-3 rounded-xl text-xs font-medium leading-relaxed ${
-                        testConnStatus.includes('✓') 
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800' 
-                          : 'bg-rose-950/80 text-rose-300 border border-rose-800'
-                      }`}>
-                        {testConnStatus}
-                      </div>
-                    )}
-                  </div>
-
                 </div>
               )}
 
@@ -2336,8 +2217,8 @@ function doGet(e) {
                       <h4 className="text-base font-bold text-slate-900">E-Arsip Digital SMP Al-Hikam Sendang Mulyo</h4>
                       <p className="text-xs text-slate-600 mt-0.5">Sistem Manajemen Pengarsipan Digital Siswa, Guru & Dokumen Resmi Sekolah</p>
                       <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                          Versi V2.5 Cloud Pro
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold">
+                          Server Utama: Supabase Cloud Pro
                         </span>
                         <span className="text-[10px] text-slate-400">Build: Oktober 2026</span>
                       </div>
@@ -2345,13 +2226,14 @@ function doGet(e) {
                   </div>
 
                   <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 space-y-2 leading-relaxed">
-                    <p><strong>Penyimpanan Fisik:</strong> Google Drive Cloud Storage (Terhubung Cloud Resmi)</p>
-                    <p><strong>Mesin Database:</strong> Google Spreadsheet Engine & Firebase Cloud Database Real-time</p>
+                    <p><strong>Database Cloud:</strong> Supabase PostgreSQL Database (<code className="text-emerald-700 font-mono">ynlcaasuybwscbikjmzt.supabase.co</code>)</p>
+                    <p><strong>Penyimpanan Berkas Fisik:</strong> Supabase Storage Bucket ('arsip')</p>
                     <p><strong>Keterangan Pendukung:</strong> Aplikasi E-Arsip Digital SMP Al-Hikam Sendang Mulyo dirancang khusus untuk mempermudah tata kelola administrasi sekolah, pengarsipan berkas siswa (Ijazah, SKL, SPMB), pendataan kepegawaian guru/tendik, serta verifikasi dokumen resmi secara digital, aman, dan efisien.</p>
                     <p><strong>Lisensi:</strong> Hak Cipta Terpelihara © 2026 SMP Al-Hikam Sendang Mulyo</p>
                   </div>
                 </div>
               )}
+
 
             </div>
 

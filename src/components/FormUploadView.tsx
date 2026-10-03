@@ -321,11 +321,11 @@ export default function FormUploadView({
     };
 
     setProgressPercent(60);
-    setProgressStatus('Menyimpan dokumen & menyinkronkan ke Cloud Database...');
+    setProgressStatus('Menyimpan dokumen & menyinkronkan ke Supabase Cloud...');
 
     let activeWorkingUrl = '';
 
-    // 1. Unggah berkas fisik langsung ke Supabase Storage Cloud (Prioritas Tinggi)
+    // 1. Unggah berkas fisik langsung ke Supabase Storage Cloud
     try {
       const supaUpload = await uploadFileToSupabaseStorage(newId, selectedFile.name, optimizedBase64);
       if (supaUpload.success && supaUpload.publicUrl) {
@@ -333,16 +333,6 @@ export default function FormUploadView({
       }
     } catch (e) {
       console.warn('Supabase storage upload notice:', e);
-    }
-
-    // 2. Sinkronisasi cadangan ke Google Drive (jika webhook aktif)
-    try {
-      const res = await syncItemToGoogleCloud(updatedArsip, optimizedBase64);
-      if (res.success && res.driveUrl && res.driveUrl !== '#' && !res.driveUrl.includes(newId)) {
-        activeWorkingUrl = res.driveUrl;
-      }
-    } catch (e) {
-      console.warn('Google Drive sync notice:', e);
     }
 
     if (activeWorkingUrl) {
@@ -360,7 +350,7 @@ export default function FormUploadView({
     }
 
     setProgressPercent(100);
-    setProgressStatus('Selesai tersimpan di Firebase Cloud Database!');
+    setProgressStatus('Selesai tersimpan di Supabase Cloud Database!');
 
     setStoredArsipList(getStoredArsip());
     setIsUploading(false);
@@ -406,7 +396,7 @@ export default function FormUploadView({
 
       const percent = Math.min(95, Math.round(((idx + 1) / count) * 90));
       setProgressPercent(percent);
-      setProgressStatus(`Menyimpan berkas (${idx + 1}/${count}): ${katKey} ke Drive & Sheet...`);
+      setProgressStatus(`Menyimpan berkas (${idx + 1}/${count}): ${katKey} ke Supabase Cloud...`);
 
       const randomNum = Math.floor(1000 + Math.random() * 9000) + idx;
       const newId = (replaceDuplicates && existing) ? existing.id : `${prefix}-${randomNum}`;
@@ -450,16 +440,6 @@ export default function FormUploadView({
         }
       } catch (e) {
         console.warn('Supabase storage kolektif upload notice:', e);
-      }
-
-      // 2. Sinkronisasi cadangan ke Google Drive
-      try {
-        const res = await syncItemToGoogleCloud(itemToSave, itemBase64);
-        if (res.success && res.driveUrl && res.driveUrl !== '#' && !res.driveUrl.includes(newId)) {
-          activeWorkingUrl = res.driveUrl;
-        }
-      } catch (e) {
-        console.warn('Kolektif sync warning:', e);
       }
 
       if (activeWorkingUrl) {

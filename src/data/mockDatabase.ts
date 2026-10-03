@@ -412,8 +412,7 @@ export function saveArsipItem(item: ArsipItem): ArsipItem[] {
   const updatedClean = [cleanItemForStorage, ...currentClean];
   safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(updatedClean));
 
-  // Sync to Firebase Cloud Firestore and Supabase PostgreSQL
-  saveArsipToFirestore(item).catch(() => {});
+  // Sync exclusively to Supabase PostgreSQL Cloud
   saveArsipToSupabase(item).catch(() => {});
 
   // Return list with enriched item for immediate UI update
@@ -535,7 +534,6 @@ export async function moveToTrashArsipItem(id: string): Promise<ArsipItem[]> {
   safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(updated));
 
   if (trashedTarget) {
-    await saveArsipToFirestore(trashedTarget);
     await saveArsipToSupabase(trashedTarget).catch(() => {});
   }
 
@@ -567,7 +565,6 @@ export async function restoreFromTrashArsipItem(id: string): Promise<ArsipItem[]
   safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(updated));
 
   if (restoredTarget) {
-    await saveArsipToFirestore(restoredTarget);
     await saveArsipToSupabase(restoredTarget).catch(() => {});
   }
 
@@ -590,7 +587,6 @@ export async function deletePermanentlyArsipItem(id: string): Promise<ArsipItem[
     localStorage.removeItem(`file_blob_${id}`);
   } catch {}
 
-  await deleteArsipFromFirestore(id);
   await deleteArsipFromSupabase(id).catch(() => {});
 
   if (typeof window !== 'undefined') {
@@ -614,7 +610,6 @@ export async function emptyTrashArsip(): Promise<ArsipItem[]> {
     try {
       localStorage.removeItem(`file_blob_${t.id}`);
     } catch {}
-    await deleteArsipFromFirestore(t.id);
     await deleteArsipFromSupabase(t.id).catch(() => {});
   }
 
@@ -643,14 +638,6 @@ export function saveMasterSiswa(item: MasterSiswaItem): MasterSiswaItem[] {
     updated = [item, ...current];
   }
   safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(updated));
-  saveSiswaToFirestore({
-    id: item.id,
-    nisn: item.nisn,
-    nama: item.nama,
-    tahun: item.tahun,
-    kelas: item.kelas,
-    tanggalTerdaftar: new Date().toLocaleDateString('id-ID')
-  }).catch(() => {});
   saveSiswaToSupabase(item).catch(() => {});
 
   addAuditLog({
@@ -670,7 +657,6 @@ export async function deleteMasterSiswa(id: string): Promise<MasterSiswaItem[]> 
   const updated = current.filter(s => s.id !== id);
   safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(updated));
   if (target) {
-    await deleteSiswaFromFirestore(target.id).catch(() => {});
     await deleteMasterSiswaFromSupabase(target.id).catch(() => {});
     addAuditLog({
       aksi: 'DELETE',
@@ -698,13 +684,6 @@ export function saveMasterGuru(item: MasterGuruItem): MasterGuruItem[] {
     updated = [item, ...current];
   }
   safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(updated));
-  saveGuruToFirestore({
-    id: item.id,
-    nuptk: item.nuptk,
-    nama: item.nama,
-    jabatan: item.jabatan,
-    tanggalTerdaftar: new Date().toLocaleDateString('id-ID')
-  }).catch(() => {});
   saveGuruToSupabase(item).catch(() => {});
 
   addAuditLog({
@@ -724,7 +703,6 @@ export async function deleteMasterGuru(id: string): Promise<MasterGuruItem[]> {
   const updated = current.filter(g => g.id !== id);
   safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(updated));
   if (target) {
-    await deleteGuruFromFirestore(target.id).catch(() => {});
     await deleteMasterGuruFromSupabase(target.id).catch(() => {});
     addAuditLog({
       aksi: 'DELETE',
