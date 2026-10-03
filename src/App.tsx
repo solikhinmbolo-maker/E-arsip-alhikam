@@ -96,7 +96,9 @@ import {
   fetchMasterSiswaFromSupabase,
   fetchMasterGuruFromSupabase,
   subscribeToSupabaseUsers,
-  fetchUsersFromSupabase
+  fetchUsersFromSupabase,
+  syncConfigToServer,
+  fetchConfigFromServer
 } from './supabase';
 
 type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'rekap' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah';
@@ -298,6 +300,18 @@ export default function App() {
   const [settingTab, setSettingTab] = useState<'tampilan' | 'bahasa' | 'akun' | 'cloud' | 'tentang'>('tampilan');
   const [previewItem, setPreviewItem] = useState<ArsipItem | null>(null);
 
+  // Security & RBAC: Super Administrator privileges
+  const isSuperAdmin = currentUser?.role === 'Super Administrator' || 
+    currentUser?.email?.toLowerCase().replace(/^@/, '') === 'superadmin' || 
+    currentUser?.email?.toLowerCase() === 'admin@alhicam.sch.id';
+
+  // Non-Superadmin (e.g. Guru/Pegawai) cannot view or stay in 'cloud' server tab
+  useEffect(() => {
+    if (!isSuperAdmin && settingTab === 'cloud') {
+      setSettingTab('tampilan');
+    }
+  }, [isSuperAdmin, settingTab]);
+
   // App User Preferences
   const [userPrefs, setUserPrefs] = useState(() => {
     try {
@@ -357,6 +371,9 @@ export default function App() {
 
     const result = await testSupabaseConnection();
     setSupabaseTestStatus(result.message);
+    if (result.success) {
+      syncConfigToServer(supabaseConfig);
+    }
     setIsTestingSupabase(false);
   };
 
@@ -393,7 +410,8 @@ export default function App() {
     }
 
     if (resArsip.success || resSiswa.success || resGuru.success) {
-      setSupabaseTestStatus(`✓ Berhasil sinkronisasi ke Supabase: ${statusMsgs.join(', ')}!`);
+      syncConfigToServer(supabaseConfig);
+      setSupabaseTestStatus(`✓ Berhasil sinkronisasi ke Supabase: ${statusMsgs.join(', ')}! (Tersimpan otomatis untuk semua perangkat)`);
     } else {
       setSupabaseTestStatus('Gagal menyinkronkan ke Supabase. Pastikan tabel "arsip", "master_siswa", dan "master_guru" sudah dibuat.');
     }
@@ -564,6 +582,21 @@ export default function App() {
         }
       }
     }).catch(() => {});
+
+    // Cross-Device Server Configuration Auto-Sync:
+    // When opened on ANY other device (phone, laptop, teacher's PC), auto-fetch pre-configured credentials
+    const currentLocalCfg = getStoredSupabaseConfig();
+    if (!currentLocalCfg.anonKey) {
+      fetchConfigFromServer().then(remoteCfg => {
+        if (remoteCfg && remoteCfg.anonKey) {
+          setSupabaseConfig(remoteCfg);
+          setDbVersion(v => v + 1);
+        }
+      });
+    } else {
+      // If this device already has active verified credentials, broadcast & save to server
+      syncConfigToServer(currentLocalCfg);
+    }
 
     return () => {
       unsubArsip();
@@ -1327,17 +1360,19 @@ function doGet(e) {
             )}
           </button>
 
-          {/* Manajemen User */}
-          <button
-            onClick={() => {
-              setShowUserModal(true);
-              setMobileSidebarOpen(false);
-            }}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all cursor-pointer"
-          >
-            <Users className="w-4 h-4" />
-            <span>Manajemen User</span>
-          </button>
+          {/* Manajemen User (Khusus Super Administrator) */}
+          {isSuperAdmin && (
+            <button
+              onClick={() => {
+                setShowUserModal(true);
+                setMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all cursor-pointer"
+            >
+              <Users className="w-4 h-4" />
+              <span>Manajemen User</span>
+            </button>
+          )}
 
           {/* Pengaturan Sistem */}
           <button
@@ -1891,7 +1926,7 @@ function doGet(e) {
                 { id: 'tampilan', label: 'Tampilan & Font', icon: Type },
                 { id: 'bahasa', label: 'Bahasa & Waktu', icon: Globe },
                 { id: 'akun', label: 'Keterangan Akun', icon: ShieldCheck },
-                { id: 'cloud', label: 'Server & Cloud', icon: Cloud },
+                ...(isSuperAdmin ? [{ id: 'cloud', label: 'Server & Cloud ⚡', icon: Cloud }] : []),
                 { id: 'tentang', label: 'Tentang Aplikasi', icon: Info }
               ].map((tab) => {
                 const IconComponent = tab.icon;
@@ -2089,10 +2124,18 @@ function doGet(e) {
                 </div>
               )}
 
-              {/* TAB 4: STATUS SERVER & CLOUD (SUPABASE CLOUD PRO) */}
-              {settingTab === 'cloud' && (
+              {/* TAB 4: STATUS SERVER & CLOUD (SUPABASE CLOUD PRO) - SUPERADMIN ONLY */}
+              {settingTab === 'cloud' && isSuperAdmin && (
                 <div className="space-y-5 animate-fadeIn">
                   
+                  {/* Security Restriction Banner */}
+                  <div className="p-3 bg-amber-950/60 border border-amber-600/40 rounded-2xl flex items-center gap-3 text-amber-200">
+                    <Shield className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                    <p className="text-[11px] leading-relaxed">
+                      <strong>Hak Akses Khusus Super Administrator</strong>: Tab Server & Cloud ini dikunci dan tidak dapat dilihat atau diubah oleh Guru/pengguna lain. Konfigurasi yang Anda simpan di sini akan otomatis berlaku untuk semua perangkat secara permanen.
+                    </p>
+                  </div>
+
                   {/* Status Banner */}
                   <div className="p-4 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/40 rounded-2xl flex items-start gap-3 shadow-md">
                     <Database className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />

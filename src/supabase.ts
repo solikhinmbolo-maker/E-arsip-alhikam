@@ -69,9 +69,57 @@ export function saveStoredSupabaseConfig(config: SupabaseConfig) {
     };
     localStorage.setItem(STORAGE_KEY_SUPABASE, JSON.stringify(cleanConfig));
     cachedClient = null; // Reset client instance
+    
+    // Automatically persist to server if valid key is present
+    if (cleanConfig.url && cleanConfig.anonKey) {
+      syncConfigToServer(cleanConfig).catch(() => {});
+    }
   } catch (err) {
     console.warn('Failed to save Supabase config to localStorage:', err);
   }
+}
+
+export async function syncConfigToServer(config: SupabaseConfig): Promise<boolean> {
+  if (!config.url || !config.anonKey) return false;
+  try {
+    const res = await fetch('/api/server-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: sanitizeSupabaseUrl(config.url),
+        anonKey: config.anonKey.trim(),
+        isEnabled: true,
+        updatedAt: new Date().toISOString()
+      })
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function fetchConfigFromServer(): Promise<SupabaseConfig | null> {
+  try {
+    let res = await fetch('/api/server-config');
+    if (!res.ok) {
+      res = await fetch('/supabase-config.json');
+    }
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.url && data.anonKey && data.anonKey.trim().length > 10) {
+        const fullConfig: SupabaseConfig = {
+          url: sanitizeSupabaseUrl(data.url),
+          anonKey: data.anonKey.trim(),
+          isEnabled: data.isEnabled !== false
+        };
+        saveStoredSupabaseConfig(fullConfig);
+        return fullConfig;
+      }
+    }
+  } catch {
+    // quiet fallback
+  }
+  return null;
 }
 
 let cachedClient: SupabaseClient | null = null;
