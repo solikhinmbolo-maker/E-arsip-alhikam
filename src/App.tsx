@@ -26,6 +26,7 @@ import {
   History,
   Clock,
   Copy,
+  Clipboard,
   Check,
   CheckCircle2,
   Trash2,
@@ -400,10 +401,32 @@ export default function App() {
   };
 
   const handleSaveSupabaseConfig = (url: string, anonKey: string) => {
-    const cleanUrl = sanitizeSupabaseUrl(url);
-    const updated = { ...supabaseConfig, url: cleanUrl, anonKey };
+    const updated = { ...supabaseConfig, url, anonKey: anonKey.trim() };
     setSupabaseConfig(updated);
     saveStoredSupabaseConfig(updated);
+  };
+
+  const handlePasteSupabaseUrl = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        const clean = sanitizeSupabaseUrl(text);
+        handleSaveSupabaseConfig(clean || text.trim(), supabaseConfig.anonKey);
+      }
+    } catch {
+      alert('Gagal membaca clipboard. Silakan klik kanan pada kolom teks lalu pilih "Paste" / "Tempel".');
+    }
+  };
+
+  const handlePasteSupabaseKey = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        handleSaveSupabaseConfig(supabaseConfig.url, text.trim());
+      }
+    } catch {
+      alert('Gagal membaca clipboard. Silakan klik kanan pada kolom teks lalu pilih "Paste" / "Tempel".');
+    }
   };
 
   const handleSaveWebhookUrl = (url: string) => {
@@ -2104,14 +2127,32 @@ function doGet(e) {
 
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                          Supabase Project URL
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-300">
+                            Supabase Project URL
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handlePasteSupabaseUrl}
+                            className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg text-[10px] font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <Clipboard className="w-3 h-3" />
+                            <span>📋 Tempel URL</span>
+                          </button>
+                        </div>
                         <input
                           type="text"
-                          placeholder="https://ynlcaasuybwscbikjmzt.supabase.co"
+                          placeholder="https://seklcpvakyaakgbsnlzt.supabase.co"
                           value={supabaseConfig.url}
                           onChange={(e) => handleSaveSupabaseConfig(e.target.value, supabaseConfig.anonKey)}
+                          onBlur={() => {
+                            if (supabaseConfig.url) {
+                              const clean = sanitizeSupabaseUrl(supabaseConfig.url);
+                              if (clean && clean !== supabaseConfig.url) {
+                                handleSaveSupabaseConfig(clean, supabaseConfig.anonKey);
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 placeholder-slate-600"
                         />
                       </div>
@@ -2121,20 +2162,30 @@ function doGet(e) {
                           <label className="block text-[11px] font-semibold text-slate-300">
                             Supabase Anon Key / Public Key
                           </label>
-                          {!supabaseConfig.anonKey && (
-                            <span className="text-[10px] text-amber-400 font-bold">⚠️ Masukkan Anon Key</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {!supabaseConfig.anonKey && (
+                              <span className="text-[10px] text-amber-400 font-bold">⚠️ Masukkan Anon Key</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={handlePasteSupabaseKey}
+                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg text-[10px] font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <Clipboard className="w-3 h-3" />
+                              <span>📋 Tempel Key</span>
+                            </button>
+                          </div>
                         </div>
                         <input
                           type="text"
-                          placeholder="Salin anon key dari Dashboard Supabase (Project Settings > API)"
+                          placeholder="Salin anon key (eyJhY...) dari Dashboard Supabase"
                           value={supabaseConfig.anonKey}
                           onChange={(e) => handleSaveSupabaseConfig(supabaseConfig.url, e.target.value)}
                           className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 placeholder-slate-600"
                         />
                         {!supabaseConfig.anonKey && (
                           <p className="text-[11px] text-amber-300/90 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50 mt-2 leading-relaxed">
-                            💡 <strong>Petunjuk:</strong> Tempelkan <strong>Anon Key</strong> dari akun Supabase Anda: <code>https://supabase.com/dashboard/project/ynlcaasuybwscbikjmzt/settings/api</code>, lalu klik <strong>Uji Database</strong> di bawah.
+                            💡 <strong>Petunjuk:</strong> Klik tombol <strong>📋 Tempel Key</strong> di atas untuk menempelkan Anon Key yang sudah Anda salin dari Supabase!
                           </p>
                         )}
                       </div>

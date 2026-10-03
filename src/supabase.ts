@@ -11,28 +11,29 @@ const STORAGE_KEY_SUPABASE = 'EARSIP_SUPABASE_CONFIG';
 
 // Helper to sanitize Supabase URL
 export function sanitizeSupabaseUrl(rawUrl: string): string {
-  if (!rawUrl) return 'https://seklcpvakyaakgbsnlzt.supabase.co';
+  const DEFAULT_FALLBACK = 'https://seklcpvakyaakgbsnlzt.supabase.co';
+  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
+    return '';
+  }
+  
   let cleaned = rawUrl.trim();
 
-  // Strip trailing subpaths if user accidentally copied API endpoint URL
-  cleaned = cleaned.replace(/\/rest\/v1\/?$/i, '');
-  cleaned = cleaned.replace(/\/auth\/v1\/?$/i, '');
-  cleaned = cleaned.replace(/\/storage\/v1\/?$/i, '');
-
-  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
-    cleaned = 'https://' + cleaned;
+  try {
+    if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+      cleaned = 'https://' + cleaned;
+    }
+    const parsed = new URL(cleaned);
+    let hostname = parsed.hostname;
+    if (!hostname || !hostname.includes('.')) {
+      return cleaned;
+    }
+    if (hostname.endsWith('.supabase.com')) {
+      hostname = hostname.replace(/\.supabase\.com$/, '.supabase.co');
+    }
+    return `${parsed.protocol}//${hostname}`;
+  } catch {
+    return cleaned;
   }
-  if (cleaned.endsWith('.supabase.com')) {
-    cleaned = cleaned.replace(/\.supabase\.com$/, '.supabase.co');
-  }
-  if (cleaned.endsWith('.supabase.com/')) {
-    cleaned = cleaned.replace(/\.supabase\.com\/$/, '.supabase.co');
-  }
-
-  // Strip trailing slashes
-  cleaned = cleaned.replace(/\/+$/, '');
-
-  return cleaned;
 }
 
 // Default Supabase configuration (fallback to env or localStorage)
@@ -43,24 +44,30 @@ export function getStoredSupabaseConfig(): SupabaseConfig {
     const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
     if (saved) {
       const parsed = JSON.parse(saved);
+      const rawUrl = parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_URL;
       return {
-        url: sanitizeSupabaseUrl(parsed.url || import.meta.env.VITE_SUPABASE_URL || DEFAULT_URL),
-        anonKey: parsed.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+        url: sanitizeSupabaseUrl(rawUrl) || DEFAULT_URL,
+        anonKey: (parsed.anonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim(),
         isEnabled: parsed.isEnabled !== false
       };
     }
   } catch {}
 
   return {
-    url: sanitizeSupabaseUrl((import.meta.env.VITE_SUPABASE_URL as string) || DEFAULT_URL),
-    anonKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '',
+    url: DEFAULT_URL,
+    anonKey: ((import.meta.env.VITE_SUPABASE_ANON_KEY as string) || '').trim(),
     isEnabled: true
   };
 }
 
 export function saveStoredSupabaseConfig(config: SupabaseConfig) {
   try {
-    localStorage.setItem(STORAGE_KEY_SUPABASE, JSON.stringify(config));
+    const cleanConfig = {
+      ...config,
+      url: sanitizeSupabaseUrl(config.url),
+      anonKey: (config.anonKey || '').trim()
+    };
+    localStorage.setItem(STORAGE_KEY_SUPABASE, JSON.stringify(cleanConfig));
     cachedClient = null; // Reset client instance
   } catch (err) {
     console.warn('Failed to save Supabase config to localStorage:', err);
@@ -73,7 +80,7 @@ export function getSupabaseClient(): SupabaseClient | null {
   if (cachedClient) return cachedClient;
 
   const config = getStoredSupabaseConfig();
-  if (!config.url || !config.anonKey) {
+  if (!config.url || !config.anonKey || !config.anonKey.trim()) {
     return null;
   }
 
@@ -257,10 +264,13 @@ export async function saveArsipToSupabase(item: ArsipItem): Promise<boolean> {
 /**
  * Bulk save / sync all local archives to Supabase
  */
-export async function syncAllArsipToSupabase(items: ArsipItem[]): Promise<{ success: boolean; count: number }> {
+export async function syncAllArsipToSupabase(items: ArsipItem[]): Promise<{ success: boolean; count: number; error?: string }> {
   const client = getSupabaseClient();
-  if (!client || !Array.isArray(items) || items.length === 0) {
-    return { success: false, count: 0 };
+  if (!client) {
+    return { success: false, count: 0, error: 'Koneksi Supabase belum aktif' };
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return { success: true, count: 0 };
   }
 
   try {
@@ -287,13 +297,13 @@ export async function syncAllArsipToSupabase(items: ArsipItem[]): Promise<{ succ
 
     if (error) {
       console.error('Supabase bulk sync error:', error);
-      return { success: false, count: 0 };
+      return { success: false, count: 0, error: error.message };
     }
 
     return { success: true, count: rows.length };
-  } catch (err) {
+  } catch (err: any) {
     console.error('Supabase bulk sync exception:', err);
-    return { success: false, count: 0 };
+    return { success: false, count: 0, error: err?.message };
   }
 }
 export async function deleteArsipFromSupabase(id: string): Promise<boolean> {
@@ -705,8 +715,11 @@ export async function deleteMasterGuruFromSupabase(id: string): Promise<boolean>
  */
 export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Promise<{ success: boolean; count: number; error?: string }> {
   const client = getSupabaseClient();
-  if (!client || !Array.isArray(items) || items.length === 0) {
-    return { success: false, count: 0 };
+  if (!client) {
+    return { success: false, count: 0, error: 'Koneksi Supabase belum aktif' };
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return { success: true, count: 0 };
   }
   try {
     const rows = items.map(s => ({
@@ -737,8 +750,11 @@ export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Pr
  */
 export async function syncAllMasterGuruToSupabase(items: MasterGuruItem[]): Promise<{ success: boolean; count: number; error?: string }> {
   const client = getSupabaseClient();
-  if (!client || !Array.isArray(items) || items.length === 0) {
-    return { success: false, count: 0 };
+  if (!client) {
+    return { success: false, count: 0, error: 'Koneksi Supabase belum aktif' };
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return { success: true, count: 0 };
   }
   try {
     const rows = items.map(g => ({
@@ -934,7 +950,10 @@ export async function testSupabaseStorage(): Promise<{ success: boolean; message
       message: '✓ Berhasil! Bucket "arsip" aktif & siap menerima file foto/PDF!' 
     };
   } catch (err: any) {
-    return { success: false, message: `Error Storage: ${err?.message || String(err)}` };
+    return { 
+      success: false, 
+      message: '❌ Gagal akses Storage: Server Supabase belum merespon atau Bucket "arsip" belum dibuat. Silakan salin & jalankan script SQL Schema di Supabase SQL Editor.' 
+    };
   }
 }
 
@@ -1093,10 +1112,38 @@ DROP POLICY IF EXISTS "Public Full Access Users" ON public.users;
 CREATE POLICY "Public Full Access Users" ON public.users FOR ALL USING (true) WITH CHECK (true);
 
 -- 6. AKTIFKAN REALTIME REPLICATION SUPABASE
-ALTER PUBLICATION supabase_realtime ADD TABLE public.arsip;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.master_siswa;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.master_guru;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'arsip'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.arsip;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'master_siswa'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.master_siswa;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'master_guru'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.master_guru;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'users'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
 
 -- 7. IZIN AKSES STORAGE BUCKET 'arsip' (Upload & Baca Berkas Fisik)
 INSERT INTO storage.buckets (id, name, public) 
