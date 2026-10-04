@@ -45,7 +45,6 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
 
   // Tab switch for mobile charts view
   const [mobileChartTab, setMobileChartTab] = useState<'kategori' | 'siswa'>('kategori');
-  const [mobileQuickSearch, setMobileQuickSearch] = useState('');
 
   // Reactive state to update whenever cloud data is synced
   const [dataVersion, setDataVersion] = useState(0);
@@ -85,6 +84,30 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
   const topKategoriEntry = sortedCategories[0] || ['Belum Ada', 0];
   const topKategoriPct = totalArsip > 0 ? Math.round((topKategoriEntry[1] / totalArsip) * 100) : 0;
   const latestItem = allArsip[0] ? `${allArsip[0].subjek} (${allArsip[0].kategori})` : '-';
+
+  // Unique subjects count for completeness calculation
+  const siswaWithArsipCount = useMemo(() => {
+    return new Set(
+      allArsip
+        .filter(a => a.kategoriUtama === 'Arsip Siswa')
+        .map(a => a.subjek.trim().toLowerCase())
+    ).size;
+  }, [allArsip]);
+
+  const guruWithArsipCount = useMemo(() => {
+    return new Set(
+      allArsip
+        .filter(a => a.kategoriUtama === 'Arsip Guru')
+        .map(a => a.subjek.trim().toLowerCase())
+    ).size;
+  }, [allArsip]);
+
+  const siswaCompletenessPct = totalSiswa > 0 ? Math.min(100, Math.round((siswaWithArsipCount / totalSiswa) * 100)) : 0;
+  const guruCompletenessPct = totalGuru > 0 ? Math.min(100, Math.round((guruWithArsipCount / totalGuru) * 100)) : 0;
+
+  const recentActivity = useMemo(() => {
+    return allArsip.slice(0, 3);
+  }, [allArsip]);
 
   // Real-time Supabase Storage Calculation (1.0 GB Free Tier limit)
   const TOTAL_STORAGE_MB = 1024; // 1 GB
@@ -310,33 +333,23 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
     });
   }, [allArsip, allSiswa, effectiveVersion]);
 
-  const handleMobileSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mobileQuickSearch.trim()) {
-      onNavigate('unduh');
-    } else {
-      onNavigate('unduh');
-    }
-  };
-
   return (
     <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full overflow-x-hidden">
       
       {/* ============================================================== */}
-      {/* 1. MOBILE EXECUTIVE HERO (SOPHISTICATED, OBSIDIAN-SLATE FINTECH STYLE) */}
+      {/* 1. MOBILE EXECUTIVE HERO (COMPACT & CROPPED UPWARDS)           */}
       {/* ============================================================== */}
       <section className="block sm:hidden">
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0B132B] text-white rounded-3xl p-5 shadow-xl border border-slate-700/60">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0B132B] text-white rounded-2xl p-3.5 shadow-md border border-slate-700/60">
           
           {/* Subtle Ambient Light Decoration */}
-          <div className="absolute top-0 right-0 w-44 h-44 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-36 h-36 bg-blue-600/15 rounded-full blur-2xl pointer-events-none" />
 
           {/* Top Label */}
-          <div className="relative z-10 flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
                 Database E-Arsip Aktif
               </span>
             </div>
@@ -345,21 +358,21 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
             </span>
           </div>
 
-          {/* Big Highlight Number & Storage Progress */}
-          <div className="relative z-10 mb-5">
-            <span className="text-xs text-slate-400 font-medium block">Total Dokumen Tersimpan</span>
+          {/* Highlight Number & Storage Progress */}
+          <div className="relative z-10 mb-2.5">
+            <span className="text-[11px] text-slate-400 font-medium block">Total Dokumen Tersimpan</span>
             <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-3xl font-extrabold text-white tracking-tight">{totalArsip}</span>
+              <span className="text-2xl font-extrabold text-white tracking-tight">{totalArsip}</span>
               <span className="text-xs font-semibold text-emerald-400">Berkas Digital</span>
             </div>
 
             {/* Storage Progress Bar */}
-            <div className="mt-3 space-y-1.5">
+            <div className="mt-2 space-y-1">
               <div className="flex justify-between text-[10px] text-slate-400 font-medium">
                 <span>Storage Penyimpanan</span>
                 <span className="text-slate-300 font-semibold">{usedStorageDisplay} / {totalStorageDisplay}</span>
               </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60">
+              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60">
                 <div 
                   className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500"
                   style={{ width: `${storagePercentage}%` }}
@@ -369,34 +382,22 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
           </div>
 
           {/* Micro Category Strip */}
-          <div className="relative z-10 grid grid-cols-3 gap-2 pt-3 border-t border-slate-800/80 text-center">
-            <div className="bg-slate-800/60 rounded-xl p-2 border border-slate-700/50">
+          <div className="relative z-10 grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800/80 text-center">
+            <div className="bg-slate-800/60 rounded-lg p-1.5 border border-slate-700/50">
               <span className="text-[10px] text-slate-400 block">Siswa</span>
-              <strong className="text-sm font-bold text-white block mt-0.5">{siswaArsip}</strong>
+              <strong className="text-xs font-bold text-white block mt-0.5">{siswaArsip}</strong>
             </div>
-            <div className="bg-slate-800/60 rounded-xl p-2 border border-slate-700/50">
+            <div className="bg-slate-800/60 rounded-lg p-1.5 border border-slate-700/50">
               <span className="text-[10px] text-slate-400 block">Guru</span>
-              <strong className="text-sm font-bold text-white block mt-0.5">{guruArsip}</strong>
+              <strong className="text-xs font-bold text-white block mt-0.5">{guruArsip}</strong>
             </div>
-            <div className="bg-slate-800/60 rounded-xl p-2 border border-slate-700/50">
+            <div className="bg-slate-800/60 rounded-lg p-1.5 border border-slate-700/50">
               <span className="text-[10px] text-slate-400 block">Lainnya</span>
-              <strong className="text-sm font-bold text-white block mt-0.5">{lainnyaArsip}</strong>
+              <strong className="text-xs font-bold text-white block mt-0.5">{lainnyaArsip}</strong>
             </div>
           </div>
 
         </div>
-
-        {/* Quick Search Input (Mobile App Bar Search) */}
-        <form onSubmit={handleMobileSearch} className="mt-3 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          <input
-            type="text"
-            value={mobileQuickSearch}
-            onChange={(e) => setMobileQuickSearch(e.target.value)}
-            placeholder="Cari nama siswa, NISN, atau berkas..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs text-slate-900 placeholder-slate-400 shadow-sm focus:outline-none focus:border-blue-500 transition-all"
-          />
-        </form>
       </section>
 
       {/* ============================================================== */}
@@ -465,79 +466,147 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
       </section>
 
       {/* ============================================================== */}
-      {/* 2. MOBILE ACTIONS (MODERN CLEAN ENTERPRISE TILES)               */}
+      {/* 2. MOBILE DASHBOARD EXECUTIVE OVERVIEW (CLEAN COMPACT WHITE)    */}
       {/* ============================================================== */}
-      <section className="block sm:hidden">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Aksi Pengarsipan</span>
-          <span className="text-[10px] text-blue-600 font-semibold">SMP Al-Hikam</span>
+      <section className="block sm:hidden space-y-2.5">
+        {/* Header & Status Badge */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Ringkasan E-Arsip</span>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200/80">
+            SMP Al-Hikam
+          </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            onClick={() => onNavigate('upload', 'Arsip Siswa')}
-            className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm text-left active:scale-98 transition-all flex items-center justify-between cursor-pointer group"
-          >
+        {/* Widget 1: Status Kelengkapan & Storage Meter (PURE WHITE COMPACT CARD) */}
+        <div className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2.5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2">
-                <GraduationCap className="w-4 h-4" />
-              </div>
-              <strong className="text-xs font-bold text-slate-900 block leading-tight">Upload Siswa</strong>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Ijazah & SKL</span>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">Kesehatan Arsip Digital</span>
+              <h3 className="text-xs font-bold text-slate-900 mt-1">Tingkat Kelengkapan Dokumen</h3>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors" />
-          </button>
+            <div className="p-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+              <ShieldCheck className="w-3.5 h-3.5" />
+            </div>
+          </div>
 
-          <button
-            onClick={() => onNavigate('upload', 'Arsip Guru')}
-            className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm text-left active:scale-98 transition-all flex items-center justify-between cursor-pointer group"
-          >
+          <div className="space-y-2">
+            {/* Siswa Completeness Bar */}
             <div>
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
-                <Briefcase className="w-4 h-4" />
+              <div className="flex items-center justify-between text-[11px] mb-0.5">
+                <span className="text-slate-800 font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  Arsip Siswa
+                </span>
+                <span className="font-bold text-blue-600">{siswaCompletenessPct}%</span>
               </div>
-              <strong className="text-xs font-bold text-slate-900 block leading-tight">Upload Guru</strong>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Kepegawaian</span>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-600 rounded-full transition-all duration-500" 
+                  style={{ width: `${siswaCompletenessPct}%` }} 
+                />
+              </div>
+              <span className="text-[10px] text-slate-400 block mt-0.5">
+                {siswaWithArsipCount} dari {totalSiswa} siswa terdata di database
+              </span>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 transition-colors" />
-          </button>
 
-          <button
-            onClick={() => onNavigate('unduh', 'Arsip Siswa')}
-            className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm text-left active:scale-98 transition-all flex items-center justify-between cursor-pointer group"
-          >
+            {/* Guru Completeness Bar */}
             <div>
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2">
-                <Download className="w-4 h-4" />
+              <div className="flex items-center justify-between text-[11px] mb-0.5">
+                <span className="text-slate-800 font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                  Arsip Guru
+                </span>
+                <span className="font-bold text-emerald-600">{guruCompletenessPct}%</span>
               </div>
-              <strong className="text-xs font-bold text-slate-900 block leading-tight">Unduh Berkas</strong>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Cetak & direct file</span>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-600 rounded-full transition-all duration-500" 
+                  style={{ width: `${guruCompletenessPct}%` }} 
+                />
+              </div>
+              <span className="text-[10px] text-slate-400 block mt-0.5">
+                {guruWithArsipCount} dari {totalGuru} guru terdata di database
+              </span>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 transition-colors" />
-          </button>
 
-          <button
-            onClick={() => onNavigate('rekap')}
-            className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm text-left active:scale-98 transition-all flex items-center justify-between cursor-pointer group"
-          >
-            <div>
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2">
-                <CheckCircle2 className="w-4 h-4" />
+            {/* Storage Cloud Meter */}
+            <div className="pt-1.5 border-t border-slate-100">
+              <div className="flex items-center justify-between text-[11px] mb-0.5">
+                <span className="text-slate-800 font-semibold flex items-center gap-1.5">
+                  <HardDrive className="w-3.5 h-3.5 text-indigo-600" />
+                  Supabase Cloud Storage
+                </span>
+                <span className="font-bold text-indigo-600">{usedStorageDisplay}</span>
               </div>
-              <strong className="text-xs font-bold text-slate-900 block leading-tight">Matriks Rekap</strong>
-              <span className="text-[10px] text-slate-400 block mt-0.5">Status kelengkapan</span>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-indigo-600 rounded-full transition-all duration-500" 
+                  style={{ width: `${storagePercentage}%` }} 
+                />
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5">
+                <span>Terpakai dari {totalStorageDisplay}</span>
+                <span className="text-indigo-600 font-semibold">{(100 - storagePercentage).toFixed(0)}% Sisa Storage</span>
+              </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-amber-600 transition-colors" />
-          </button>
+          </div>
+        </div>
+
+        {/* Widget 2: Recent Upload Activity Stream (MATCHING WIDGET 1 TYPOGRAPHY & HEADER) */}
+        <div className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">Log Berkas Masuk</span>
+              <h3 className="text-xs font-bold text-slate-900 mt-1">Aktivitas Upload Terbaru</h3>
+            </div>
+            <div className="p-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-200/60">
+              <FilePlus className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          {recentActivity.length > 0 ? (
+            <div className="space-y-1.5">
+              {recentActivity.map((item) => (
+                <div 
+                  key={item.id}
+                  className="p-2 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                      item.kategoriUtama === 'Arsip Siswa' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {item.kategoriUtama === 'Arsip Siswa' ? 'SSW' : 'GRU'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-[11px] font-semibold text-slate-800 truncate leading-tight">{item.subjek}</h4>
+                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {item.kategori} • <span className="font-mono text-slate-600">{item.ukuran}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex-shrink-0 ml-1.5">
+                    ✓ Tersimpan
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-2.5 text-center text-xs text-slate-400">
+              Belum ada berkas diunggah.
+            </div>
+          )}
         </div>
       </section>
 
       {/* ============================================================== */}
-      {/* 3. KPI METRIC CARDS (DESKTOP AND MOBILE)                        */}
+      {/* 3. KPI METRIC CARDS (DESKTOP ONLY - HIDDEN ON MOBILE)          */}
       {/* ============================================================== */}
       
-      {/* Mobile KPI (Clean white cards with fine colored accent bar) */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5">
+      <section className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5">
         
         {/* Total Arsip */}
         <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200/90 shadow-sm relative overflow-hidden">
