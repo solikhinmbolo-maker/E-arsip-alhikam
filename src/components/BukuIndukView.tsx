@@ -36,6 +36,7 @@ import {
   KATEGORI_SISWA,
   KATEGORI_GURU
 } from '../data/mockDatabase';
+import { clearMasterSiswaInSupabase, clearMasterGuruInSupabase } from '../supabase';
 
 interface BukuIndukViewProps {
   onNavigateToArsip: (sub: 'Arsip Siswa' | 'Arsip Guru', namaSubjek: string) => void;
@@ -408,6 +409,28 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                if (confirm(`Yakin ingin mengosongkan seluruh data ${activeTab === 'siswa' ? 'Siswa & Alumni' : 'Pendidik & Tendik'}?`)) {
+                  if (activeTab === 'siswa') {
+                    localStorage.setItem('EARSIP_MASTER_SISWA', JSON.stringify([]));
+                    await clearMasterSiswaInSupabase();
+                    setSiswaList([]);
+                  } else {
+                    localStorage.setItem('EARSIP_MASTER_GURU', JSON.stringify([]));
+                    await clearMasterGuruInSupabase();
+                    setGuruList([]);
+                  }
+                  alert(`Berhasil mengosongkan seluruh data ${activeTab === 'siswa' ? 'Siswa' : 'Guru'}.`);
+                }
+              }}
+              className="px-3.5 py-2.5 rounded-xl border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Kosongkan semua data"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Kosongkan</span>
+            </button>
+
             <button
               onClick={handleExportCSV}
               className="px-3.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"

@@ -739,7 +739,7 @@ export async function saveSiswaToSupabase(item: MasterSiswaItem): Promise<boolea
       id: item.id,
       nisn: item.nisn || '',
       nama: item.nama || '',
-      jenis_kelamin: item.jenisKelamin || '',
+      kelas: item.jenisKelamin || '',
       angkatan: item.tahun || ''
     };
     const { error } = await client
@@ -827,7 +827,7 @@ export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Pr
       id: s.id,
       nisn: s.nisn || '',
       nama: s.nama || '',
-      jenis_kelamin: s.jenisKelamin || '',
+      kelas: s.jenisKelamin || '',
       angkatan: s.tahun || ''
     }));
 
@@ -906,6 +906,28 @@ export async function fetchMasterSiswaFromSupabase(): Promise<MasterSiswaItem[] 
   } catch (err) {
     console.warn('Supabase fetch master_siswa exception:', err);
     return null;
+  }
+}
+
+export async function clearMasterSiswaInSupabase(): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const { error } = await client.from('master_siswa').delete().neq('id', '___NEVER_MATCH___');
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function clearMasterGuruInSupabase(): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+  try {
+    const { error } = await client.from('master_guru').delete().neq('id', '___NEVER_MATCH___');
+    return !error;
+  } catch {
+    return false;
   }
 }
 
