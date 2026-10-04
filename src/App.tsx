@@ -1685,7 +1685,7 @@ function doGet(e) {
               </div>
               <div className="relative w-9 h-9 flex-shrink-0 flex items-center justify-center">
                 <img
-                  src={currentUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=3b82f6&color=fff&size=100`}
+                  src={getAvatarForUser(currentUser.email, currentUser.name)}
                   alt={currentUser.name}
                   className="w-9 h-9 rounded-full border-2 border-cyan-400/80 group-hover:border-cyan-300 object-cover shadow-sm transition-colors"
                 />

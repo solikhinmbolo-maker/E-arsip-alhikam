@@ -995,28 +995,36 @@ export function getPublicStorageAvatarUrl(emailOrUsername: string): string {
 }
 
 export function getAvatarForUser(emailOrUsername: string, name?: string): string {
-  const key = sanitizeUserStorageKey(emailOrUsername);
-
-  // 1. Check local cache in EARSIP_AVATARS_MAP (if base64 or custom URL exists on this device)
   try {
     const raw = localStorage.getItem('EARSIP_AVATARS_MAP');
     if (raw) {
       const map = JSON.parse(raw);
       const isBadUrl = (url: string) => !url || url.includes('seklcpvkayaakgbsnlzt') || url.includes('vakya');
 
-      if (map[key] && !isBadUrl(map[key])) {
-        return map[key];
+      if (emailOrUsername && map[emailOrUsername] && !isBadUrl(map[emailOrUsername])) return map[emailOrUsername];
+      if (emailOrUsername && map[emailOrUsername.toLowerCase()] && !isBadUrl(map[emailOrUsername.toLowerCase()])) return map[emailOrUsername.toLowerCase()];
+      
+      const key = sanitizeUserStorageKey(emailOrUsername);
+      if (key && map[key] && !isBadUrl(map[key])) return map[key];
+
+      if (name) {
+        if (map[name] && !isBadUrl(map[name])) return map[name];
+        if (map[name.toLowerCase()] && !isBadUrl(map[name.toLowerCase()])) return map[name.toLowerCase()];
       }
-      if (map[emailOrUsername] && !isBadUrl(map[emailOrUsername])) {
-        return map[emailOrUsername];
+
+      if (emailOrUsername && (emailOrUsername.toLowerCase().includes('superadmin') || emailOrUsername.toLowerCase().includes('solikhin'))) {
+        if (map['superadmin'] && !isBadUrl(map['superadmin'])) return map['superadmin'];
+        if (map['master-superadmin'] && !isBadUrl(map['master-superadmin'])) return map['master-superadmin'];
+        if (map['Solikhin Mbolo'] && !isBadUrl(map['Solikhin Mbolo'])) return map['Solikhin Mbolo'];
       }
-      if ((key === 'superadmin' || emailOrUsername.includes('superadmin')) && map['superadmin'] && !isBadUrl(map['superadmin'])) {
-        return map['superadmin'];
+
+      if (emailOrUsername && (emailOrUsername.toLowerCase().includes('fatma') || emailOrUsername.toLowerCase().includes('fatmarum'))) {
+        if (map['fatmarum'] && !isBadUrl(map['fatmarum'])) return map['fatmarum'];
+        if (map['FATMA SEKAR ARUM'] && !isBadUrl(map['FATMA SEKAR ARUM'])) return map['FATMA SEKAR ARUM'];
       }
     }
   } catch {}
 
-  // 2. Fallback to clean deterministic UI Avatar based on name / email
   const displayName = name || emailOrUsername || 'User';
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff&size=120`;
 }
@@ -1027,12 +1035,26 @@ export function saveAvatarForUser(emailOrUsername: string, avatarDataUrl: string
     const key = sanitizeUserStorageKey(emailOrUsername);
     const raw = localStorage.getItem('EARSIP_AVATARS_MAP');
     const map = raw ? JSON.parse(raw) : {};
+
     map[key] = avatarDataUrl;
-    map[emailOrUsername] = avatarDataUrl;
-    if (key === 'superadmin' || emailOrUsername.includes('superadmin')) {
+    if (emailOrUsername) {
+      map[emailOrUsername] = avatarDataUrl;
+      map[emailOrUsername.toLowerCase()] = avatarDataUrl;
+    }
+
+    if (key === 'superadmin' || (emailOrUsername && (emailOrUsername.toLowerCase().includes('superadmin') || emailOrUsername.toLowerCase().includes('solikhin')))) {
       map['superadmin'] = avatarDataUrl;
       map['master-superadmin'] = avatarDataUrl;
+      map['Solikhin Mbolo'] = avatarDataUrl;
+      map['solikhin mbolo'] = avatarDataUrl;
     }
+
+    if (emailOrUsername && (emailOrUsername.toLowerCase().includes('fatma') || emailOrUsername.toLowerCase().includes('fatmarum'))) {
+      map['fatmarum'] = avatarDataUrl;
+      map['FATMA SEKAR ARUM'] = avatarDataUrl;
+      map['fatma sekar arum'] = avatarDataUrl;
+    }
+
     localStorage.setItem('EARSIP_AVATARS_MAP', JSON.stringify(map));
   } catch (err) {
     console.warn('saveAvatarForUser notice:', err);

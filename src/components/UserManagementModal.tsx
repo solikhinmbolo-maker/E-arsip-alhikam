@@ -803,7 +803,7 @@ export default function UserManagementModal({
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                       <img
-                        src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&background=2563eb&color=fff&size=100`}
+                        src={getAvatarForUser(u.email, u.name)}
                         alt={u.name}
                         className="w-10 h-10 rounded-xl object-cover border border-slate-700 flex-shrink-0"
                         onError={(e) => {
