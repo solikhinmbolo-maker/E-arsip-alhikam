@@ -14,6 +14,11 @@ import {
   deleteMasterSiswaFromSupabase,
   deleteMasterGuruFromSupabase
 } from '../supabase';
+import * as pdfjsLib from 'pdfjs-dist';
+
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+}
 
 export interface MasterSiswaItem {
   id: string;
@@ -115,14 +120,75 @@ const IDB_VERSION = 1;
  * Compresses heavy photos (e.g. 5MB - 15MB) down to crisp ~1MB without quality loss
  */
 export async function compressDocumentHighQuality(
-  file: { size?: number }, 
+  file: { size?: number; type?: string }, 
   dataUrl: string, 
   targetMaxBytes = 1024 * 1024 // 1 MB target
 ): Promise<{ compressedDataUrl: string; originalSize: number; compressedSize: number; ratio: string }> {
   const originalSize = file?.size || Math.round((dataUrl.length * 3) / 4);
 
-  // If not an image or already under 850 KB, don't over-compress
-  if (!dataUrl.startsWith('data:image') || originalSize <= 850 * 1024) {
+  // If already under 850 KB, don't over-compress
+  if (originalSize <= 850 * 1024) {
+    return {
+      compressedDataUrl: dataUrl,
+      originalSize,
+      compressedSize: originalSize,
+      ratio: '100%'
+    };
+  }
+
+  // 1. If PDF document, render first page to canvas and compress as crisp JPEG
+  if (dataUrl.startsWith('data:application/pdf') || file?.type === 'application/pdf' || dataUrl.includes('application/pdf')) {
+    try {
+      const base64Data = dataUrl.split(',')[1];
+      if (base64Data) {
+        const binary = atob(base64Data);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+
+        const loadingTask = pdfjsLib.getDocument({ data: bytes });
+        const pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+          let quality = 0.85;
+          let resultDataUrl = canvas.toDataURL('image/jpeg', quality);
+          let approxBytes = Math.round((resultDataUrl.length * 3) / 4);
+
+          while (approxBytes > targetMaxBytes * 1.1 && quality > 0.65) {
+            quality -= 0.05;
+            resultDataUrl = canvas.toDataURL('image/jpeg', quality);
+            approxBytes = Math.round((resultDataUrl.length * 3) / 4);
+          }
+
+          const ratio = Math.round((approxBytes / originalSize) * 100) + '%';
+          return {
+            compressedDataUrl: resultDataUrl,
+            originalSize,
+            compressedSize: approxBytes,
+            ratio
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('PDF compression fallback to original:', err);
+    }
+  }
+
+  // 2. If not an image
+  if (!dataUrl.startsWith('data:image')) {
     return {
       compressedDataUrl: dataUrl,
       originalSize,
@@ -139,8 +205,6 @@ export async function compressDocumentHighQuality(
         let width = img.width;
         let height = img.height;
 
-        // Keep 2K ultra-crisp document resolution (up to 2048px on the longest side)
-        // 2048px ensures fine print on diplomas, legal stamps, and signatures remain 100% sharp
         const MAX_DIMENSION = 2048;
         if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
           if (width > height) {
@@ -161,19 +225,16 @@ export async function compressDocumentHighQuality(
           return;
         }
 
-        // High quality bicubic scaling
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Adaptive quality targetting ~1 MB
-        let quality = 0.88; // 88% quality (pristine visual clarity)
+        let quality = 0.88;
         let resultDataUrl = canvas.toDataURL('image/jpeg', quality);
         let approxBytes = Math.round((resultDataUrl.length * 3) / 4);
 
-        // If still noticeably larger than 1.1MB, step down gently while keeping >= 0.72
         while (approxBytes > targetMaxBytes * 1.1 && quality > 0.72) {
           quality -= 0.05;
           resultDataUrl = canvas.toDataURL('image/jpeg', quality);
