@@ -22,7 +22,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Chart, registerables } from 'chart.js';
-import { getStoredArsip, getStoredMasterSiswa } from '../data/mockDatabase';
+import { getStoredArsip, getStoredMasterSiswa, getStoredMasterGuru } from '../data/mockDatabase';
 import { getSupabaseClient } from '../supabase';
 
 Chart.register(...registerables);
@@ -61,14 +61,16 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
   // Live data reference (silky-smooth reactive memo without unmounting)
   const allArsip = useMemo(() => getStoredArsip(), [effectiveVersion]);
   const allSiswa = useMemo(() => getStoredMasterSiswa(), [effectiveVersion]);
+  const allGuru = useMemo(() => getStoredMasterGuru(), [effectiveVersion]);
 
   // Calculate Metrics
+  const totalSiswa = allSiswa.length;
+  const totalGuru = allGuru.length;
   const totalArsip = allArsip.length;
   const siswaArsip = allArsip.filter(a => a.kategoriUtama === 'Arsip Siswa').length;
   const guruArsip = allArsip.filter(a => a.kategoriUtama === 'Arsip Guru').length;
   const lainnyaArsip = allArsip.filter(a => a.kategoriUtama === 'Arsip Lainnya').length;
 
-  // Insight metrics
   const todayStr = new Date().toLocaleDateString('id-ID');
   const uploadHariIni = allArsip.filter(a => a.tanggal === todayStr).length;
 
@@ -77,6 +79,7 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
   allArsip.forEach(a => {
     kategoriCountMap[a.kategori] = (kategoriCountMap[a.kategori] || 0) + 1;
   });
+  const totalKategori = Object.keys(kategoriCountMap).length;
 
   const sortedCategories = Object.entries(kategoriCountMap).sort((a, b) => b[1] - a[1]);
   const topKategoriEntry = sortedCategories[0] || ['Belum Ada', 0];
@@ -735,55 +738,47 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
       <section className="hidden sm:block bg-[#0F172A] text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h3 className="text-lg font-bold text-white">Aksi Cepat Pengarsipan</h3>
-            <p className="text-xs text-slate-400">Pilih menu cepat untuk memproses pengarsipan digital sekolah</p>
+            <h3 className="text-lg font-bold text-white">Ringkasan Statistik Sistem</h3>
+            <p className="text-xs text-slate-400">Statistik langsung basis data master & arsip digital sekolah</p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <button
-            onClick={() => onNavigate('upload', 'Arsip Siswa')}
-            className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-left transition-all hover:-translate-y-1 cursor-pointer group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-left">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-3">
               <GraduationCap className="w-5 h-5" />
             </div>
-            <strong className="block text-sm font-semibold text-white">Upload Siswa</strong>
-            <span className="text-[11px] text-slate-400">Unggah berkas alumni</span>
-          </button>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Siswa</span>
+            <strong className="block text-2xl font-black text-white">{totalSiswa}</strong>
+            <span className="text-[11px] text-slate-400">Siswa & alumni terdaftar</span>
+          </div>
 
-          <button
-            onClick={() => onNavigate('upload', 'Arsip Guru')}
-            className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-left transition-all hover:-translate-y-1 cursor-pointer group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-left">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
               <Briefcase className="w-5 h-5" />
             </div>
-            <strong className="block text-sm font-semibold text-white">Upload Guru</strong>
-            <span className="text-[11px] text-slate-400">Berkas kepegawaian</span>
-          </button>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Guru & Tendik</span>
+            <strong className="block text-2xl font-black text-white">{totalGuru}</strong>
+            <span className="text-[11px] text-slate-400">Pendidik & kependidikan</span>
+          </div>
 
-          <button
-            onClick={() => onNavigate('unduh', 'Arsip Siswa')}
-            className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-left transition-all hover:-translate-y-1 cursor-pointer group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <Download className="w-5 h-5" />
+          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-left">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-3">
+              <FolderOpen className="w-5 h-5" />
             </div>
-            <strong className="block text-sm font-semibold text-white">Unduh Arsip</strong>
-            <span className="text-[11px] text-slate-400">Pencarian & direct download</span>
-          </button>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Arsip</span>
+            <strong className="block text-2xl font-black text-white">{totalArsip}</strong>
+            <span className="text-[11px] text-slate-400">Dokumen digital tersimpan</span>
+          </div>
 
-          <button
-            onClick={() => onNavigate('rekap')}
-            className="p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-left transition-all hover:-translate-y-1 cursor-pointer group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-left">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
+              <Boxes className="w-5 h-5" />
             </div>
-            <strong className="block text-sm font-semibold text-white">Rekap Matriks</strong>
-            <span className="text-[11px] text-slate-400">Cek status kelengkapan</span>
-          </button>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Total Kategori</span>
+            <strong className="block text-2xl font-black text-white">{totalKategori}</strong>
+            <span className="text-[11px] text-slate-400">Jenis klasifikasi berkas</span>
+          </div>
         </div>
       </section>
 
