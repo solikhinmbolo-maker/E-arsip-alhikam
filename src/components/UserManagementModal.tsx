@@ -131,6 +131,17 @@ export default function UserManagementModal({
       const localList = getStoredUserList();
       setUsers(localList);
 
+      if (!isCurrentSuperAdmin) {
+        const foundSelf = localList.find(u => 
+          u.email.toLowerCase().replace(/^@/, '') === currentUser.email.toLowerCase().replace(/^@/, '') ||
+          u.name.toLowerCase() === currentUser.name.toLowerCase()
+        ) || localList[0];
+
+        if (foundSelf) {
+          handleStartEdit(foundSelf);
+        }
+      }
+
       fetchUsersFromSupabase().then(async cloudUsers => {
         if (cloudUsers && cloudUsers.length > 0) {
           const merged = [...cloudUsers];
@@ -149,6 +160,16 @@ export default function UserManagementModal({
 
           setUsers(merged);
           saveStoredUserList(merged);
+
+          if (!isCurrentSuperAdmin && !editingUser) {
+            const foundSelfCloud = merged.find(u => 
+              u.email.toLowerCase().replace(/^@/, '') === currentUser.email.toLowerCase().replace(/^@/, '') ||
+              u.name.toLowerCase() === currentUser.name.toLowerCase()
+            );
+            if (foundSelfCloud) {
+              handleStartEdit(foundSelfCloud);
+            }
+          }
         } else if (localList.length > 0) {
           // Jika tabel Supabase masih kosong, unggah semua akun lokal
           await syncAllUsersToSupabase(localList);
@@ -210,6 +231,10 @@ export default function UserManagementModal({
   };
 
   const handleCancelForm = () => {
+    if (!isCurrentSuperAdmin) {
+      onClose();
+      return;
+    }
     setEditingUser(null);
     setIsCreatingNew(false);
     setMessage(null);
