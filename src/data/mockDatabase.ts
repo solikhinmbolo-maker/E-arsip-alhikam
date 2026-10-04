@@ -1002,7 +1002,7 @@ export function getAvatarForUser(emailOrUsername: string, name?: string): string
     const raw = localStorage.getItem('EARSIP_AVATARS_MAP');
     if (raw) {
       const map = JSON.parse(raw);
-      const isBadUrl = (url: string) => !url || url.includes('ui-avatars.com') || url.includes('ynlcaasuybwscbikjmzt') || url.includes('vakya');
+      const isBadUrl = (url: string) => !url || url.includes('seklcpvkayaakgbsnlzt') || url.includes('vakya');
 
       if (map[key] && !isBadUrl(map[key])) {
         return map[key];
@@ -1016,8 +1016,9 @@ export function getAvatarForUser(emailOrUsername: string, name?: string): string
     }
   } catch {}
 
-  // 2. Return public Supabase Cloud Storage URL (Deterministic - Works on ALL devices globally!)
-  return getPublicStorageAvatarUrl(key);
+  // 2. Fallback to clean deterministic UI Avatar based on name / email
+  const displayName = name || emailOrUsername || 'User';
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=2563eb&color=fff&size=120`;
 }
 
 export function saveAvatarForUser(emailOrUsername: string, avatarDataUrl: string): void {
