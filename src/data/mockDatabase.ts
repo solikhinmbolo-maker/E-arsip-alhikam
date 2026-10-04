@@ -995,12 +995,36 @@ export function getPublicStorageAvatarUrl(emailOrUsername: string): string {
 }
 
 export function getAvatarForUser(emailOrUsername: string, name?: string): string {
+  const isBadUrl = (url: string) => !url || url.includes('vakya') || url.includes('ui-avatars.com');
+
+  // 1. Check EARSIP_USER_LIST (Supabase users table cache) first
+  try {
+    const rawList = localStorage.getItem('EARSIP_USER_LIST');
+    if (rawList) {
+      const users = JSON.parse(rawList);
+      if (Array.isArray(users)) {
+        const cleanTarget = (emailOrUsername || '').toLowerCase().trim().replace(/^@/, '');
+        const found = users.find((u: any) => {
+          const uEmail = (u.email || u.username || '').toLowerCase().trim().replace(/^@/, '');
+          const uName = (u.name || '').toLowerCase().trim();
+          return (
+            (cleanTarget && (uEmail === cleanTarget || uEmail.includes(cleanTarget) || cleanTarget.includes(uEmail))) ||
+            (name && uName === name.toLowerCase().trim()) ||
+            (cleanTarget === 'superadmin' && (uEmail === 'superadmin' || u.id === 'master-superadmin' || u.isSuperAdmin))
+          );
+        });
+        if (found && found.avatarUrl && !isBadUrl(found.avatarUrl)) {
+          return found.avatarUrl;
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Check local cache in EARSIP_AVATARS_MAP
   try {
     const raw = localStorage.getItem('EARSIP_AVATARS_MAP');
     if (raw) {
       const map = JSON.parse(raw);
-      const isBadUrl = (url: string) => !url || url.includes('seklcpvkayaakgbsnlzt') || url.includes('vakya');
-
       if (emailOrUsername && map[emailOrUsername] && !isBadUrl(map[emailOrUsername])) return map[emailOrUsername];
       if (emailOrUsername && map[emailOrUsername.toLowerCase()] && !isBadUrl(map[emailOrUsername.toLowerCase()])) return map[emailOrUsername.toLowerCase()];
       

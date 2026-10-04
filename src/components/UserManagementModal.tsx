@@ -360,7 +360,7 @@ export default function UserManagementModal({
             email: cleanEmail,
             role: isMasterAdmin ? 'Super Administrator' : formRole,
             status: isMasterAdmin ? 'Aktif' : formStatus,
-            avatarUrl: formAvatar,
+            avatarUrl: isCurrentSuperAdmin ? formAvatar : u.avatarUrl,
             password: formPassword || u.password
           };
         }
@@ -581,18 +581,27 @@ export default function UserManagementModal({
                     alt="Avatar"
                     className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-500 shadow-md"
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
-                  >
-                    <Camera className="w-4 h-4" />
-                    <span className="text-[8px] font-bold">Ubah</span>
-                  </button>
+                  {isCurrentSuperAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span className="text-[8px] font-bold">Ubah</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex-1 space-y-1.5">
-                  <span className="text-xs font-bold text-white block">Foto Profil Pengguna</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white block">Foto Profil Pengguna</span>
+                    {!isCurrentSuperAdmin && (
+                      <span className="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-md font-medium">
+                        🔒 Hanya Super Admin yang dapat mengubah Foto Profil
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -600,23 +609,25 @@ export default function UserManagementModal({
                     accept="image/*"
                     className="hidden"
                   />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
-                    >
-                      <Camera className="w-3 h-3" />
-                      <span>Unggah Foto</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(formName || 'User')}&background=2563eb&color=fff&size=100`)}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition-all cursor-pointer border border-slate-700"
-                    >
-                      Inisial
-                    </button>
-                  </div>
+                  {isCurrentSuperAdmin && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <Camera className="w-3 h-3" />
+                        <span>Unggah Foto</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(formName || 'User')}&background=2563eb&color=fff&size=100`)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition-all cursor-pointer border border-slate-700"
+                      >
+                        Inisial
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
