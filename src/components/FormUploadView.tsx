@@ -125,7 +125,7 @@ export default function FormUploadView({
         nama: quickNama.trim(),
         nisn: quickIdentitas.trim(),
         tahun: yearToSet,
-        kelas: quickKelasJabatan.trim() || '9A'
+        jenisKelamin: quickKelasJabatan.trim() || 'L'
       };
       const updatedList = saveMasterSiswa(newSiswa);
       setMasterSiswa(updatedList);
@@ -769,7 +769,7 @@ export default function FormUploadView({
                     : '-- Pilih Nama Siswa --'}
                 </option>
                 {siswaFilter.map(s => (
-                  <option key={s.id} value={s.nama}>{s.nama} ({s.kelas})</option>
+                  <option key={s.id} value={s.nama}>{s.nama} ({s.jenisKelamin})</option>
                 ))}
               </select>
               <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />

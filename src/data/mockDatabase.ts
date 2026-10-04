@@ -19,7 +19,7 @@ export interface MasterSiswaItem {
   id: string;
   nama: string;
   tahun: string;
-  kelas: string;
+  jenisKelamin: string;
   nisn: string;
 }
 
@@ -665,7 +665,7 @@ export function saveMasterSiswa(item: MasterSiswaItem): MasterSiswaItem[] {
     aksi: 'UPDATE',
     kategori: 'Buku Induk Siswa',
     subjek: item.nama,
-    detail: `Pembaruan data siswa NISN: ${item.nisn} (Kelas ${item.kelas}, Angkatan ${item.tahun})`,
+    detail: `Pembaruan data siswa NISN: ${item.nisn} (JK: ${item.jenisKelamin}, Angkatan ${item.tahun})`,
     operator: 'admin@alhicam.sch.id',
     status: 'SUCCESS'
   });

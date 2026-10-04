@@ -739,7 +739,7 @@ export async function saveSiswaToSupabase(item: MasterSiswaItem): Promise<boolea
       id: item.id,
       nisn: item.nisn || '',
       nama: item.nama || '',
-      kelas: item.kelas || '',
+      jenis_kelamin: item.jenisKelamin || '',
       angkatan: item.tahun || ''
     };
     const { error } = await client
@@ -827,7 +827,7 @@ export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Pr
       id: s.id,
       nisn: s.nisn || '',
       nama: s.nama || '',
-      kelas: s.kelas || '',
+      jenis_kelamin: s.jenisKelamin || '',
       angkatan: s.tahun || ''
     }));
 
@@ -900,7 +900,7 @@ export async function fetchMasterSiswaFromSupabase(): Promise<MasterSiswaItem[] 
       id: row.id,
       nisn: row.nisn || '',
       nama: row.nama || '',
-      kelas: row.kelas || '',
+      jenisKelamin: row.jenis_kelamin || row.kelas || '',
       tahun: row.angkatan || ''
     }));
   } catch (err) {

@@ -22,7 +22,7 @@ export interface MasterSiswa {
   nisn: string;
   nama: string;
   tahun: string;
-  kelas: string;
+  jenisKelamin: string;
   tanggalTerdaftar?: string;
 }
 

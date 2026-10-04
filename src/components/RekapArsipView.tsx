@@ -69,7 +69,7 @@ export default function RekapArsipView({ onPreview }: RekapArsipViewProps) {
         nama: siswa.nama,
         tahun: siswa.tahun,
         nisn: siswa.nisn,
-        kelas: siswa.kelas,
+        jenisKelamin: siswa.jenisKelamin,
         statusMap,
         completedCount,
         total: KATEGORI_SISWA.length,
@@ -228,7 +228,7 @@ export default function RekapArsipView({ onPreview }: RekapArsipViewProps) {
                 <div>
                   <strong className="text-xs font-bold text-slate-900 block leading-tight">{row.nama}</strong>
                   <span className="text-[10px] text-slate-500 font-mono">
-                    {targetKelompok === 'Siswa' ? `NISN: ${row.nisn} • ${row.kelas} (${row.tahun})` : `NUPTK: ${row.nuptk} • ${row.jabatan}`}
+                    {targetKelompok === 'Siswa' ? `NISN: ${row.nisn} • ${row.jenisKelamin} (${row.tahun})` : `NUPTK: ${row.nuptk} • ${row.jabatan}`}
                   </span>
                 </div>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -306,7 +306,7 @@ export default function RekapArsipView({ onPreview }: RekapArsipViewProps) {
                   <td className="py-3 px-4">
                     <strong className="text-slate-900 block font-semibold">{row.nama}</strong>
                     <span className="text-[10px] text-slate-400 font-mono">
-                      {targetKelompok === 'Siswa' ? `NISN: ${row.nisn} • ${row.kelas}` : `NUPTK: ${row.nuptk} • ${row.jabatan}`}
+                      {targetKelompok === 'Siswa' ? `NISN: ${row.nisn} • ${row.jenisKelamin}` : `NUPTK: ${row.nuptk} • ${row.jabatan}`}
                     </span>
                   </td>
                   {targetKelompok === 'Siswa' && (
