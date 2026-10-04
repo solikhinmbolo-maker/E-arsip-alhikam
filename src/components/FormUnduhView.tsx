@@ -13,7 +13,10 @@ import {
   User,
   ChevronDown,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { ArsipItem, getStoredArsip, moveToTrashArsipItem } from '../data/mockDatabase';
 
@@ -39,6 +42,8 @@ export default function FormUnduhView({
   const [isPushingToGoogle, setIsPushingToGoogle] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
   const [trashConfirmItem, setTrashConfirmItem] = useState<ArsipItem | null>(null);
+  const [isMovingToTrash, setIsMovingToTrash] = useState(false);
+  const [trashToast, setTrashToast] = useState('');
   const [dataVersion, setDataVersion] = useState(0);
 
   useEffect(() => {
@@ -46,8 +51,20 @@ export default function FormUnduhView({
   }, [kategoriMenu]);
 
   const handleMoveToTrash = async (item: ArsipItem) => {
-    await moveToTrashArsipItem(item.id);
-    setTrashConfirmItem(null);
+    if (isMovingToTrash) return;
+    setIsMovingToTrash(true);
+    try {
+      // Smooth visual feedback for moving to trash
+      await new Promise(r => setTimeout(r, 650));
+      await moveToTrashArsipItem(item.id);
+      setTrashToast(`✓ Berkas "${item.subjek}" (${item.kategori}) berhasil dipindahkan ke folder Sampah.`);
+      setTimeout(() => setTrashToast(''), 4500);
+    } catch (err) {
+      console.error('Error moving to trash:', err);
+    } finally {
+      setIsMovingToTrash(false);
+      setTrashConfirmItem(null);
+    }
   };
 
   useEffect(() => {
@@ -133,6 +150,19 @@ export default function FormUnduhView({
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/80 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
       
+      {/* Toast Notification for Trash Action */}
+      {trashToast && (
+        <div className="mb-4 p-3.5 bg-slate-900 text-white rounded-2xl text-xs font-semibold flex items-center justify-between shadow-lg animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <span>{trashToast}</span>
+          </div>
+          <button onClick={() => setTrashToast('')} className="text-slate-400 hover:text-white cursor-pointer ml-2">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* HEADER EMERALD */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b-2 border-slate-100">
         <div className="flex items-center gap-3">
@@ -151,7 +181,7 @@ export default function FormUnduhView({
         <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Terhubung Firebase Cloud</span>
+            <span>Terhubung Supabase Cloud</span>
           </div>
         </div>
       </div>
@@ -441,23 +471,53 @@ export default function FormUnduhView({
               <Trash2 className="w-7 h-7" />
             </div>
             <h3 className="text-base sm:text-lg font-bold mb-1">Pindahkan ke Sampah?</h3>
-            <p className="text-xs text-slate-300 mb-6 leading-relaxed">
+            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
               Dokumen <strong className="text-red-400">"{trashConfirmItem.subjek}"</strong> akan dipindahkan ke folder Sampah. Anda masih dapat memulihkannya kapan saja.
             </p>
+
+            {/* Loading progress indicator */}
+            {isMovingToTrash && (
+              <div className="mb-5 space-y-2 animate-fadeIn">
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                  <div className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full animate-pulse w-full" />
+                </div>
+                <p className="text-[11px] text-amber-400 font-semibold flex items-center justify-center gap-1.5">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Sedang memindahkan berkas ke folder sampah...</span>
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2.5">
               <button
                 type="button"
+                disabled={isMovingToTrash}
                 onClick={() => setTrashConfirmItem(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                className={`flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors ${
+                  isMovingToTrash ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               >
                 Batal
               </button>
               <button
                 type="button"
+                disabled={isMovingToTrash}
                 onClick={() => handleMoveToTrash(trashConfirmItem)}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                className={`flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                  isMovingToTrash ? 'opacity-90 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               >
-                Hapus ke Sampah
+                {isMovingToTrash ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Memindahkan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus ke Sampah</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

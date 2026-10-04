@@ -72,7 +72,8 @@ import {
   getStoredMasterSiswa,
   getStoredMasterGuru,
   getAvatarForUser,
-  saveAvatarForUser
+  saveAvatarForUser,
+  getPermanentDeletedIds
 } from './data/mockDatabase';
 import { 
   subscribeToArsip, 
@@ -541,39 +542,21 @@ export default function App() {
       try {
         if (!Array.isArray(supabaseItems)) return;
 
+        const deletedIds = getPermanentDeletedIds();
+        const validSupabaseItems = supabaseItems.filter(it => !deletedIds.has(it.id));
+
         const localRaw = getAllRawArsip();
         const localMap = new Map<string, ArsipItem>();
         localRaw.forEach(it => localMap.set(it.id, it));
 
-        // Auto-push any local items that are not yet in Supabase
-        const supaIdSet = new Set(supabaseItems.map(s => s.id));
-        const missingInSupabase = localRaw.filter(it => !supaIdSet.has(it.id));
-        if (missingInSupabase.length > 0) {
-          syncAllArsipToSupabase(missingInSupabase).catch(() => {});
-        }
-
-        // Merge: Supabase is authoritative, but keep local items until synced
-        const mergedMap = new Map<string, ArsipItem>();
-        supabaseItems.forEach(it => {
-          mergedMap.set(it.id, {
-            ...it,
-            fileDataUrl: it.fileDataUrl || localMap.get(it.id)?.fileDataUrl
-          });
-        });
-        localRaw.forEach(it => {
-          if (!mergedMap.has(it.id)) {
-            mergedMap.set(it.id, it);
-          }
-        });
-
-        const mergedList = Array.from(mergedMap.values());
-        const clean = mergedList.map(it => {
+        // Supabase is the single source of truth across all devices.
+        // We preserve local fileDataUrl from memory cache if available:
+        const clean = validSupabaseItems.map(it => {
           const copy = { ...it };
           delete copy.fileDataUrl;
           return copy;
         });
 
-        // Supabase is the single source of truth across all devices
         localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
         triggerDebouncedSync();
       } catch (err) {
@@ -581,11 +564,25 @@ export default function App() {
       }
     });
 
-    // Auto-seed / sync local archives to Supabase on startup
-    const rawArsipInitial = getAllRawArsip();
-    if (rawArsipInitial.length > 0) {
-      syncAllArsipToSupabase(rawArsipInitial).catch(() => {});
-    }
+    // Pull authoritative archives from Supabase on startup
+    fetchArsipFromSupabase().then(supaItems => {
+      const deletedIds = getPermanentDeletedIds();
+      if (Array.isArray(supaItems) && supaItems.length > 0) {
+        const validItems = supaItems.filter(it => !deletedIds.has(it.id));
+        const clean = validItems.map(it => {
+          const copy = { ...it };
+          delete copy.fileDataUrl;
+          return copy;
+        });
+        localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
+        triggerDebouncedSync();
+      } else {
+        const rawArsipInitial = getAllRawArsip().filter(it => !deletedIds.has(it.id));
+        if (rawArsipInitial.length > 0) {
+          syncAllArsipToSupabase(rawArsipInitial).catch(() => {});
+        }
+      }
+    }).catch(() => {});
 
     // Auto sync/seed master siswa and master guru from/to Supabase
     fetchMasterSiswaFromSupabase().then(supaSiswa => {

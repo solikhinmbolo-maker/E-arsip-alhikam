@@ -366,6 +366,35 @@ function safeSetItem(key: string, value: string) {
   }
 }
 
+const TOMBSTONE_DELETED_KEY = 'EARSIP_DELETED_PERMANENT_IDS';
+
+export function getPermanentDeletedIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(TOMBSTONE_DELETED_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+export function recordPermanentDeletedId(id: string) {
+  try {
+    const set = getPermanentDeletedIds();
+    set.add(id);
+    localStorage.setItem(TOMBSTONE_DELETED_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+export function recordMultiplePermanentDeletedIds(ids: string[]) {
+  try {
+    const set = getPermanentDeletedIds();
+    ids.forEach(id => set.add(id));
+    localStorage.setItem(TOMBSTONE_DELETED_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
 export function getAllRawArsip(): ArsipItem[] {
   try {
     const raw = localStorage.getItem(DB_KEYS.ARSIP_ITEMS);
@@ -373,8 +402,11 @@ export function getAllRawArsip(): ArsipItem[] {
       return [];
     }
     const items: ArsipItem[] = JSON.parse(raw);
+    const deletedIds = getPermanentDeletedIds();
+    const validItems = items.filter(it => !deletedIds.has(it.id));
+
     // Enrich with fileDataUrl from memory cache if available
-    return items.map(item => {
+    return validItems.map(item => {
       if (fileBlobCache.has(item.id)) {
         return { ...item, fileDataUrl: fileBlobCache.get(item.id) };
       }
@@ -578,6 +610,8 @@ export async function restoreFromTrashArsipItem(id: string): Promise<ArsipItem[]
  * Permanently delete document from Firestore, local storage, and IndexedDB
  */
 export async function deletePermanentlyArsipItem(id: string): Promise<ArsipItem[]> {
+  recordPermanentDeletedId(id);
+
   const all = getAllRawArsip();
   const remaining = all.filter(item => item.id !== id);
 
@@ -587,7 +621,7 @@ export async function deletePermanentlyArsipItem(id: string): Promise<ArsipItem[
     localStorage.removeItem(`file_blob_${id}`);
   } catch {}
 
-  await deleteArsipFromSupabase(id).catch(() => {});
+  await deleteArsipFromSupabase(id).catch(() => false);
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
@@ -603,15 +637,19 @@ export async function emptyTrashArsip(): Promise<ArsipItem[]> {
   const trashed = all.filter(i => i.isTrash === true);
   const activeOnly = all.filter(i => !i.isTrash);
 
+  recordMultiplePermanentDeletedIds(trashed.map(t => t.id));
+
   safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(activeOnly));
 
-  for (const t of trashed) {
-    fileBlobCache.delete(t.id);
-    try {
-      localStorage.removeItem(`file_blob_${t.id}`);
-    } catch {}
-    await deleteArsipFromSupabase(t.id).catch(() => {});
-  }
+  await Promise.all(
+    trashed.map(async t => {
+      fileBlobCache.delete(t.id);
+      try {
+        localStorage.removeItem(`file_blob_${t.id}`);
+      } catch {}
+      return deleteArsipFromSupabase(t.id).catch(() => false);
+    })
+  );
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));

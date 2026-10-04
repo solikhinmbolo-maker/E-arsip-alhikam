@@ -9,7 +9,8 @@ import {
   User, 
   Calendar,
   CheckCircle2,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { 
   ArsipItem, 
@@ -229,24 +230,52 @@ export default function TongSampahView() {
               <AlertTriangle className="w-7 h-7" />
             </div>
             <h3 className="text-base sm:text-lg font-bold mb-1">Hapus Permanen?</h3>
-            <p className="text-xs text-slate-300 mb-2 leading-relaxed">
-              Berkas <strong className="text-red-400">"{deleteTargetItem.subjek}"</strong> akan dihapus selamanya dari Firebase Cloud Database & Storage.
+            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+              Berkas <strong className="text-red-400">"{deleteTargetItem.subjek}"</strong> akan dihapus selamanya dari Supabase Cloud Database & Storage.
             </p>
-            <p className="text-[11px] text-slate-400 mb-6 italic">Tindakan ini tidak dapat dibatalkan!</p>
+
+            {isProcessing && (
+              <div className="mb-5 space-y-2 animate-fadeIn">
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                  <div className="h-full bg-gradient-to-r from-red-500 to-rose-400 rounded-full animate-pulse w-full" />
+                </div>
+                <p className="text-[11px] text-red-400 font-semibold flex items-center justify-center gap-1.5">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Sedang menghapus permanen dari server...</span>
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2.5">
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={() => setDeleteTargetItem(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                className={`flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors ${
+                  isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               >
                 Batal
               </button>
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={handleConfirmDeletePermanent}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                className={`flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                  isProcessing ? 'opacity-90 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               >
-                Ya, Hapus
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Menghapus...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash className="w-3.5 h-3.5" />
+                    <span>Ya, Hapus</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -261,24 +290,52 @@ export default function TongSampahView() {
               <Trash className="w-7 h-7" />
             </div>
             <h3 className="text-base sm:text-lg font-bold mb-1">Kosongkan Sampah?</h3>
-            <p className="text-xs text-slate-300 mb-2 leading-relaxed">
+            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
               Seluruh <strong className="text-red-400">{trashData.length} berkas</strong> di folder Sampah akan dihapus secara permanen dari Database & Cloud Storage.
             </p>
-            <p className="text-[11px] text-slate-400 mb-6 italic">Semua data terhapus selamanya!</p>
+
+            {isProcessing && (
+              <div className="mb-5 space-y-2 animate-fadeIn">
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                  <div className="h-full bg-gradient-to-r from-red-500 to-rose-400 rounded-full animate-pulse w-full" />
+                </div>
+                <p className="text-[11px] text-red-400 font-semibold flex items-center justify-center gap-1.5">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Membersihkan seluruh folder sampah...</span>
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2.5">
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={() => setShowEmptyConfirm(false)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                className={`flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors ${
+                  isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               >
                 Batal
               </button>
               <button
                 type="button"
+                disabled={isProcessing}
                 onClick={handleConfirmEmptyTrash}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                className={`flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                  isProcessing ? 'opacity-90 cursor-not-allowed' : 'cursor-pointer'
+                }`}
               >
-                Kosongkan
+                {isProcessing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Membersihkan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash className="w-3.5 h-3.5" />
+                    <span>Kosongkan</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
