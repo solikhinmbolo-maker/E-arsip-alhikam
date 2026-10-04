@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
-import { ArsipItem, getStoredArsip, moveToTrashArsipItem } from '../data/mockDatabase';
+import { ArsipItem, getStoredArsip, moveToTrashArsipItem, getFileAttachment } from '../data/mockDatabase';
 
 interface FormUnduhViewProps {
   kategoriMenu?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -111,32 +111,40 @@ export default function FormUnduhView({
     });
   }, [scopedData, filterTahun, filterJenis, searchTerm]);
 
-  // Handle Download Simulation
-  const handleDownload = (item: ArsipItem) => {
+  // Handle Robust Download
+  const handleDownload = async (item: ArsipItem) => {
     setIsDownloading(true);
     setDownloadingItemName(item.namaFileAsli || item.subjek);
-    setDownloadProgress(20);
+    setDownloadProgress(30);
 
-    const timer1 = setTimeout(() => setDownloadProgress(60), 150);
-    const timer2 = setTimeout(() => setDownloadProgress(100), 300);
-    const timer3 = setTimeout(() => {
-      setIsDownloading(false);
-      setDownloadProgress(0);
+    try {
+      let fileContent = item.fileDataUrl || await getFileAttachment(item.id);
+      setDownloadProgress(70);
 
       const element = document.createElement('a');
-      const fileContent = item.fileDataUrl || `data:text/plain;charset=utf-8,Dokumen E-Arsip Al-Hicam\nNama: ${item.subjek}\nKategori: ${item.kategori}\nTahun: ${item.tahun}\nID: ${item.id}`;
-      element.setAttribute('href', fileContent);
+      if (fileContent) {
+        element.setAttribute('href', fileContent);
+      } else if (item.linkDrive && item.linkDrive.startsWith('http')) {
+        element.setAttribute('href', item.linkDrive);
+        element.setAttribute('target', '_blank');
+      } else {
+        const fallbackText = `Dokumen E-Arsip Al-Hicam\nNama: ${item.subjek}\nKategori: ${item.kategori}\nTahun: ${item.tahun}\nID: ${item.id}`;
+        const blob = new Blob([fallbackText], { type: 'text/plain;charset=utf-8' });
+        element.setAttribute('href', URL.createObjectURL(blob));
+      }
+
       element.setAttribute('download', item.namaFileAsli || `${item.subjek}_${item.kategori}.txt`);
       document.body.appendChild(element);
+      setDownloadProgress(100);
+      await new Promise(r => setTimeout(r, 300));
       element.click();
       document.body.removeChild(element);
-    }, 450);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
+    } catch (err) {
+      console.error('Download error:', err);
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
+    }
   };
 
   // Handle Print
