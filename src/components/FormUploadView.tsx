@@ -22,7 +22,8 @@ import {
   CopyCheck,
   X,
   Plus,
-  Sparkles
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   MasterSiswaItem, 
@@ -291,25 +292,13 @@ export default function FormUploadView({
     const newId = replaceExistingId || `${prefix}-${randomNum}`;
     const todayStr = new Date().toLocaleDateString('id-ID');
 
-    // Kompresi Cerdas Adaptif (5 MB -> ~1 MB, menjaga ketajaman resolusi 2048px teks & stempel ijazah)
+    // Raw original file upload without compression
     let optimizedBase64 = fileBase64 || '';
-    let finalUkuran = `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`;
+    let finalUkuran = `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`;
 
-    setProgressPercent(45);
-    if (fileBase64 && selectedFile.size > 850 * 1024) {
-      setProgressStatus('Mengompresi HD...');
-      const comp = await compressDocumentHighQuality(selectedFile, fileBase64, 1024 * 1024);
-      optimizedBase64 = comp.compressedDataUrl;
-      const compMB = (comp.compressedSize / (1024 * 1024)).toFixed(1);
-      const origMB = (comp.originalSize / (1024 * 1024)).toFixed(1);
-      if (comp.compressedSize < comp.originalSize) {
-        finalUkuran = `${compMB} MB (HD kompresi dari ${origMB} MB)`;
-      }
-      await new Promise(r => setTimeout(r, 600));
-    } else {
-      setProgressStatus('Menyiapkan file...');
-      await new Promise(r => setTimeout(r, 500));
-    }
+    setProgressPercent(50);
+    setProgressStatus('Menyiapkan file...');
+    await new Promise(r => setTimeout(r, 400));
 
     const updatedArsip: ArsipItem = {
       id: newId,
@@ -409,19 +398,9 @@ export default function FormUploadView({
       const randomNum = Math.floor(1000 + Math.random() * 9000) + idx;
       const newId = (replaceDuplicates && existing) ? existing.id : `${prefix}-${randomNum}`;
 
-      // Kompresi Cerdas Adaptif Kolektif (5 MB -> ~1 MB)
+      // Raw original file upload without compression
       let itemBase64 = fileObj.base64;
-      let itemUkuran = `${(fileObj.file.size / (1024 * 1024)).toFixed(1)} MB`;
-
-      if (fileObj.base64 && fileObj.file.size > 850 * 1024) {
-        const comp = await compressDocumentHighQuality(fileObj.file, fileObj.base64, 1024 * 1024);
-        itemBase64 = comp.compressedDataUrl;
-        const compMB = (comp.compressedSize / (1024 * 1024)).toFixed(1);
-        const origMB = (comp.originalSize / (1024 * 1024)).toFixed(1);
-        if (comp.compressedSize < comp.originalSize) {
-          itemUkuran = `${compMB} MB (HD kompresi dari ${origMB} MB)`;
-        }
-      }
+      let itemUkuran = `${(fileObj.file.size / (1024 * 1024)).toFixed(2)} MB`;
 
       const itemToSave: ArsipItem = {
         id: newId,
@@ -931,17 +910,7 @@ export default function FormUploadView({
                     </div>
                   </div>
 
-                  {selectedFile.size > 1024 * 1024 && (
-                    <div className="p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex items-start gap-2.5 text-xs text-blue-950 animate-fadeIn">
-                      <Sparkles className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold block text-blue-900">⚡ Kompresi Cerdas Otomatis Aktif (Target ~1.0 MB)</span>
-                        <p className="text-[11px] text-blue-700 mt-0.5 leading-relaxed">
-                          Ukuran asli <strong>{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</strong> akan dikompres otomatis ke kisaran <strong>~1 MB</strong> saat disimpan ke Supabase Storage. Resolusi teks ijazah, stempel sekolah, dan tanda tangan <strong>tetap 100% tajam & jernih</strong> tanpa buram.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               )}
             </div>
@@ -1218,22 +1187,23 @@ export default function FormUploadView({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl animate-scaleUp border border-emerald-100">
             {/* Animated Glowing Green Checkmark Icon */}
-            <div className="relative flex items-center justify-center mx-auto mb-5 w-20 h-20">
-              <div className="absolute inset-0 rounded-full bg-emerald-400/30 animate-ping" />
+            <div className="relative flex items-center justify-center mx-auto mb-5 w-20 h-20 animate-circle-pop">
+              <div className="absolute inset-0 rounded-full bg-emerald-400/25 animate-ping" />
               <div className="relative w-18 h-18 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-[0_0_35px_rgba(16,185,129,0.5)]">
-                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <svg className="w-10 h-10 text-white overflow-visible" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5">
+                  <path className="animate-checkmark" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold mb-2 border border-emerald-200/80">
-              <span>✓ Google Drive & Sheet Terhubung</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Supabase Cloud Storage Terhubung</span>
             </div>
 
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1.5">Pengarsipan Berhasil!</h3>
             <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-              Sebanyak <strong>{successInfo.count} berkas dokumen</strong> milik <strong>{successInfo.name}</strong> telah berhasil disimpan ke <strong>Google Drive</strong> dan dicatat di <strong>Google Spreadsheet</strong>.
+              Sebanyak <strong>{successInfo.count} berkas dokumen</strong> milik <strong>{successInfo.name}</strong> telah berhasil disimpan secara aman di <strong>Supabase Cloud Storage</strong> & Database E-Arsip.
             </p>
 
             <div className="space-y-2">

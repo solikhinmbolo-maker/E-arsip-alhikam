@@ -171,11 +171,11 @@ export default function LaporanView({ onPreview }: LaporanViewProps) {
         <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
           <span className="text-[11px] text-emerald-600 font-semibold block">Status Sinkronisasi</span>
           <span className="text-xs font-bold text-emerald-900 flex items-center gap-1 mt-1">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Terverifikasi Google Drive
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Terverifikasi Supabase Storage
           </span>
         </div>
         <div className="p-3 bg-purple-50/70 border border-purple-200 rounded-xl">
-          <span className="text-[11px] text-purple-600 font-semibold block">Database Spreadsheet</span>
+          <span className="text-[11px] text-purple-600 font-semibold block">Database Supabase Cloud</span>
           <span className="text-xs font-mono font-bold text-purple-950 block mt-1 truncate">
             1ew4gfR5...
           </span>

@@ -118,7 +118,7 @@ export default function TongSampahView() {
               </span>
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-500">
-              Berkas yang dihapus disimpan sementara di sini sebelum dihapus permanen dari Database & Cloud Drive.
+              Berkas yang dihapus disimpan sementara di sini sebelum dihapus permanen dari Database & Supabase Storage.
             </p>
           </div>
         </div>
