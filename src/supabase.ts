@@ -529,11 +529,10 @@ export async function saveSingleUserToSupabase(
         email: cleanEmail,
         password: cleanPassword,
         role: cleanRole,
-        status: 'Aktif'
+        status: 'Aktif',
+        avatar_url: publicAvatarUrl || user.avatarUrl || '',
+        avatar: publicAvatarUrl || user.avatarUrl || ''
       };
-      if (publicAvatarUrl) {
-        updateData.avatar_url = publicAvatarUrl;
-      }
 
       return await executeAdaptiveUserWrite('update', updateData, existing.id);
     } else {
@@ -546,11 +545,10 @@ export async function saveSingleUserToSupabase(
         email: cleanEmail,
         password: cleanPassword,
         role: cleanRole,
-        status: 'Aktif'
+        status: 'Aktif',
+        avatar_url: publicAvatarUrl || user.avatarUrl || '',
+        avatar: publicAvatarUrl || user.avatarUrl || ''
       };
-      if (publicAvatarUrl) {
-        insertPayload.avatar_url = publicAvatarUrl;
-      }
 
       return await executeAdaptiveUserWrite('insert', insertPayload);
     }
@@ -648,9 +646,15 @@ export async function fetchUsersFromSupabase(): Promise<any[] | null> {
     return data.map((d: any) => {
       const email = d.email || d.username || '';
       const name = d.name || d.nama || 'Pengguna';
-      const avatarUrl = (d.avatar_url && !d.avatar_url.includes('ui-avatars.com')) 
-        ? d.avatar_url 
+      const rawAvatar = d.avatar_url || d.avatar || d.photo || '';
+      const avatarUrl = (rawAvatar && !rawAvatar.includes('ui-avatars.com')) 
+        ? rawAvatar 
         : getAvatarForUser(email, name);
+
+      if (rawAvatar && !rawAvatar.includes('ui-avatars.com')) {
+        saveAvatarForUser(email, rawAvatar);
+        if (d.username) saveAvatarForUser(d.username, rawAvatar);
+      }
 
       return {
         id: d.id || `usr-${email}`,
