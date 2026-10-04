@@ -47,34 +47,9 @@ export interface ArsipItem {
   deletedAt?: string;
 }
 
-export const INITIAL_MASTER_SISWA: MasterSiswaItem[] = [
-  { id: 'S001', nama: 'Andika Pratama', tahun: '2024', kelas: '9A', nisn: '0071829301' },
-  { id: 'S002', nama: 'Ahmad Fauzi', tahun: '2024', kelas: '9B', nisn: '0071829302' },
-  { id: 'S003', nama: 'Budi Santoso', tahun: '2023', kelas: '9A', nisn: '0062819203' },
-  { id: 'S004', nama: 'Citra Dewi Permata', tahun: '2024', kelas: '9C', nisn: '0071829304' },
-  { id: 'S005', nama: 'Dedi Kurniawan', tahun: '2022', kelas: '9B', nisn: '0053819205' },
-  { id: 'S006', nama: 'Eka Nurhaliza', tahun: '2023', kelas: '9C', nisn: '0062819206' },
-  { id: 'S007', nama: 'Fajar Ramadhan', tahun: '2025', kelas: '9A', nisn: '0081829307' },
-  { id: 'S008', nama: 'Gita Permata Sari', tahun: '2025', kelas: '9B', nisn: '0081829308' },
-  { id: 'S009', nama: 'Hadi Saputra', tahun: '2024', kelas: '9A', nisn: '0071829309' },
-  { id: 'S010', nama: 'Indah Lestari', tahun: '2023', kelas: '9B', nisn: '0062819210' },
-  { id: 'S011', nama: 'Muhammad Rizky', tahun: '2025', kelas: '9C', nisn: '0081829311' },
-  { id: 'S012', nama: 'Nabila Azzahra', tahun: '2022', kelas: '9A', nisn: '0053819212' },
-  { id: 'S013', nama: 'Rian Hidayat', tahun: '2024', kelas: '9B', nisn: '0071829313' },
-  { id: 'S014', nama: 'Siti Rohmah', tahun: '2023', kelas: '9A', nisn: '0062819214' },
-  { id: 'S015', nama: 'Zahra Amelia', tahun: '2025', kelas: '9A', nisn: '0081829315' },
-];
+export const INITIAL_MASTER_SISWA: MasterSiswaItem[] = [];
 
-export const INITIAL_MASTER_GURU: MasterGuruItem[] = [
-  { id: 'G001', nama: 'Drs. H. Solikhin, M.Pd', nuptk: '197405121999031001', jabatan: 'Kepala Sekolah' },
-  { id: 'G002', nama: 'Siti Aminah, S.Pd', nuptk: '198208152006042015', jabatan: 'Guru Matematika' },
-  { id: 'G003', nama: 'Nurul Hidayah, S.Kom', nuptk: '198903142015051002', jabatan: 'Guru TIK & Operator' },
-  { id: 'G004', nama: 'Agus Setiawan, M.Pd', nuptk: '197811202005011003', jabatan: 'Waka Kurikulum' },
-  { id: 'G005', nama: 'Dewi Sartika, S.Si', nuptk: '198506102010012019', jabatan: 'Guru IPA' },
-  { id: 'G006', nama: 'Bambang Irawan, S.Pd', nuptk: '198104232008011007', jabatan: 'Guru Bahasa Indonesia' },
-  { id: 'G007', nama: 'Rina Kusuma, S.Pd', nuptk: '199012052019032008', jabatan: 'Guru Bahasa Inggris' },
-  { id: 'G008', nama: 'Ahmad Mubarok, S.Ag', nuptk: '197607192003121004', jabatan: 'Guru PAI' },
-];
+export const INITIAL_MASTER_GURU: MasterGuruItem[] = [];
 
 export const KATEGORI_SISWA = [
   'Ijazah SD/MI',
@@ -311,17 +286,21 @@ export function getStoredMasterSiswa(): MasterSiswaItem[] {
   try {
     const raw = localStorage.getItem(DB_KEYS.MASTER_SISWA);
     if (!raw) {
-      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(INITIAL_MASTER_SISWA));
-      return INITIAL_MASTER_SISWA;
+      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify([]));
+      return [];
     }
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(INITIAL_MASTER_SISWA));
-      return INITIAL_MASTER_SISWA;
+    if (!Array.isArray(parsed)) {
+      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify([]));
+      return [];
+    }
+    if (parsed.length > 0 && parsed[0]?.nama === 'Andika Pratama') {
+      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify([]));
+      return [];
     }
     return parsed;
   } catch {
-    return INITIAL_MASTER_SISWA;
+    return [];
   }
 }
 
@@ -329,17 +308,21 @@ export function getStoredMasterGuru(): MasterGuruItem[] {
   try {
     const raw = localStorage.getItem(DB_KEYS.MASTER_GURU);
     if (!raw) {
-      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(INITIAL_MASTER_GURU));
-      return INITIAL_MASTER_GURU;
+      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify([]));
+      return [];
     }
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(INITIAL_MASTER_GURU));
-      return INITIAL_MASTER_GURU;
+    if (!Array.isArray(parsed)) {
+      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify([]));
+      return [];
+    }
+    if (parsed.length > 0 && parsed[0]?.nama === 'Drs. H. Solikhin, M.Pd') {
+      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify([]));
+      return [];
     }
     return parsed;
   } catch {
-    return INITIAL_MASTER_GURU;
+    return [];
   }
 }
 
