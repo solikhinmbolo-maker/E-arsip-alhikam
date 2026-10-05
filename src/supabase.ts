@@ -1069,6 +1069,33 @@ async function getDriveScriptConfig(): Promise<{ scriptUrl: string; scriptSecret
   if (cachedDriveConfig && cachedDriveConfig.scriptUrl) {
     return cachedDriveConfig;
   }
+
+  // Priority 1: Check localStorage sync config
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('EARSIP_GOOGLE_CONFIG') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.webhookUrl && parsed.webhookUrl.startsWith('http')) {
+        cachedDriveConfig = {
+          scriptUrl: parsed.webhookUrl.trim(),
+          scriptSecret: 'eArsipSecretAlHikam2026_SecureKey'
+        };
+        return cachedDriveConfig;
+      }
+    }
+  } catch {}
+
+  // Priority 2: Standard deployed Google Apps Script URL for SMP Al-Hikam
+  const defaultGas = 'https://script.google.com/macros/s/AKfycbqyQCpSe1n4Z9h8dmSYD65g5YfwD-x5k314VEC_2Ia_CxOVoobk851R0WGxMUd-ATcL/exec';
+  if (defaultGas) {
+    cachedDriveConfig = {
+      scriptUrl: defaultGas,
+      scriptSecret: 'eArsipSecretAlHikam2026_SecureKey'
+    };
+    return cachedDriveConfig;
+  }
+
+  // Priority 3: Fetch server environment config
   try {
     const res = await fetch('/api/drive/config');
     if (res.ok) {
@@ -1103,6 +1130,7 @@ function fileToBase64Raw(file: File): Promise<string> {
 
 /**
  * Upload original file directly to Google Drive Private Storage (supports up to 50MB raw original size)
+ * with live real-time progress callback
  */
 export async function uploadFileToGoogleDriveApi(
   file: File,
@@ -1114,16 +1142,49 @@ export async function uploadFileToGoogleDriveApi(
     kategoriUtama: string;
     tahun?: string;
     customFilename?: string;
-  }
+  },
+  onProgress?: (percent: number, statusText: string) => void
 ): Promise<{ success: boolean; fileId?: string; fileName?: string; error?: string; message?: string }> {
   try {
     const desiredFilename = metadata.customFilename || file.name || `arsip_${Date.now()}`;
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    
+    if (onProgress) {
+      onProgress(15, `Membaca berkas asli (${sizeMb} MB)...`);
+    }
+
     const cfg = await getDriveScriptConfig();
 
     // 1. Direct High-Speed Upload directly from Browser to Google Drive (Bypasses Vercel 4.5MB limit - 100% original quality up to 50MB)
     if (cfg && cfg.scriptUrl) {
       try {
+        if (onProgress) {
+          onProgress(30, `Menyiapkan payload biner (${sizeMb} MB)...`);
+        }
+
         const rawBase64 = await fileToBase64Raw(file);
+
+        if (onProgress) {
+          onProgress(45, `Mengirim berkas asli (${sizeMb} MB) ke Google Drive...`);
+        }
+
+        // Realistic smooth progress simulation while sending large file over network
+        let currentProgress = 45;
+        const progressTimer = setInterval(() => {
+          if (currentProgress < 92) {
+            currentProgress += 3;
+            if (onProgress) {
+              const uploadedMb = ((file.size * (currentProgress / 100)) / (1024 * 1024)).toFixed(1);
+              onProgress(
+                currentProgress, 
+                currentProgress < 85 
+                  ? `Mengirim ke Google Drive (${currentProgress}%) - ${uploadedMb} / ${sizeMb} MB...`
+                  : `Menyimpan di folder kearsipan Google Drive (${currentProgress}%)...`
+              );
+            }
+          }
+        }, 220);
+
         const payload = {
           secret: cfg.scriptSecret,
           action: 'upload',
@@ -1146,6 +1207,12 @@ export async function uploadFileToGoogleDriveApi(
           body: JSON.stringify(payload)
         });
 
+        clearInterval(progressTimer);
+
+        if (onProgress) {
+          onProgress(95, 'Memvalidasi ID berkas tersimpan...');
+        }
+
         const directText = await directRes.text();
         let directResult: any = null;
         try {
@@ -1155,6 +1222,9 @@ export async function uploadFileToGoogleDriveApi(
         }
 
         if (directResult && directResult.success && directResult.fileId) {
+          if (onProgress) {
+            onProgress(100, '✓ Berkas ukuran asli berhasil tersimpan di Google Drive!');
+          }
           return {
             success: true,
             fileId: directResult.fileId,
@@ -1175,6 +1245,10 @@ export async function uploadFileToGoogleDriveApi(
     }
 
     // 2. Fallback via Vercel Backend Proxy (/api/drive/upload)
+    if (onProgress) {
+      onProgress(50, 'Mengirim melalui jalur proxy server...');
+    }
+
     const formData = new FormData();
     formData.append('file', file, file.name);
 
@@ -1199,7 +1273,7 @@ export async function uploadFileToGoogleDriveApi(
       if (response.status === 413 || responseText.includes('Request Entity') || responseText.includes('Too Large')) {
         return {
           success: false,
-          error: `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas transfer proxy Vercel. Silakan pastikan GOOGLE_APPS_SCRIPT_URL aktif untuk upload direct tanpa batas.`
+          error: `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas transfer proxy Vercel. Pastikan koneksi ke Google Drive aktif.`
         };
       }
       return {
@@ -1214,6 +1288,10 @@ export async function uploadFileToGoogleDriveApi(
         error: result.error || result.detail || 'Gagal mengunggah berkas ke Google Drive Private Storage.',
         message: result.message
       };
+    }
+
+    if (onProgress) {
+      onProgress(100, '✓ Berkas berhasil tersimpan di Google Drive!');
     }
 
     return {

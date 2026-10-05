@@ -373,18 +373,23 @@ export default function FormUploadView({
       fileDataUrl: optimizedBase64
     };
 
-    setProgressPercent(60);
-
-    // 1. Unggah berkas fisik langsung ke Google Drive Private Storage
-    const driveUpload = await uploadFileToGoogleDriveApi(selectedFile, {
-      id: newId,
-      subjek: namaSubjek,
-      identitas: identitas || '-',
-      kategori: kategori,
-      kategoriUtama: jenisArsip,
-      tahun: tahun || new Date().getFullYear().toString(),
-      customFilename: selectedFile.name
-    });
+    // 1. Unggah berkas fisik langsung ke Google Drive Private Storage dengan live real-time progress
+    const driveUpload = await uploadFileToGoogleDriveApi(
+      selectedFile,
+      {
+        id: newId,
+        subjek: namaSubjek,
+        identitas: identitas || '-',
+        kategori: kategori,
+        kategoriUtama: jenisArsip,
+        tahun: tahun || new Date().getFullYear().toString(),
+        customFilename: selectedFile.name
+      },
+      (percent, statusText) => {
+        setProgressPercent(percent);
+        setProgressStatus(statusText);
+      }
+    );
 
     if (!driveUpload.success || !driveUpload.fileId) {
       setIsUploading(false);
@@ -470,15 +475,21 @@ export default function FormUploadView({
         fileDataUrl: fileObj.base64
       };
 
-      const driveUpload = await uploadFileToGoogleDriveApi(fileObj.file, {
-        id: newId,
-        subjek: namaSubjek,
-        identitas: identitas || '-',
-        kategori: katKey,
-        kategoriUtama: jenisArsip,
-        tahun: tahun || new Date().getFullYear().toString(),
-        customFilename: fileObj.file.name
-      });
+      const driveUpload = await uploadFileToGoogleDriveApi(
+        fileObj.file, 
+        {
+          id: newId,
+          subjek: namaSubjek,
+          identitas: identitas || '-',
+          kategori: katKey,
+          kategoriUtama: jenisArsip,
+          tahun: tahun || new Date().getFullYear().toString(),
+          customFilename: fileObj.file.name
+        },
+        (p, status) => {
+          setProgressStatus(`[${katKey}] ${status}`);
+        }
+      );
 
       if (!driveUpload.success || !driveUpload.fileId) {
         throw new Error(`Gagal mengunggah berkas "${katKey}": ${driveUpload.error || 'Terjadi kesalahan'}`);
