@@ -137,7 +137,18 @@ export default async function handler(req: any, res: any) {
       }));
     }
 
-    if (!result || !result.success || !result.fileId) {
+    const createdFileId = result?.fileId || result?.id || 
+      (result?.driveUrl ? result.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] || result.driveUrl.match(/id=([a-zA-Z0-9_-]+)/)?.[1] : null);
+
+    const isSuccess = Boolean(
+      result && (
+        result.success === true || 
+        result.status === 'success' || 
+        Boolean(createdFileId)
+      )
+    );
+
+    if (!isSuccess || !createdFileId) {
       res.statusCode = 400;
       return res.end(JSON.stringify({
         success: false,
@@ -146,10 +157,13 @@ export default async function handler(req: any, res: any) {
       }));
     }
 
+    const createdDriveUrl = result.driveUrl || `https://drive.google.com/file/d/${createdFileId}/view?usp=drivesdk`;
+
     res.statusCode = 200;
     return res.end(JSON.stringify({
       success: true,
-      fileId: result.fileId,
+      fileId: createdFileId,
+      driveUrl: createdDriveUrl,
       fileName: result.fileName || desiredFilename,
       mimeType: result.mimeType || file.mimeType,
       size: result.size || file.buffer.length,

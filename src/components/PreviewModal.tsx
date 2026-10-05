@@ -27,15 +27,24 @@ interface PreviewModalProps {
 export function extractGoogleDriveId(link?: string): string | null {
   if (!link) return null;
   const clean = link.trim();
+  
+  // Folders are not previewable files in /file/d/ iframe
+  if (clean.includes('/folders/')) return null;
+
   if (clean.startsWith('gdrive://')) {
     const idPart = clean.replace('gdrive://', '').trim();
     if (idPart && !idPart.startsWith('gdrive_') && idPart.length > 10) return idPart;
+    return null;
   }
-  const dMatch = clean.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
+  const dMatch = clean.match(/\/file\/d\/([a-zA-Z0-9_-]{15,})/);
   if (dMatch) return dMatch[1];
+  const genericDMatch = clean.match(/\/d\/([a-zA-Z0-9_-]{15,})/);
+  if (genericDMatch) return genericDMatch[1];
   const idMatch = clean.match(/id=([a-zA-Z0-9_-]{15,})/);
   if (idMatch) return idMatch[1];
-  if (/^[a-zA-Z0-9_-]{20,}$/.test(clean)) return clean;
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(clean) && !clean.startsWith('gdrive_') && clean !== '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9') {
+    return clean;
+  }
   return null;
 }
 
@@ -74,13 +83,14 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
   const folderId = syncConfig.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9';
 
   const driveFileId = item ? extractGoogleDriveId(item.linkDrive) : null;
+  const isFolderUrl = Boolean(item?.linkDrive && item.linkDrive.includes('/folders/'));
   const drivePreviewUrl = driveFileId 
     ? `https://drive.google.com/file/d/${driveFileId}/preview` 
-    : (item?.linkDrive && item.linkDrive.startsWith('http') && item.linkDrive.includes('drive.google.com') ? item.linkDrive : null);
+    : null;
 
   const driveDirectDownloadUrl = driveFileId 
     ? `https://drive.google.com/uc?export=download&id=${driveFileId}` 
-    : (item?.linkDrive && item.linkDrive.startsWith('http') ? item.linkDrive : null);
+    : (item?.linkDrive && item.linkDrive.startsWith('http') && !isFolderUrl ? item.linkDrive : null);
 
   useEffect(() => {
     if (!item) return;
@@ -250,9 +260,9 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
           </div>
 
           <div className="flex items-center gap-2">
-            {drivePreviewUrl && (
+            {(drivePreviewUrl || isFolderUrl) && (
               <button
-                onClick={() => window.open(item.linkDrive?.startsWith('http') ? item.linkDrive : drivePreviewUrl, '_blank')}
+                onClick={() => window.open(item.linkDrive?.startsWith('http') ? item.linkDrive : (drivePreviewUrl || `https://drive.google.com/drive/folders/${folderId}`), '_blank')}
                 className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 text-xs font-medium rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                 title="Buka Dokumen Asli di Google Drive"
               >
@@ -367,6 +377,26 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
                 </object>
               </div>
             )
+          ) : isFolderUrl ? (
+            /* Folder link fallback */
+            <div className="text-center p-8 max-w-md bg-slate-900 border border-slate-800 rounded-3xl text-slate-300 space-y-4 shadow-xl">
+              <div className="w-14 h-14 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto">
+                <HardDrive className="w-7 h-7" />
+              </div>
+              <h4 className="text-base font-bold text-white">Folder Google Drive</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Berkas untuk arsip <strong>{item.subjek}</strong> ({item.kategori}) tersimpan di folder Google Drive sekolah.
+              </p>
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  onClick={() => window.open(item.linkDrive, '_blank')}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Buka di Google Drive</span>
+                </button>
+              </div>
+            </div>
           ) : (
             /* Fallback if no physical file in cache and no drive link */
             <div className="text-center p-8 max-w-md bg-slate-900 border border-slate-800 rounded-3xl text-slate-300 space-y-4 shadow-xl">

@@ -1071,12 +1071,29 @@ async function getDriveScriptConfig(): Promise<{ scriptUrl: string; scriptSecret
     return cachedDriveConfig;
   }
 
-  // Priority 1: Check localStorage sync config
+  // Priority 1: Fetch server environment config (/api/drive/config) configured on Vercel
+  try {
+    const res = await fetch('/api/drive/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.hasConfig && data.scriptUrl && data.scriptUrl.startsWith('http')) {
+        cachedDriveConfig = {
+          scriptUrl: data.scriptUrl.trim(),
+          scriptSecret: data.scriptSecret || 'eArsipSecretAlHikam2026_SecureKey'
+        };
+        return cachedDriveConfig;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch drive config from server:', err);
+  }
+
+  // Priority 2: Check localStorage sync config from Settings
   try {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('EARSIP_GOOGLE_CONFIG') : null;
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.webhookUrl && parsed.webhookUrl.startsWith('http')) {
+      if (parsed.webhookUrl && parsed.webhookUrl.startsWith('http') && !parsed.webhookUrl.includes('AKfycbqyQCp')) {
         cachedDriveConfig = {
           scriptUrl: parsed.webhookUrl.trim(),
           scriptSecret: 'eArsipSecretAlHikam2026_SecureKey'
@@ -1086,32 +1103,6 @@ async function getDriveScriptConfig(): Promise<{ scriptUrl: string; scriptSecret
     }
   } catch {}
 
-  // Priority 2: Standard deployed Google Apps Script URL for SMP Al-Hikam
-  const defaultGas = 'https://script.google.com/macros/s/AKfycbqyQCpSe1n4Z9h8dmSYD65g5YfwD-x5k314VEC_2Ia_CxOVoobk851R0WGxMUd-ATcL/exec';
-  if (defaultGas) {
-    cachedDriveConfig = {
-      scriptUrl: defaultGas,
-      scriptSecret: 'eArsipSecretAlHikam2026_SecureKey'
-    };
-    return cachedDriveConfig;
-  }
-
-  // Priority 3: Fetch server environment config
-  try {
-    const res = await fetch('/api/drive/config');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.hasConfig && data.scriptUrl) {
-        cachedDriveConfig = {
-          scriptUrl: data.scriptUrl,
-          scriptSecret: data.scriptSecret || 'eArsipSecretAlHikam2026_SecureKey'
-        };
-        return cachedDriveConfig;
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to fetch drive config:', err);
-  }
   return null;
 }
 
@@ -1130,8 +1121,7 @@ function fileToBase64Raw(file: File): Promise<string> {
 }
 
 /**
- * Upload original file directly to Google Drive Private Storage (supports up to 50MB raw original size)
- * with live real-time progress callback
+ * Upload original file directly to Google Drive Private Storage with live real-time progress callback
  */
 export async function uploadFileToGoogleDriveApi(
   file: File,
@@ -1145,169 +1135,167 @@ export async function uploadFileToGoogleDriveApi(
     customFilename?: string;
   },
   onProgress?: (percent: number, statusText: string) => void
-): Promise<{ success: boolean; fileId?: string; fileName?: string; error?: string; message?: string }> {
+): Promise<{ success: boolean; fileId?: string; driveUrl?: string; fileName?: string; error?: string; message?: string }> {
   try {
     const desiredFilename = metadata.customFilename || file.name || `arsip_${Date.now()}`;
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
     
     if (onProgress) {
-      onProgress(15, `Membaca berkas asli (${sizeMb} MB)...`);
+      onProgress(15, `Menyiapkan berkas "${desiredFilename}" (${sizeMb} MB)...`);
     }
 
-    const cfg = await getDriveScriptConfig();
+    const syncCfg = getStoredSyncConfig();
+    const targetFolderId = syncCfg.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9';
+    const targetSheetId = syncCfg.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI';
 
-    // 1. Direct High-Speed Upload directly from Browser to Google Drive (Bypasses Vercel 4.5MB limit - 100% original quality up to 50MB)
-    if (cfg && cfg.scriptUrl) {
+    // 1. PRIMARY ENGINE: Upload via Serverless Proxy (/api/drive/upload) for reliable server-to-server transfer (No CORS issues)
+    const canUseServerProxy = file.size < 4.2 * 1024 * 1024; // Vercel 4.5MB limit safe threshold
+    
+    if (canUseServerProxy) {
       try {
         if (onProgress) {
-          onProgress(30, `Menyiapkan payload biner (${sizeMb} MB)...`);
+          onProgress(35, `Mengirim berkas ke Google Drive (${sizeMb} MB)...`);
         }
 
-        const rawBase64 = await fileToBase64Raw(file);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('customFilename', desiredFilename);
+        formData.append('folderId', targetFolderId);
+        formData.append('spreadsheetId', targetSheetId);
+        formData.append('subjek', metadata.subjek || '');
+        formData.append('identitas', metadata.identitas || '');
+        formData.append('kategori', metadata.kategori || '');
+        formData.append('kategoriUtama', metadata.kategoriUtama || '');
+        formData.append('tahun', metadata.tahun || '');
+        formData.append('id', metadata.id || '');
 
-        if (onProgress) {
-          onProgress(45, `Mengirim berkas asli (${sizeMb} MB) ke Google Drive...`);
-        }
-
-        // Realistic smooth progress simulation while sending large file over network
-        let currentProgress = 45;
+        let currentProgress = 35;
         const progressTimer = setInterval(() => {
-          if (currentProgress < 92) {
-            currentProgress += 3;
+          if (currentProgress < 90) {
+            currentProgress += 5;
             if (onProgress) {
-              const uploadedMb = ((file.size * (currentProgress / 100)) / (1024 * 1024)).toFixed(1);
-              onProgress(
-                currentProgress, 
-                currentProgress < 85 
-                  ? `Mengirim ke Google Drive (${currentProgress}%) - ${uploadedMb} / ${sizeMb} MB...`
-                  : `Menyimpan di folder kearsipan Google Drive (${currentProgress}%)...`
-              );
+              onProgress(currentProgress, `Menyimpan di Google Drive (${currentProgress}%)...`);
             }
           }
-        }, 220);
+        }, 200);
 
-        const syncCfg = getStoredSyncConfig();
-        const targetFolderId = syncCfg.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9';
-        const targetSheetId = syncCfg.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI';
-        const targetSecret = cfg.scriptSecret || 'eArsipSecretAlHikam2026_SecureKey';
-
-        const payload = {
-          secret: targetSecret,
-          apiKey: targetSecret,
-          action: 'upload',
-          actionType: 'upload',
-          folderId: targetFolderId,
-          spreadsheetId: targetSheetId,
-          fileName: desiredFilename,
-          namaFileAsli: desiredFilename,
-          namaFile: desiredFilename,
-          mimeType: file.type || 'application/octet-stream',
-          fileBase64: rawBase64,
-          fileData: rawBase64,
-          kategori: metadata.kategori || '',
-          kategoriUtama: metadata.kategoriUtama || '',
-          tahun: metadata.tahun || '',
-          subjek: metadata.subjek || '',
-          identitas: metadata.identitas || '',
-          id: metadata.id || '',
-          ukuran: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-        };
-
-        let directResult: any = null;
-
-        try {
-          const directRes = await fetch(cfg.scriptUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'text/plain;charset=utf-8'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const directText = await directRes.text();
-          try {
-            directResult = JSON.parse(directText);
-          } catch {
-            if (directText.includes('drive.google.com') || directText.includes('success')) {
-              directResult = { status: 'success', driveUrl: directText };
-            }
-          }
-        } catch (fetchErr) {
-          // If standard CORS fetch failed on browser redirect, send via no-cors stream so Google Apps Script executes and creates the file in Google Drive!
-          try {
-            await fetch(cfg.scriptUrl, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: {
-                'Content-Type': 'text/plain;charset=utf-8'
-              },
-              body: JSON.stringify(payload)
-            });
-            directResult = { status: 'success', driveUrl: `https://drive.google.com/drive/folders/${targetFolderId}` };
-          } catch (noCorsErr) {
-            console.warn('no-cors fallback error:', noCorsErr);
-          }
-        }
+        const proxyRes = await fetch('/api/drive/upload', {
+          method: 'POST',
+          body: formData
+        });
 
         clearInterval(progressTimer);
 
-        const isSuccess = directResult && (
-          directResult.success === true ||
-          directResult.status === 'success' ||
-          Boolean(directResult.fileId) ||
-          Boolean(directResult.driveUrl)
-        );
-
-        if (isSuccess) {
-          const extractedId = directResult.fileId || 
-            (directResult.driveUrl 
-              ? (directResult.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] || directResult.driveUrl.match(/id=([a-zA-Z0-9_-]+)/)?.[1] || directResult.driveUrl)
-              : `gdrive_${Date.now()}`);
-
-          if (onProgress) {
-            onProgress(100, '✓ Berkas berhasil tersimpan di Google Drive Private Storage!');
+        if (proxyRes.ok) {
+          const proxyResult = await proxyRes.json();
+          const validId = proxyResult.fileId || (proxyResult.driveUrl ? proxyResult.driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)?.[1] : null);
+          if (proxyResult.success && validId) {
+            if (onProgress) {
+              onProgress(100, '✓ Berkas berhasil tersimpan di Google Drive!');
+            }
+            return {
+              success: true,
+              fileId: validId,
+              driveUrl: proxyResult.driveUrl || `https://drive.google.com/file/d/${validId}/view?usp=drivesdk`,
+              fileName: desiredFilename,
+              message: '✓ Berkas berhasil tersimpan di Google Drive!'
+            };
           }
-          return {
-            success: true,
-            fileId: extractedId,
-            fileName: desiredFilename,
-            message: '✓ Berkas ukuran asli berhasil tersimpan di Google Drive Private Storage!'
-          };
         }
-
-        if (directResult && directResult.message && directResult.message.includes('API Secret tidak valid')) {
-          return {
-            success: false,
-            error: 'Akses ditolak: API Secret tidak valid pada Google Apps Script.'
-          };
-        }
-
-        if (directResult && directResult.message) {
-          return {
-            success: false,
-            error: `Google Apps Script: ${directResult.message}`
-          };
-        }
-      } catch (directErr: any) {
-        console.warn('Direct Google Drive upload exception:', directErr);
+      } catch (proxyErr) {
+        console.warn('Proxy upload attempted, falling back to direct upload:', proxyErr);
       }
     }
 
-    // Direct Google Drive success confirmation
-    if (onProgress) {
-      onProgress(100, '✓ Berkas berhasil tersimpan di Google Drive!');
+    // 2. SECONDARY ENGINE: Direct Browser Upload (For large files > 4MB or when proxy needs fallback)
+    const cfg = await getDriveScriptConfig();
+    const effectiveScriptUrl = cfg?.scriptUrl || syncCfg.webhookUrl;
+
+    if (effectiveScriptUrl && effectiveScriptUrl.startsWith('http')) {
+      if (onProgress) {
+        onProgress(50, `Mengirim berkas (${sizeMb} MB) langsung ke Google Apps Script...`);
+      }
+
+      const rawBase64 = await fileToBase64Raw(file);
+      const targetSecret = cfg?.scriptSecret || 'eArsipSecretAlHikam2026_SecureKey';
+
+      const payload = {
+        secret: targetSecret,
+        apiKey: targetSecret,
+        action: 'upload',
+        actionType: 'upload',
+        folderId: targetFolderId,
+        spreadsheetId: targetSheetId,
+        fileName: desiredFilename,
+        namaFileAsli: desiredFilename,
+        namaFile: desiredFilename,
+        mimeType: file.type || 'application/octet-stream',
+        fileBase64: rawBase64,
+        fileData: rawBase64,
+        kategori: metadata.kategori || '',
+        kategoriUtama: metadata.kategoriUtama || '',
+        tahun: metadata.tahun || '',
+        subjek: metadata.subjek || '',
+        identitas: metadata.identitas || '',
+        id: metadata.id || '',
+        ukuran: `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+      };
+
+      let directResult: any = null;
+
+      try {
+        const directRes = await fetch(effectiveScriptUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const directText = await directRes.text();
+        try {
+          directResult = JSON.parse(directText);
+        } catch {
+          if (directText.includes('drive.google.com/file/d/')) {
+            directResult = { status: 'success', driveUrl: directText };
+          }
+        }
+      } catch (directErr) {
+        console.warn('Direct upload error:', directErr);
+      }
+
+      const createdFileId = directResult?.fileId || directResult?.id || 
+        (directResult?.driveUrl ? directResult.driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)?.[1] : null);
+
+      if (createdFileId) {
+        if (onProgress) {
+          onProgress(100, '✓ Berkas berhasil tersimpan di Google Drive!');
+        }
+        return {
+          success: true,
+          fileId: createdFileId,
+          driveUrl: directResult?.driveUrl || `https://drive.google.com/file/d/${createdFileId}/view?usp=drivesdk`,
+          fileName: desiredFilename,
+          message: '✓ Berkas berhasil tersimpan di Google Drive!'
+        };
+      }
+
+      if (directResult && directResult.message) {
+        return {
+          success: false,
+          error: `Google Apps Script: ${directResult.message}`
+        };
+      }
     }
-    return {
-      success: true,
-      fileId: `gdrive_${metadata.id}`,
-      fileName: desiredFilename,
-      message: '✓ Berkas berhasil dikirim ke Google Drive Private Storage!'
-    };
-  } catch (err: any) {
-    console.error('uploadFileToGoogleDriveApi Error:', err);
+
     return {
       success: false,
-      error: err.message || 'Koneksi ke server upload Google Drive terputus.'
+      error: 'Gagal mengunggah berkas ke Google Drive. Pastikan URL Google Apps Script pada Vercel atau menu Setting sudah aktif dan benar.'
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || 'Terjadi kesalahan sistem saat mengunggah berkas.'
     };
   }
 }
