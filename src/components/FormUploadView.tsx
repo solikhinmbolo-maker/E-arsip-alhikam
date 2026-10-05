@@ -220,14 +220,75 @@ export default function FormUploadView({
     }
   }, [jenisArsip]);
 
+  // Helper to optimize large image files before upload
+  const optimizeUploadFile = async (file: File): Promise<File> => {
+    if (file.type.startsWith('image/') && file.size > 1.5 * 1024 * 1024) {
+      try {
+        return await new Promise<File>((resolve) => {
+          const img = new Image();
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              const maxDim = 2200;
+              if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                  height = Math.round((height * maxDim) / width);
+                  width = maxDim;
+                } else {
+                  width = Math.round((width * maxDim) / height);
+                  height = maxDim;
+                }
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return resolve(file);
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, width, height);
+              ctx.drawImage(img, 0, 0, width, height);
+              canvas.toBlob((blob) => {
+                if (blob && blob.size < file.size) {
+                  const optimizedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                  });
+                  resolve(optimizedFile);
+                } else {
+                  resolve(file);
+                }
+              }, 'image/jpeg', 0.88);
+            };
+            img.onerror = () => resolve(file);
+            img.src = e.target?.result as string;
+          };
+          reader.onerror = () => resolve(file);
+          reader.readAsDataURL(file);
+        });
+      } catch {
+        return file;
+      }
+    }
+    return file;
+  };
+
   // File dropzone handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 10 * 1024 * 1024) {
-        setErrorMessage('Ukuran file melebihi 10MB! Mohon kompres terlebih dahulu.');
+      let file = e.target.files[0];
+      
+      // Auto-compress large image files
+      if (file.type.startsWith('image/') && file.size > 1.5 * 1024 * 1024) {
+        file = await optimizeUploadFile(file);
+      }
+
+      if (file.size > 4.2 * 1024 * 1024) {
+        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas 4.2 MB. Mohon kompres berkas (misal: ilovepdf.com untuk PDF) sebelum diunggah.`);
         return;
       }
+      
       setSelectedFile(file);
       setErrorMessage('');
 
@@ -245,9 +306,14 @@ export default function FormUploadView({
   };
 
   // Kolektif file picker
-  const handleKolektifFile = (kat: string, file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMessage(`Ukuran berkas ${kat} melebihi batas 10MB.`);
+  const handleKolektifFile = async (kat: string, rawFile: File) => {
+    let file = rawFile;
+    if (file.type.startsWith('image/') && file.size > 1.5 * 1024 * 1024) {
+      file = await optimizeUploadFile(file);
+    }
+
+    if (file.size > 4.2 * 1024 * 1024) {
+      setErrorMessage(`Ukuran berkas "${kat}" (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas 4.2 MB. Mohon kompres terlebih dahulu.`);
       return;
     }
     const reader = new FileReader();

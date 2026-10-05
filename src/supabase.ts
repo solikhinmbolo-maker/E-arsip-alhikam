@@ -1093,7 +1093,23 @@ export async function uploadFileToGoogleDriveApi(
       body: formData
     });
 
-    const result = await response.json();
+    const responseText = await response.text();
+    let result: any = null;
+
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      if (response.status === 413 || responseText.includes('Request Entity') || responseText.includes('Too Large')) {
+        return {
+          success: false,
+          error: `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas transfer server Vercel (Maks 4.2 MB). Mohon kompres berkas (PDF/Gambar) sebelum diunggah.`
+        };
+      }
+      return {
+        success: false,
+        error: `Respon server tidak valid (${response.status}): ${responseText.slice(0, 120)}`
+      };
+    }
 
     if (!response.ok || !result.success || !result.fileId) {
       return {
