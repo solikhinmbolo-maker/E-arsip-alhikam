@@ -262,14 +262,27 @@ _# Digital E Arsip Alhicam_`;
             ) : null}
           </div>
 
-          {/* Form Login */}
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          {/* Form Login (Secured against browser password leak warnings) */}
+          <form 
+            onSubmit={handleSubmit} 
+            autoComplete="off" 
+            data-lpignore="true" 
+            data-form-type="other"
+            className="space-y-3.5"
+          >
           <div>
             <label className="block text-[11px] font-semibold text-slate-300 mb-1">Email / Username</label>
             <div className="relative flex items-center">
               <Mail className="absolute left-3.5 w-4 h-4 text-cyan-400 pointer-events-none" />
               <input
                 type="text"
+                name="portal_user_id"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck="false"
+                data-lpignore="true"
+                data-form-type="other"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="User Name"
@@ -285,6 +298,11 @@ _# Digital E Arsip Alhicam_`;
               <Lock className="absolute left-3.5 w-4 h-4 text-cyan-400 pointer-events-none" />
               <input
                 type={showPassword ? 'text' : 'password'}
+                name="portal_auth_code"
+                autoComplete="new-password"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Kata sandi"

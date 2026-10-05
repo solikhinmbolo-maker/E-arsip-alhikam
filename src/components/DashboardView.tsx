@@ -177,18 +177,14 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
   // Donut chart colors
   const donutColors = ['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#64748B'];
 
-  // Helper function to build Donut Chart
+  // Helper function to build Donut Chart with Super Slow-Motion & Smooth Easing
   const buildDonutChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
     const labels = sortedCategories.slice(0, 6).map(e => e[0]);
     const data = sortedCategories.slice(0, 6).map(e => e[1]);
 
-    // If chart already exists, update data silently without re-running animations
     if (instanceRef.current) {
-      instanceRef.current.data.labels = labels.length > 0 ? labels : ['Belum Ada'];
-      instanceRef.current.data.datasets[0].data = data.length > 0 ? data : [1];
-      instanceRef.current.data.datasets[0].backgroundColor = donutColors.slice(0, labels.length || 1);
-      instanceRef.current.update('none');
-      return;
+      instanceRef.current.destroy();
+      instanceRef.current = null;
     }
 
     instanceRef.current = new Chart(canvas, {
@@ -198,40 +194,50 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
         datasets: [{
           data: data.length > 0 ? data : [1],
           backgroundColor: donutColors.slice(0, labels.length || 1),
-          borderWidth: 2,
+          borderWidth: 3,
           borderColor: '#ffffff',
-          hoverOffset: 6
+          hoverOffset: 10,
+          borderRadius: 4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 350 },
-        cutout: '70%',
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 2500, // Cinematic 2.5s slow-motion rotation & scale-in
+          easing: 'easeOutQuart'
+        },
+        cutout: '72%',
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0F172A',
+            titleFont: { size: 12, weight: 'bold' },
+            bodyFont: { size: 11 },
+            padding: 10,
+            cornerRadius: 10
+          }
         }
       }
     });
   };
 
-  // Helper function to build Bar Chart
+  // Helper function to build Bar Chart with Staggered Cascading Slow-Motion
   const buildBarChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
     const ctx = canvas.getContext('2d');
     let gradient: any = '#2563EB';
     if (ctx) {
       gradient = ctx.createLinearGradient(0, 0, 0, 220);
-      gradient.addColorStop(0, 'rgba(37, 99, 235, 0.95)');
-      gradient.addColorStop(1, 'rgba(37, 99, 235, 0.15)');
+      gradient.addColorStop(0, 'rgba(37, 99, 235, 1)'); // Deep Blue
+      gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.85)'); // Vibrant Blue
+      gradient.addColorStop(1, 'rgba(147, 197, 253, 0.25)'); // Soft Light Blue
     }
 
-    // If chart already exists, update data silently without re-running animations
     if (instanceRef.current) {
-      instanceRef.current.data.labels = angkatanLabels.map(th => `Th ${th}`);
-      instanceRef.current.data.datasets[0].data = angkatanData;
-      instanceRef.current.data.datasets[0].backgroundColor = gradient;
-      instanceRef.current.update('none');
-      return;
+      instanceRef.current.destroy();
+      instanceRef.current = null;
     }
 
     instanceRef.current = new Chart(canvas, {
@@ -242,25 +248,40 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
           label: 'Jumlah Siswa',
           data: angkatanData,
           backgroundColor: gradient,
-          borderRadius: 8,
-          maxBarThickness: 50
+          borderRadius: 12,
+          maxBarThickness: 52
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 350 },
+        animation: {
+          duration: 2600, // Cinematic 2.6s slow-motion rise
+          easing: 'easeOutExpo',
+          delay: (ctx: any) => {
+            if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+            return ctx.dataIndex * 380; // Cascading delay: each bar rises one by one!
+          }
+        },
         plugins: {
-          legend: { display: false }
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0F172A',
+            titleFont: { size: 12, weight: 'bold' },
+            bodyFont: { size: 11 },
+            padding: 10,
+            cornerRadius: 10
+          }
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { font: { size: 11 } }
+            ticks: { font: { size: 11, weight: 'bold' }, color: '#64748B' }
           },
           y: {
             beginAtZero: true,
-            ticks: { precision: 0, font: { size: 11 } }
+            grid: { color: 'rgba(226, 232, 240, 0.6)' },
+            ticks: { precision: 0, font: { size: 11 }, color: '#94A3B8' }
           }
         }
       }
@@ -268,23 +289,27 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
   };
 
   useEffect(() => {
-    // 1. Mobile Charts initialization
-    if (mobileDonutRef.current) {
-      buildDonutChart(mobileDonutRef.current, mobileDonutChart);
-    }
-    if (mobileBarRef.current) {
-      buildBarChart(mobileBarRef.current, mobileBarChart);
-    }
+    // Re-render both charts with the cinematic slowmo animation on every refresh / auto-detect
+    const timer = setTimeout(() => {
+      // 1. Mobile Charts initialization
+      if (mobileDonutRef.current) {
+        buildDonutChart(mobileDonutRef.current, mobileDonutChart);
+      }
+      if (mobileBarRef.current) {
+        buildBarChart(mobileBarRef.current, mobileBarChart);
+      }
 
-    // 2. Desktop Charts initialization
-    if (desktopDonutRef.current) {
-      buildDonutChart(desktopDonutRef.current, desktopDonutChart);
-    }
-    if (desktopBarRef.current) {
-      buildBarChart(desktopBarRef.current, desktopBarChart);
-    }
+      // 2. Desktop Charts initialization
+      if (desktopDonutRef.current) {
+        buildDonutChart(desktopDonutRef.current, desktopDonutChart);
+      }
+      if (desktopBarRef.current) {
+        buildBarChart(desktopBarRef.current, desktopBarChart);
+      }
+    }, 50);
 
     return () => {
+      clearTimeout(timer);
       if (mobileDonutChart.current) {
         mobileDonutChart.current.destroy();
         mobileDonutChart.current = null;
@@ -302,36 +327,7 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
         desktopBarChart.current = null;
       }
     };
-  }, [mobileChartTab]);
-
-  // Silky-Smooth Chart Reactive Live Update (Zero Canvas Destruction)
-  useEffect(() => {
-    const labels = sortedCategories.slice(0, 6).map(e => e[0]);
-    const data = sortedCategories.slice(0, 6).map(e => e[1]);
-    const activeLabels = labels.length > 0 ? labels : ['Belum Ada'];
-    const activeData = data.length > 0 ? data : [1];
-    const activeColors = donutColors.slice(0, labels.length || 1);
-
-    [desktopDonutChart.current, mobileDonutChart.current].forEach(chart => {
-      if (chart) {
-        chart.data.labels = activeLabels;
-        chart.data.datasets[0].data = activeData;
-        chart.data.datasets[0].backgroundColor = activeColors;
-        chart.update();
-      }
-    });
-
-    const bLabels = angkatanLabels.map(th => `Th ${th}`);
-    const bData = angkatanData;
-
-    [desktopBarChart.current, mobileBarChart.current].forEach(chart => {
-      if (chart) {
-        chart.data.labels = bLabels;
-        chart.data.datasets[0].data = bData;
-        chart.update();
-      }
-    });
-  }, [allArsip, allSiswa, effectiveVersion]);
+  }, [mobileChartTab, effectiveVersion]);
 
   return (
     <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full overflow-x-hidden">
