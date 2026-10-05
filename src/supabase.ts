@@ -7,7 +7,8 @@ import {
   saveAvatarForUser, 
   sanitizeUserStorageKey, 
   getPublicStorageAvatarUrl,
-  sanitizeAndReconcileMasterData
+  sanitizeAndReconcileMasterData,
+  getStoredSyncConfig
 } from './data/mockDatabase';
 
 export interface SupabaseConfig {
@@ -1185,11 +1186,15 @@ export async function uploadFileToGoogleDriveApi(
           }
         }, 220);
 
+        const syncCfg = getStoredSyncConfig();
+        const targetFolderId = syncCfg.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9';
+        const targetSheetId = syncCfg.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI';
+
         const payload = {
           secret: cfg.scriptSecret,
           action: 'UPLOAD_ARSIP',
-          folderId: '1hHk3xY4cwzncVWTyalyC7d9v7WvxdniQ',
-          spreadsheetId: '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI',
+          folderId: targetFolderId,
+          spreadsheetId: targetSheetId,
           fileName: desiredFilename,
           namaFileAsli: desiredFilename,
           namaFile: desiredFilename,
@@ -1235,7 +1240,7 @@ export async function uploadFileToGoogleDriveApi(
               },
               body: JSON.stringify(payload)
             });
-            directResult = { status: 'success', driveUrl: `https://drive.google.com/drive/folders/1hHk3xY4cwzncVWTyalyC7d9v7WvxdniQ` };
+            directResult = { status: 'success', driveUrl: `https://drive.google.com/drive/folders/${targetFolderId}` };
           } catch (noCorsErr) {
             console.warn('no-cors fallback error:', noCorsErr);
           }

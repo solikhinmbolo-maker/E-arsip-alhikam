@@ -93,10 +93,15 @@ export default async function handler(req: any, res: any) {
     // Payload for Google Apps Script Web App (executed server-to-server)
     const payload = {
       secret: scriptSecret,
-      action: 'upload',
+      action: 'UPLOAD_ARSIP',
+      folderId: fields.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9',
+      spreadsheetId: fields.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI',
       fileName: desiredFilename,
+      namaFileAsli: desiredFilename,
+      namaFile: desiredFilename,
       mimeType: file.mimeType,
       fileBase64: file.buffer.toString('base64'),
+      fileData: file.buffer.toString('base64'),
       kategori: fields.kategori || '',
       kategoriUtama: fields.kategoriUtama || '',
       tahun: fields.tahun || '',

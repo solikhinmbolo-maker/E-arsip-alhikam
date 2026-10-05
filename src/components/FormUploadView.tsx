@@ -49,7 +49,7 @@ import {
   compressImageDataUrl,
   compressDocumentHighQuality
 } from '../data/mockDatabase';
-import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi } from '../supabase';
+import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi, saveArsipToSupabase } from '../supabase';
 
 interface FormUploadViewProps {
   initialJenis?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -409,6 +409,13 @@ export default function FormUploadView({
       saveArsipItem(updatedArsip);
     }
 
+    // Explicitly sync record metadata to Supabase PostgreSQL database
+    try {
+      await saveArsipToSupabase(updatedArsip);
+    } catch (dbErr) {
+      console.warn('Supabase record sync warning:', dbErr);
+    }
+
     setProgressPercent(100);
     setProgressStatus('Selesai!');
 
@@ -506,6 +513,10 @@ export default function FormUploadView({
       } else {
         saveArsipItem(itemToSave);
       }
+
+      try {
+        await saveArsipToSupabase(itemToSave);
+      } catch {}
 
       completedCount++;
       setProgressPercent(Math.round((completedCount / count) * 90) + 10);

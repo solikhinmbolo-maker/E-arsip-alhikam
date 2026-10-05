@@ -996,8 +996,8 @@ export interface GoogleSyncConfig {
 }
 
 export const DEFAULT_SYNC_CONFIG: GoogleSyncConfig = {
-  webhookUrl: 'https://script.google.com/macros/s/AKfycbyqQcpSe1n4Z9h8dmSYD65g5YfwD-x5k314VEC_2Ia_Cx0VOobk851R0WGxMUd-ATcL/exec',
-  folderId: '1hHk3xY4cwzncVWTyalyC7d9v7WvxdniQ',
+  webhookUrl: 'https://script.google.com/macros/s/AKfycbqyQCpSe1n4Z9h8dmSYD65g5YfwD-x5k314VEC_2Ia_CxOVoobk851R0WGxMUd-ATcL/exec',
+  folderId: '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9',
   spreadsheetId: '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI',
   autoSync: true
 };
@@ -1006,13 +1006,16 @@ export const DB_CONFIG_KEY = 'EARSIP_GOOGLE_CONFIG';
 
 export function getStoredSyncConfig(): GoogleSyncConfig {
   try {
-    const raw = localStorage.getItem(DB_CONFIG_KEY);
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(DB_CONFIG_KEY) : null;
     if (raw) {
       const parsed = JSON.parse(raw);
-      parsed.webhookUrl = 'https://script.google.com/macros/s/AKfycbyqQcpSe1n4Z9h8dmSYD65g5YfwD-x5k314VEC_2Ia_Cx0VOobk851R0WGxMUd-ATcL/exec';
-      parsed.folderId = DEFAULT_SYNC_CONFIG.folderId;
-      parsed.spreadsheetId = DEFAULT_SYNC_CONFIG.spreadsheetId;
-      return parsed;
+      return {
+        webhookUrl: (parsed.webhookUrl && parsed.webhookUrl.startsWith('http')) ? parsed.webhookUrl.trim() : DEFAULT_SYNC_CONFIG.webhookUrl,
+        folderId: (parsed.folderId && parsed.folderId.length > 5) ? parsed.folderId.trim() : DEFAULT_SYNC_CONFIG.folderId,
+        spreadsheetId: (parsed.spreadsheetId && parsed.spreadsheetId.length > 5) ? parsed.spreadsheetId.trim() : DEFAULT_SYNC_CONFIG.spreadsheetId,
+        autoSync: parsed.autoSync !== undefined ? Boolean(parsed.autoSync) : true,
+        lastSyncTime: parsed.lastSyncTime
+      };
     }
   } catch {}
   return DEFAULT_SYNC_CONFIG;
