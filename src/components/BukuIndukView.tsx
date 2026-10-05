@@ -21,14 +21,19 @@ import {
   ClipboardList,
   Save,
   Check,
-  RotateCcw
+  RotateCcw,
+  Eye,
+  FolderOpen,
+  CloudUpload
 } from 'lucide-react';
 import { 
   MasterSiswaItem, 
   MasterGuruItem, 
+  ArsipItem,
   getStoredMasterSiswa, 
   getStoredMasterGuru, 
   getStoredArsip,
+  getFileAttachment,
   getSanitizedMasterData,
   saveMasterSiswa, 
   deleteMasterSiswa, 
@@ -41,6 +46,8 @@ import { clearMasterSiswaInSupabase, clearMasterGuruInSupabase, fetchSanitizedMa
 
 interface BukuIndukViewProps {
   onNavigateToArsip: (sub: 'Arsip Siswa' | 'Arsip Guru', namaSubjek: string) => void;
+  onPreview?: (item: ArsipItem) => void;
+  onNavigateToUpload?: (sub: 'Arsip Siswa' | 'Arsip Guru', namaSubjek: string) => void;
 }
 
 interface BatchSiswaRow {
@@ -58,7 +65,16 @@ interface BatchGuruRow {
   jabatan: string;
 }
 
-export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps) {
+interface ViewingPerson {
+  id: string;
+  nama: string;
+  isSiswa: boolean;
+  nisnOrNuptk: string;
+  tahunOrJabatan: string;
+  jenisKelamin?: string;
+}
+
+export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigateToUpload }: BukuIndukViewProps) {
   const [activeTab, setActiveTab] = useState<'siswa' | 'guru'>('siswa');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTahun, setFilterTahun] = useState('SEMUA');
@@ -66,6 +82,9 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
   // Master Data State
   const [siswaList, setSiswaList] = useState<MasterSiswaItem[]>(() => getSanitizedMasterData().siswa);
   const [guruList, setGuruList] = useState<MasterGuruItem[]>(() => getSanitizedMasterData().guru);
+
+  // Individual Uploaded Files Modal State (Specific replacement for Rekap)
+  const [viewingPerson, setViewingPerson] = useState<ViewingPerson | null>(null);
 
   const reloadMasterData = async () => {
     const supaData = await fetchSanitizedMasterDataFromSupabase().catch(() => null);
@@ -258,6 +277,28 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
   };
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // Direct download file attachment helper
+  const handleDownloadFile = async (item: ArsipItem) => {
+    try {
+      let dataUrl = item.fileDataUrl;
+      if (!dataUrl) {
+        dataUrl = await getFileAttachment(item.id) || '';
+      }
+      if (!dataUrl) {
+        alert('Berkas sedang disinkronkan dari Cloud. Mohon coba sesaat lagi.');
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = item.namaFileAsli || `${item.kategori}_${item.subjek}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('Download error:', e);
+    }
+  };
 
   // Save All Batch Rows to LocalStorage & Supabase
   const handleSaveBatch = async (e: React.FormEvent) => {
@@ -566,15 +607,24 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => onNavigateToArsip('Arsip Siswa', siswa.nama)}
-                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                            title="Lihat Berkas Arsip"
+                            onClick={() => {
+                              setViewingPerson({
+                                id: siswa.id,
+                                nama: siswa.nama,
+                                isSiswa: true,
+                                nisnOrNuptk: siswa.nisn,
+                                tahunOrJabatan: `Angkatan ${siswa.tahun}`,
+                                jenisKelamin: siswa.jenisKelamin
+                              });
+                            }}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="Lihat Berkas Arsip Real"
                           >
                             <FileText className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleOpenAddModal(siswa)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
                             title="Edit Data"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -645,15 +695,23 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => onNavigateToArsip('Arsip Guru', guru.nama)}
-                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
-                            title="Lihat Berkas Guru"
+                            onClick={() => {
+                              setViewingPerson({
+                                id: guru.id,
+                                nama: guru.nama,
+                                isSiswa: false,
+                                nisnOrNuptk: guru.nuptk,
+                                tahunOrJabatan: guru.jabatan
+                              });
+                            }}
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                            title="Lihat Berkas Guru Real"
                           >
                             <FileText className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleOpenAddModal(guru)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
                             title="Edit Data"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -1026,6 +1084,189 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
                   )}
                 </button>
               </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL LIHAT BERKAS REAL INDIVIDUAL (PENGGANTI FITUR REKAP SPESIFIK)   */}
+      {/* ===================================================================== */}
+      {viewingPerson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl animate-scaleUp border border-slate-100 max-h-[92vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100 flex-shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold shadow-md ${
+                  viewingPerson.isSiswa 
+                    ? 'bg-blue-600 text-white shadow-blue-500/20' 
+                    : 'bg-emerald-600 text-white shadow-emerald-500/20'
+                }`}>
+                  {viewingPerson.nama.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+                      {viewingPerson.nama}
+                    </h3>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                      viewingPerson.isSiswa 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}>
+                      {viewingPerson.isSiswa ? 'Siswa' : 'Guru / Tendik'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {viewingPerson.isSiswa 
+                      ? `NISN: ${viewingPerson.nisnOrNuptk || '-'} • ${viewingPerson.tahunOrJabatan}` 
+                      : `NUPTK/NIP: ${viewingPerson.nisnOrNuptk || '-'} • ${viewingPerson.tahunOrJabatan}`}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setViewingPerson(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Progress & Stat Banner */}
+            {(() => {
+              const coverage = getArchiveCoverage(viewingPerson.nama, viewingPerson.isSiswa);
+              const targetKategori = viewingPerson.isSiswa ? KATEGORI_SISWA : KATEGORI_GURU;
+              const personArsip = arsipList.filter(a => 
+                a.kategoriUtama === (viewingPerson.isSiswa ? 'Arsip Siswa' : 'Arsip Guru') &&
+                a.subjek.trim().toLowerCase() === viewingPerson.nama.trim().toLowerCase()
+              );
+
+              return (
+                <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+                  
+                  {/* Status Banner */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200/80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold text-slate-700">Kelengkapan Berkas Digital</span>
+                      <span className="text-xs font-mono font-bold text-blue-700">
+                        {coverage.count} dari {coverage.total} Berkas ({coverage.pct}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          coverage.pct >= 80 ? 'bg-emerald-500' : coverage.pct >= 40 ? 'bg-blue-600' : 'bg-amber-500'
+                        }`}
+                        style={{ width: `${coverage.pct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Document Breakdown Cards Grid */}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+                      Daftar Dokumen Real ({targetKategori.length} Jenis Kategori)
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {targetKategori.map((cat, idx) => {
+                        const fileItem = personArsip.find(a => 
+                          a.kategori.trim().toLowerCase() === cat.trim().toLowerCase()
+                        );
+                        const isUploaded = !!fileItem;
+
+                        return (
+                          <div 
+                            key={idx}
+                            className={`p-3 rounded-2xl border transition-all flex flex-col justify-between ${
+                              isUploaded 
+                                ? 'bg-emerald-50/40 border-emerald-200/90 shadow-xs' 
+                                : 'bg-slate-50/60 border-slate-200/80 border-dashed'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-2 min-w-0">
+                                <div className={`p-1.5 rounded-lg flex-shrink-0 mt-0.5 ${
+                                  isUploaded ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200/70 text-slate-400'
+                                }`}>
+                                  <FileText className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-900 truncate leading-snug">
+                                    {cat}
+                                  </p>
+                                  {isUploaded ? (
+                                    <p className="text-[10px] text-slate-500 truncate mt-0.5 font-mono">
+                                      {fileItem.namaFileAsli || `${cat}.pdf`}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[10px] text-slate-400 mt-0.5">
+                                      Belum ada berkas terunggah
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                                isUploaded 
+                                  ? 'bg-emerald-100 text-emerald-800' 
+                                  : 'bg-slate-200 text-slate-600'
+                              }`}>
+                                {isUploaded ? '✓ Terupload' : 'Belum Ada'}
+                              </span>
+                            </div>
+
+                            {/* File Info & Action Buttons (Only for Uploaded Files) */}
+                            {isUploaded && (
+                              <div className="flex items-center justify-between pt-2 border-t border-emerald-100 mt-2.5">
+                                <span className="text-[10px] text-slate-400">
+                                  {fileItem.tanggal || 'Tersimpan'} {fileItem.ukuran ? `• ${fileItem.ukuran}` : ''}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {onPreview && (
+                                    <button
+                                      onClick={() => onPreview(fileItem)}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                                      title="Lihat Berkas"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Lihat</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleDownloadFile(fileItem)}
+                                    className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                                    title="Unduh Berkas"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
+              <span className="text-[11px] text-slate-400">
+                Total {viewingPerson.isSiswa ? 8 : 14} dokumen wajib kearsipan sekolah
+              </span>
+              <button
+                onClick={() => setViewingPerson(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
             </div>
 
           </div>

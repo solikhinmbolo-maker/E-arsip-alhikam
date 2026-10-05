@@ -24,17 +24,19 @@ interface FormUnduhViewProps {
   kategoriMenu?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
   onSelectKategoriMenu?: (kat: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya') => void;
   onPreview: (item: ArsipItem) => void;
+  initialSearch?: string;
 }
 
 export default function FormUnduhView({ 
   kategoriMenu = 'Arsip Siswa', 
   onSelectKategoriMenu,
-  onPreview 
+  onPreview,
+  initialSearch = ''
 }: FormUnduhViewProps) {
   const [activeKategori, setActiveKategori] = useState<'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya'>(kategoriMenu);
   const [filterTahun, setFilterTahun] = useState('SEMUA');
   const [filterJenis, setFilterJenis] = useState('SEMUA');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadingItemName, setDownloadingItemName] = useState('');
@@ -49,6 +51,12 @@ export default function FormUnduhView({
   useEffect(() => {
     setActiveKategori(kategoriMenu);
   }, [kategoriMenu]);
+
+  useEffect(() => {
+    if (initialSearch !== undefined) {
+      setSearchTerm(initialSearch);
+    }
+  }, [initialSearch]);
 
   const handleMoveToTrash = async (item: ArsipItem) => {
     if (isMovingToTrash) return;

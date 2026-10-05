@@ -285,6 +285,7 @@ export default function App() {
   // Navigation State
   const [activePage, setActivePage] = useState<ActivePage>('dashboard');
   const [activeSubKategori, setActiveSubKategori] = useState<SubKategori>('Arsip Siswa');
+  const [unduhInitialSearch, setUnduhInitialSearch] = useState('');
 
   // Accordion Menus in Sidebar
   const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
@@ -1700,6 +1701,7 @@ function doGet(e) {
           {activePage === 'unduh' && (
             <FormUnduhView
               kategoriMenu={activeSubKategori}
+              initialSearch={unduhInitialSearch}
               onPreview={(item) => setPreviewItem(item)}
             />
           )}
@@ -1708,6 +1710,12 @@ function doGet(e) {
             <BukuIndukView
               onNavigateToArsip={(sub, nama) => {
                 setActivePage('unduh');
+                setActiveSubKategori(sub);
+                setUnduhInitialSearch(nama || '');
+              }}
+              onPreview={(item) => setPreviewItem(item)}
+              onNavigateToUpload={(sub, nama) => {
+                setActivePage('upload');
                 setActiveSubKategori(sub);
               }}
             />
