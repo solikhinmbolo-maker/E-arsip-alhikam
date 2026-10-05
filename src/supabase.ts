@@ -1062,8 +1062,47 @@ export async function uploadFileToSupabaseStorage(
   }
 }
 
+// Cached config to avoid repeated network calls
+let cachedDriveConfig: { scriptUrl: string; scriptSecret: string } | null = null;
+
+async function getDriveScriptConfig(): Promise<{ scriptUrl: string; scriptSecret: string } | null> {
+  if (cachedDriveConfig && cachedDriveConfig.scriptUrl) {
+    return cachedDriveConfig;
+  }
+  try {
+    const res = await fetch('/api/drive/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.hasConfig && data.scriptUrl) {
+        cachedDriveConfig = {
+          scriptUrl: data.scriptUrl,
+          scriptSecret: data.scriptSecret || 'eArsipSecretAlHikam2026_SecureKey'
+        };
+        return cachedDriveConfig;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch drive config:', err);
+  }
+  return null;
+}
+
+// Convert File to Base64 in browser without losing quality
+function fileToBase64Raw(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 /**
- * Upload new file directly via FormData/binary to Google Drive Private Storage via Vercel Backend
+ * Upload original file directly to Google Drive Private Storage (supports up to 50MB raw original size)
  */
 export async function uploadFileToGoogleDriveApi(
   file: File,
@@ -1078,6 +1117,64 @@ export async function uploadFileToGoogleDriveApi(
   }
 ): Promise<{ success: boolean; fileId?: string; fileName?: string; error?: string; message?: string }> {
   try {
+    const desiredFilename = metadata.customFilename || file.name || `arsip_${Date.now()}`;
+    const cfg = await getDriveScriptConfig();
+
+    // 1. Direct High-Speed Upload directly from Browser to Google Drive (Bypasses Vercel 4.5MB limit - 100% original quality up to 50MB)
+    if (cfg && cfg.scriptUrl) {
+      try {
+        const rawBase64 = await fileToBase64Raw(file);
+        const payload = {
+          secret: cfg.scriptSecret,
+          action: 'upload',
+          fileName: desiredFilename,
+          mimeType: file.type || 'application/octet-stream',
+          fileBase64: rawBase64,
+          kategori: metadata.kategori || '',
+          kategoriUtama: metadata.kategoriUtama || '',
+          tahun: metadata.tahun || '',
+          subjek: metadata.subjek || '',
+          identitas: metadata.identitas || '',
+          id: metadata.id || ''
+        };
+
+        const directRes = await fetch(cfg.scriptUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const directText = await directRes.text();
+        let directResult: any = null;
+        try {
+          directResult = JSON.parse(directText);
+        } catch {
+          // Proceed to fallback if parse fails
+        }
+
+        if (directResult && directResult.success && directResult.fileId) {
+          return {
+            success: true,
+            fileId: directResult.fileId,
+            fileName: directResult.fileName || desiredFilename,
+            message: '✓ Berkas ukuran asli berhasil tersimpan di Google Drive Private Storage!'
+          };
+        }
+
+        if (directResult && directResult.message && directResult.message.includes('API Secret tidak valid')) {
+          return {
+            success: false,
+            error: 'Akses ditolak: API Secret tidak valid pada Google Apps Script.'
+          };
+        }
+      } catch (directErr) {
+        console.warn('Direct upload fallback:', directErr);
+      }
+    }
+
+    // 2. Fallback via Vercel Backend Proxy (/api/drive/upload)
     const formData = new FormData();
     formData.append('file', file, file.name);
 
@@ -1102,7 +1199,7 @@ export async function uploadFileToGoogleDriveApi(
       if (response.status === 413 || responseText.includes('Request Entity') || responseText.includes('Too Large')) {
         return {
           success: false,
-          error: `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas transfer server Vercel (Maks 4.2 MB). Mohon kompres berkas (PDF/Gambar) sebelum diunggah.`
+          error: `Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas transfer proxy Vercel. Silakan pastikan GOOGLE_APPS_SCRIPT_URL aktif untuk upload direct tanpa batas.`
         };
       }
       return {

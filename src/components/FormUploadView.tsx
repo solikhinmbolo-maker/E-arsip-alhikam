@@ -277,15 +277,10 @@ export default function FormUploadView({
   // File dropzone handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      let file = e.target.files[0];
+      const file = e.target.files[0];
       
-      // Auto-compress large image files
-      if (file.type.startsWith('image/') && file.size > 1.5 * 1024 * 1024) {
-        file = await optimizeUploadFile(file);
-      }
-
-      if (file.size > 4.2 * 1024 * 1024) {
-        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas 4.2 MB. Mohon kompres berkas (misal: ilovepdf.com untuk PDF) sebelum diunggah.`);
+      if (file.size > 50 * 1024 * 1024) {
+        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal 50 MB.`);
         return;
       }
       
@@ -306,14 +301,9 @@ export default function FormUploadView({
   };
 
   // Kolektif file picker
-  const handleKolektifFile = async (kat: string, rawFile: File) => {
-    let file = rawFile;
-    if (file.type.startsWith('image/') && file.size > 1.5 * 1024 * 1024) {
-      file = await optimizeUploadFile(file);
-    }
-
-    if (file.size > 4.2 * 1024 * 1024) {
-      setErrorMessage(`Ukuran berkas "${kat}" (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas 4.2 MB. Mohon kompres terlebih dahulu.`);
+  const handleKolektifFile = async (kat: string, file: File) => {
+    if (file.size > 50 * 1024 * 1024) {
+      setErrorMessage(`Ukuran berkas "${kat}" (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas 50 MB.`);
       return;
     }
     const reader = new FileReader();
