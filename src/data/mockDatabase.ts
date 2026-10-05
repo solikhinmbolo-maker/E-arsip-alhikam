@@ -87,6 +87,61 @@ export const KATEGORI_LAINNYA = [
   'Berkas Umum'
 ];
 
+export function getActiveKategoriSiswa(): string[] {
+  try {
+    const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_SISWA');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return KATEGORI_SISWA;
+}
+
+export function getActiveKategoriGuru(): string[] {
+  try {
+    const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_GURU');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return KATEGORI_GURU;
+}
+
+export function getActiveKategoriLainnya(): string[] {
+  try {
+    const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_LAINNYA');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return KATEGORI_LAINNYA;
+}
+
+export interface LegalisirConfig {
+  nomorFormat: string;
+  watermarkText: string;
+  masaBerlakuBulan: string;
+  pejabatPenandatangan: string;
+  nipPejabat: string;
+}
+
+export const DEFAULT_LEGALISIR_CONFIG: LegalisirConfig = {
+  nomorFormat: 'ALH/LEG/{YYYY}/{NO}',
+  watermarkText: 'E-ARSIP RESMI SMP AL-HIKAM - DOKUMEN TERVERIFIKASI SAH',
+  masaBerlakuBulan: '12',
+  pejabatPenandatangan: 'Ahmad Zaenuri, S.Pd., M.Pd. (Kepala Sekolah)',
+  nipPejabat: '19780512 200501 1 008'
+};
+
+export function getStoredLegalisirConfig(): LegalisirConfig {
+  try {
+    const saved = localStorage.getItem('EARSIP_LEGALISIR_CONFIG');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return DEFAULT_LEGALISIR_CONFIG;
+}
+
+export function saveStoredLegalisirConfig(cfg: LegalisirConfig) {
+  try {
+    localStorage.setItem('EARSIP_LEGALISIR_CONFIG', JSON.stringify(cfg));
+  } catch {}
+}
+
+
 export const INITIAL_ARSIP: ArsipItem[] = [];
 
 // =====================================================================

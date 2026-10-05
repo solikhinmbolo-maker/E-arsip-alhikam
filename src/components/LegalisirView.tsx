@@ -22,7 +22,8 @@ import {
   getStoredLegalisir, 
   saveLegalisirRecord, 
   getStoredMasterSiswa, 
-  getStoredArsip 
+  getStoredArsip,
+  getStoredLegalisirConfig
 } from '../data/mockDatabase';
 
 export default function LegalisirView() {
@@ -66,7 +67,10 @@ export default function LegalisirView() {
     const s = masterSiswa.find(m => m.nama === selectedSiswaNama);
     const nisn = s ? s.nisn : '-';
     const tahun = s ? s.tahun : new Date().getFullYear().toString();
-    const regNum = `LEG/${new Date().getFullYear()}/SMP-AH/00${records.length + 1}`;
+    const cfg = getStoredLegalisirConfig();
+    const regNum = cfg.nomorFormat
+      .replace('{YYYY}', new Date().getFullYear().toString())
+      .replace('{NO}', `00${records.length + 1}`);
     const token = `VERIF-AH-${tahun}-${Math.floor(100 + Math.random() * 900)}-${selectedSiswaNama.replace(/\s+/g, '').toUpperCase().slice(0, 8)}`;
 
     const newRecord: LegalisirRecord = {
@@ -79,8 +83,10 @@ export default function LegalisirView() {
       jenisDokumen: jenisDokumen,
       nomorSeriIjazah: nomorSeri || `DN-05/DIK/${tahun}/009182`,
       statusKeaslian: 'ASLI_TERVERIFIKASI',
-      pejabatPengesah: 'Drs. H. Solikhin, M.Pd',
-      jabatanPengesah: 'Kepala Sekolah SMP Al-Hikam',
+      pejabatPengesah: cfg.pejabatPenandatangan || 'Ahmad Zaenuri, S.Pd., M.Pd. (Kepala Sekolah)',
+      jabatanPengesah: cfg.pejabatPenandatangan.includes('(') 
+        ? cfg.pejabatPenandatangan.slice(cfg.pejabatPenandatangan.indexOf('(') + 1).replace(')', '')
+        : 'Kepala Sekolah SMP Al-Hikam',
       qrCodeToken: token
     };
 

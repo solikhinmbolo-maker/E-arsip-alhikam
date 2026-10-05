@@ -32,6 +32,9 @@ import {
   KATEGORI_SISWA, 
   KATEGORI_GURU, 
   KATEGORI_LAINNYA,
+  getActiveKategoriSiswa,
+  getActiveKategoriGuru,
+  getActiveKategoriLainnya,
   getStoredMasterSiswa, 
   getStoredMasterGuru, 
   getStoredArsip,
@@ -190,9 +193,9 @@ export default function FormUploadView({
 
   // Update dynamic categories based on active type
   const activeKategoriList = 
-    jenisArsip === 'Arsip Siswa' ? KATEGORI_SISWA :
-    jenisArsip === 'Arsip Guru' ? KATEGORI_GURU : 
-    KATEGORI_LAINNYA;
+    jenisArsip === 'Arsip Siswa' ? getActiveKategoriSiswa() :
+    jenisArsip === 'Arsip Guru' ? getActiveKategoriGuru() : 
+    getActiveKategoriLainnya();
 
   // Filter siswa based on selected tahun
   const siswaFilter = masterSiswa.filter(s => s.tahun === tahun);
