@@ -1142,12 +1142,14 @@ export const GOOGLE_APPS_SCRIPT_ROBUST_CODE = `/**
  * Versi 3.0 (Anti-Gagal, Auto-Folder, Multi-Format)
  */
 
-var DEFAULT_FOLDER_ID = "1hHk3xY4cwzncVWTyalyC7d9v7WvxdniQ";
+var DEFAULT_FOLDER_ID = "1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9";
 var DEFAULT_SPREADSHEET_ID = "1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI";
+var API_SECRET = "eArsipSecretAlHikam2026_SecureKey";
 
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: "success",
+    success: true,
     message: "Server Google Apps Script E-Arsip Aktif & Siap Menerima Berkas!",
     timestamp: new Date().toISOString()
   })).setMimeType(ContentService.MimeType.JSON);
@@ -1160,19 +1162,20 @@ function doPost(e) {
     }
 
     var contents = JSON.parse(e.postData.contents);
-    var action = contents.action || "UPLOAD_ARSIP";
+    var action = (contents.action || contents.actionType || "UPLOAD_ARSIP").toUpperCase();
 
     // 1. Action PING untuk tes koneksi
     if (action === "PING") {
       return responseJson({
         status: "success",
+        success: true,
         message: "Koneksi Webhook Google Drive Berhasil Terhubung!",
         timestamp: new Date().toISOString()
       });
     }
 
     // 2. Action UPLOAD_ARSIP
-    if (action === "UPLOAD_ARSIP") {
+    if (action === "UPLOAD_ARSIP" || action === "UPLOAD") {
       var folder;
       var targetFolderId = contents.folderId || DEFAULT_FOLDER_ID;
 
@@ -1180,20 +1183,21 @@ function doPost(e) {
       try {
         folder = DriveApp.getFolderById(targetFolderId);
       } catch (errFolder) {
-        var folders = DriveApp.getFoldersByName("BERKAS_ARSIP_SMP_ALHICAM");
+        var folders = DriveApp.getFoldersByName("E-ARSIP DIGITAL SMP AL-HIKAM");
         if (folders.hasNext()) {
           folder = folders.next();
         } else {
-          folder = DriveApp.createFolder("BERKAS_ARSIP_SMP_ALHICAM");
+          folder = DriveApp.createFolder("E-ARSIP DIGITAL SMP AL-HIKAM");
         }
       }
 
       var driveUrl = "#";
+      var fileId = "";
       var rawFile = contents.fileBase64 || contents.fileData || "";
 
       // Simpan file fisik jika ada base64
       if (rawFile && rawFile.length > 50) {
-        var contentType = "application/pdf";
+        var contentType = contents.mimeType || "application/pdf";
         var base64Data = rawFile;
 
         if (rawFile.indexOf("data:") === 0) {
@@ -1202,7 +1206,7 @@ function doPost(e) {
           contentType = parts[0].replace("data:", "").split(";")[0];
         }
 
-        var fileName = (contents.id || "ARSIP") + "_" + (contents.namaFileAsli || contents.namaFile || "dokumen");
+        var fileName = (contents.id || "ARSIP") + "_" + (contents.namaFileAsli || contents.namaFile || contents.fileName || "dokumen");
         if (fileName.indexOf(".") === -1) {
           if (contentType.indexOf("image/jpeg") !== -1) fileName += ".jpg";
           else if (contentType.indexOf("image/png") !== -1) fileName += ".png";
@@ -1214,6 +1218,7 @@ function doPost(e) {
         var file = folder.createFile(blob);
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         driveUrl = file.getUrl();
+        fileId = file.getId();
       }
 
       // Catat ke Google Spreadsheet secara aman
@@ -1240,6 +1245,8 @@ function doPost(e) {
 
       return responseJson({
         status: "success",
+        success: true,
+        fileId: fileId,
         driveUrl: driveUrl,
         message: "File berhasil disimpan ke Google Drive!"
       });
@@ -1255,7 +1262,8 @@ function doPost(e) {
 function responseJson(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}`;
+}
+`;
 
 export async function testGoogleWebhook(url?: string): Promise<{ success: boolean; message: string }> {
   const targetUrl = url || getStoredSyncConfig().webhookUrl;
@@ -1266,7 +1274,13 @@ export async function testGoogleWebhook(url?: string): Promise<{ success: boolea
     const res = await fetch(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'PING' })
+      body: JSON.stringify({ 
+        action: 'PING',
+        actionType: 'PING',
+        secret: 'eArsipSecretAlHikam2026_SecureKey',
+        apiKey: 'eArsipSecretAlHikam2026_SecureKey',
+        apiSecret: 'eArsipSecretAlHikam2026_SecureKey'
+      })
     });
     const text = await res.text();
     if (text.includes('accounts.google.com') || text.includes('ServiceLogin')) {
@@ -1277,12 +1291,12 @@ export async function testGoogleWebhook(url?: string): Promise<{ success: boolea
     }
     try {
       const data = JSON.parse(text);
-      if (data.status === 'success' || data.status === 'ok') {
+      if (data.status === 'success' || data.status === 'ok' || data.success === true) {
         return { success: true, message: '✓ Berhasil! Google Apps Script siap menerima file ke Google Drive.' };
       }
       return { success: false, message: data.message || 'Respon webhook tidak sesuai format' };
     } catch {
-      return { success: false, message: 'Respon dari Google bukan JSON valid: ' + text.substring(0, 100) };
+      return { success: false, message: 'Respon dari Google: ' + text.substring(0, 100) };
     }
   } catch (err: any) {
     return { success: false, message: 'Gagal menghubungi Webhook: ' + (err.message || 'Network error') };
@@ -1303,8 +1317,11 @@ export async function syncItemToGoogleCloud(
 
   try {
     const payload = {
-      action: 'UPLOAD_ARSIP',
-      folderId: config.folderId || '1hHk3xY4cwzncVWTyalyC7d9v7WvxdniQ',
+      action: 'upload',
+      actionType: 'upload',
+      secret: 'eArsipSecretAlHikam2026_SecureKey',
+      apiKey: 'eArsipSecretAlHikam2026_SecureKey',
+      folderId: config.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9',
       spreadsheetId: config.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI',
       id: item.id,
       tanggal: item.tanggal,

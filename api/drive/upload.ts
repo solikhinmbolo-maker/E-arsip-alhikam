@@ -93,7 +93,9 @@ export default async function handler(req: any, res: any) {
     // Payload for Google Apps Script Web App (executed server-to-server)
     const payload = {
       secret: scriptSecret,
-      action: 'UPLOAD_ARSIP',
+      apiKey: scriptSecret,
+      action: 'upload',
+      actionType: 'upload',
       folderId: fields.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9',
       spreadsheetId: fields.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI',
       fileName: desiredFilename,

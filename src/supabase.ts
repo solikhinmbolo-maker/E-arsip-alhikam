@@ -1189,10 +1189,13 @@ export async function uploadFileToGoogleDriveApi(
         const syncCfg = getStoredSyncConfig();
         const targetFolderId = syncCfg.folderId || '1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9';
         const targetSheetId = syncCfg.spreadsheetId || '1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI';
+        const targetSecret = cfg.scriptSecret || 'eArsipSecretAlHikam2026_SecureKey';
 
         const payload = {
-          secret: cfg.scriptSecret,
-          action: 'UPLOAD_ARSIP',
+          secret: targetSecret,
+          apiKey: targetSecret,
+          action: 'upload',
+          actionType: 'upload',
           folderId: targetFolderId,
           spreadsheetId: targetSheetId,
           fileName: desiredFilename,
