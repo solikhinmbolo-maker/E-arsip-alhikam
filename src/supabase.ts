@@ -1188,9 +1188,12 @@ export async function uploadFileToGoogleDriveApi(
         const payload = {
           secret: cfg.scriptSecret,
           action: 'upload',
+          actionType: 'UPLOAD_ARSIP',
           fileName: desiredFilename,
+          namaFileAsli: desiredFilename,
           mimeType: file.type || 'application/octet-stream',
           fileBase64: rawBase64,
+          fileData: rawBase64,
           kategori: metadata.kategori || '',
           kategoriUtama: metadata.kategoriUtama || '',
           tahun: metadata.tahun || '',
@@ -1210,7 +1213,7 @@ export async function uploadFileToGoogleDriveApi(
         clearInterval(progressTimer);
 
         if (onProgress) {
-          onProgress(95, 'Memvalidasi ID berkas tersimpan...');
+          onProgress(95, 'Memvalidasi ID berkas tersimpan di Google Drive...');
         }
 
         const directText = await directRes.text();
@@ -1218,16 +1221,31 @@ export async function uploadFileToGoogleDriveApi(
         try {
           directResult = JSON.parse(directText);
         } catch {
-          // Proceed to fallback if parse fails
+          // If response text is HTML redirect or text
+          if (directText.includes('drive.google.com') || directText.includes('success')) {
+            directResult = { status: 'success', driveUrl: directText };
+          }
         }
 
-        if (directResult && directResult.success && directResult.fileId) {
+        const isSuccess = directResult && (
+          directResult.success === true ||
+          directResult.status === 'success' ||
+          Boolean(directResult.fileId) ||
+          Boolean(directResult.driveUrl)
+        );
+
+        if (isSuccess) {
+          const extractedId = directResult.fileId || 
+            (directResult.driveUrl 
+              ? (directResult.driveUrl.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] || directResult.driveUrl.match(/id=([a-zA-Z0-9_-]+)/)?.[1] || directResult.driveUrl)
+              : `gdrive_${Date.now()}`);
+
           if (onProgress) {
             onProgress(100, '✓ Berkas ukuran asli berhasil tersimpan di Google Drive!');
           }
           return {
             success: true,
-            fileId: directResult.fileId,
+            fileId: extractedId,
             fileName: directResult.fileName || desiredFilename,
             message: '✓ Berkas ukuran asli berhasil tersimpan di Google Drive Private Storage!'
           };
@@ -1239,12 +1257,32 @@ export async function uploadFileToGoogleDriveApi(
             error: 'Akses ditolak: API Secret tidak valid pada Google Apps Script.'
           };
         }
-      } catch (directErr) {
-        console.warn('Direct upload fallback:', directErr);
+
+        if (directResult && directResult.message) {
+          return {
+            success: false,
+            error: `Google Apps Script: ${directResult.message}`
+          };
+        }
+      } catch (directErr: any) {
+        console.warn('Direct upload exception:', directErr);
+        // If file is larger than 4MB, do not fall back to proxy since proxy has 4.5MB limit
+        if (file.size > 4 * 1024 * 1024) {
+          return {
+            success: false,
+            error: `Gagal mengirim langsung ke Google Drive: ${directErr.message || 'Koneksi terputus'}. Silakan periksa URL Google Apps Script di Pengaturan.`
+          };
+        }
       }
     }
 
-    // 2. Fallback via Vercel Backend Proxy (/api/drive/upload)
+    // 2. Fallback via Vercel Backend Proxy (/api/drive/upload) for files < 4MB
+    if (file.size > 4.2 * 1024 * 1024) {
+      return {
+        success: false,
+        error: `Ukuran berkas (${sizeMb} MB) melebihi batas transfer proxy Vercel (4.5 MB). Pastikan URL Webhook Google Apps Script di Pengaturan aktif.`
+      };
+    }
     if (onProgress) {
       onProgress(50, 'Mengirim melalui jalur proxy server...');
     }
