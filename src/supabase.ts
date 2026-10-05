@@ -1063,6 +1063,62 @@ export async function uploadFileToSupabaseStorage(
 }
 
 /**
+ * Upload new file directly via FormData/binary to Google Drive Private Storage via Vercel Backend
+ */
+export async function uploadFileToGoogleDriveApi(
+  file: File,
+  metadata: {
+    id: string;
+    subjek: string;
+    identitas?: string;
+    kategori: string;
+    kategoriUtama: string;
+    tahun?: string;
+    customFilename?: string;
+  }
+): Promise<{ success: boolean; fileId?: string; fileName?: string; error?: string; message?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    // Append metadata
+    Object.entries(metadata).forEach(([key, val]) => {
+      if (val !== undefined && val !== null) {
+        formData.append(key, String(val));
+      }
+    });
+
+    const response = await fetch('/api/drive/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.fileId) {
+      return {
+        success: false,
+        error: result.error || result.detail || 'Gagal mengunggah berkas ke Google Drive Private Storage.',
+        message: result.message
+      };
+    }
+
+    return {
+      success: true,
+      fileId: result.fileId,
+      fileName: result.fileName,
+      message: result.message || '✓ Berkas berhasil tersimpan di Google Drive Private Storage!'
+    };
+  } catch (err: any) {
+    console.error('uploadFileToGoogleDriveApi Error:', err);
+    return {
+      success: false,
+      error: err.message || 'Koneksi ke server upload Google Drive terputus.'
+    };
+  }
+}
+
+/**
  * Live test to verify Supabase Storage bucket 'arsip' and RLS permission
  */
 export async function testSupabaseStorage(): Promise<{ success: boolean; message: string }> {

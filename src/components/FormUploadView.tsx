@@ -46,7 +46,7 @@ import {
   compressImageDataUrl,
   compressDocumentHighQuality
 } from '../data/mockDatabase';
-import { uploadFileToSupabaseStorage } from '../supabase';
+import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi } from '../supabase';
 
 interface FormUploadViewProps {
   initialJenis?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -316,23 +316,26 @@ export default function FormUploadView({
     };
 
     setProgressPercent(80);
-    setProgressStatus('Mengunggah ke Cloud...');
+    setProgressStatus('Mengunggah ke Google Drive...');
 
-    let activeWorkingUrl = '';
+    // 1. Unggah berkas fisik biner (FormData) ke Google Drive Private Storage
+    const driveUpload = await uploadFileToGoogleDriveApi(selectedFile, {
+      id: newId,
+      subjek: namaSubjek,
+      identitas: identitas || '-',
+      kategori: kategori,
+      kategoriUtama: jenisArsip,
+      tahun: tahun || new Date().getFullYear().toString(),
+      customFilename: selectedFile.name
+    });
 
-    // 1. Unggah berkas fisik langsung ke Supabase Storage Cloud
-    try {
-      const supaUpload = await uploadFileToSupabaseStorage(newId, selectedFile.name, optimizedBase64);
-      if (supaUpload.success && supaUpload.publicUrl) {
-        activeWorkingUrl = supaUpload.publicUrl;
-      }
-    } catch (e) {
-      console.warn('Supabase storage upload notice:', e);
+    if (!driveUpload.success || !driveUpload.fileId) {
+      setIsUploading(false);
+      setErrorMessage(driveUpload.error || 'Gagal mengunggah berkas ke Google Drive Private Storage.');
+      return;
     }
 
-    if (activeWorkingUrl) {
-      updatedArsip.linkDrive = activeWorkingUrl;
-    }
+    updatedArsip.linkDrive = `gdrive://${driveUpload.fileId}`;
 
     if (optimizedBase64) {
       await saveFileAttachment(newId, optimizedBase64);
@@ -393,7 +396,7 @@ export default function FormUploadView({
 
       const percent = Math.min(95, Math.round(((idx + 1) / count) * 90));
       setProgressPercent(percent);
-      setProgressStatus(`Mengunggah (${idx + 1}/${count})...`);
+      setProgressStatus(`Mengunggah ke Google Drive (${idx + 1}/${count})...`);
 
       const randomNum = Math.floor(1000 + Math.random() * 9000) + idx;
       const newId = (replaceDuplicates && existing) ? existing.id : `${prefix}-${randomNum}`;
@@ -417,21 +420,24 @@ export default function FormUploadView({
         fileDataUrl: itemBase64
       };
 
-      let activeWorkingUrl = '';
+      // 1. Unggah berkas fisik biner (FormData) ke Google Drive Private Storage
+      const driveUpload = await uploadFileToGoogleDriveApi(fileObj.file, {
+        id: newId,
+        subjek: namaSubjek,
+        identitas: identitas || '-',
+        kategori: katKey,
+        kategoriUtama: jenisArsip,
+        tahun: tahun || new Date().getFullYear().toString(),
+        customFilename: fileObj.file.name
+      });
 
-      // 1. Unggah berkas fisik langsung ke Supabase Storage
-      try {
-        const supaUpload = await uploadFileToSupabaseStorage(newId, fileObj.file.name, itemBase64);
-        if (supaUpload.success && supaUpload.publicUrl) {
-          activeWorkingUrl = supaUpload.publicUrl;
-        }
-      } catch (e) {
-        console.warn('Supabase storage kolektif upload notice:', e);
+      if (!driveUpload.success || !driveUpload.fileId) {
+        setIsUploading(false);
+        setErrorMessage(`Gagal mengunggah berkas "${katKey}" ke Google Drive: ${driveUpload.error || 'Terjadi kesalahan'}`);
+        return;
       }
 
-      if (activeWorkingUrl) {
-        itemToSave.linkDrive = activeWorkingUrl;
-      }
+      itemToSave.linkDrive = `gdrive://${driveUpload.fileId}`;
 
       if (fileObj.base64) {
         await saveFileAttachment(itemToSave.id, fileObj.base64);
@@ -1198,12 +1204,12 @@ export default function FormUploadView({
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold mb-2 border border-emerald-200/80">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Supabase Cloud Storage Terhubung</span>
+              <span>Google Drive Private Storage Terhubung</span>
             </div>
 
             <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1.5">Pengarsipan Berhasil!</h3>
             <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-              Sebanyak <strong>{successInfo.count} berkas dokumen</strong> milik <strong>{successInfo.name}</strong> telah berhasil disimpan secara aman di <strong>Supabase Cloud Storage</strong> & Database E-Arsip.
+              Sebanyak <strong>{successInfo.count} berkas dokumen</strong> milik <strong>{successInfo.name}</strong> telah berhasil disimpan secara aman di <strong>Google Drive Private</strong> & Metadata tersinkron ke Supabase.
             </p>
 
             <div className="space-y-2">
