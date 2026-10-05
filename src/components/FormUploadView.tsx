@@ -397,7 +397,14 @@ export default function FormUploadView({
       return;
     }
 
-    updatedArsip.linkDrive = `gdrive://${driveUpload.fileId}`;
+    const cleanDriveId = driveUpload.fileId || '';
+    const formattedDriveUrl = cleanDriveId.startsWith('http') 
+      ? cleanDriveId 
+      : (cleanDriveId.startsWith('gdrive_') 
+          ? `https://drive.google.com/drive/folders/1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9`
+          : `https://drive.google.com/file/d/${cleanDriveId.replace('gdrive://', '')}/view?usp=drivesdk`);
+
+    updatedArsip.linkDrive = formattedDriveUrl;
 
     if (optimizedBase64) {
       saveFileAttachment(newId, optimizedBase64).catch(() => {});
@@ -502,7 +509,14 @@ export default function FormUploadView({
         throw new Error(`Gagal mengunggah berkas "${katKey}": ${driveUpload.error || 'Terjadi kesalahan'}`);
       }
 
-      itemToSave.linkDrive = `gdrive://${driveUpload.fileId}`;
+      const cleanDriveId = driveUpload.fileId || '';
+      const formattedDriveUrl = cleanDriveId.startsWith('http') 
+        ? cleanDriveId 
+        : (cleanDriveId.startsWith('gdrive_') 
+            ? `https://drive.google.com/drive/folders/1qsi9UTuDxBmeg0ZUcGnUfJSSxwR2BwS9`
+            : `https://drive.google.com/file/d/${cleanDriveId.replace('gdrive://', '')}/view?usp=drivesdk`);
+
+      itemToSave.linkDrive = formattedDriveUrl;
 
       if (fileObj.base64) {
         saveFileAttachment(itemToSave.id, fileObj.base64).catch(() => {});
