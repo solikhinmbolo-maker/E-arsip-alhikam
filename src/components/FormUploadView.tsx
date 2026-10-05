@@ -335,26 +335,25 @@ export default function FormUploadView({
     }
   };
 
+  // Pre-fetch drive config on mount for zero-latency uploads
+  useEffect(() => {
+    fetch('/api/drive/config').catch(() => {});
+  }, []);
+
   const startIndividualUpload = async (replaceExistingId?: string) => {
     if (!selectedFile) return;
 
     setIsUploading(true);
-    setProgressPercent(15);
-    setProgressStatus(replaceExistingId ? 'Memperbarui...' : 'Membaca berkas...');
-    await new Promise(r => setTimeout(r, 600));
+    setProgressPercent(20);
+    setProgressStatus(replaceExistingId ? 'Memperbarui...' : 'Mengirim ke Google Drive...');
 
     const prefix = jenisArsip === 'Arsip Siswa' ? 'SSW' : jenisArsip === 'Arsip Guru' ? 'GRU' : 'LYN';
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const newId = replaceExistingId || `${prefix}-${randomNum}`;
     const todayStr = new Date().toLocaleDateString('id-ID');
 
-    // Raw original file upload without compression
     let optimizedBase64 = fileBase64 || '';
     let finalUkuran = `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`;
-
-    setProgressPercent(50);
-    setProgressStatus('Menyiapkan file...');
-    await new Promise(r => setTimeout(r, 400));
 
     const updatedArsip: ArsipItem = {
       id: newId,
@@ -371,10 +370,9 @@ export default function FormUploadView({
       fileDataUrl: optimizedBase64
     };
 
-    setProgressPercent(80);
-    setProgressStatus('Mengunggah ke Google Drive...');
+    setProgressPercent(60);
 
-    // 1. Unggah berkas fisik biner (FormData) ke Google Drive Private Storage
+    // 1. Unggah berkas fisik langsung ke Google Drive Private Storage
     const driveUpload = await uploadFileToGoogleDriveApi(selectedFile, {
       id: newId,
       subjek: namaSubjek,
@@ -394,7 +392,7 @@ export default function FormUploadView({
     updatedArsip.linkDrive = `gdrive://${driveUpload.fileId}`;
 
     if (optimizedBase64) {
-      await saveFileAttachment(newId, optimizedBase64);
+      saveFileAttachment(newId, optimizedBase64).catch(() => {});
     }
 
     if (replaceExistingId) {
@@ -403,10 +401,8 @@ export default function FormUploadView({
       saveArsipItem(updatedArsip);
     }
 
-    await new Promise(r => setTimeout(r, 700));
     setProgressPercent(100);
     setProgressStatus('Selesai!');
-    await new Promise(r => setTimeout(r, 400));
 
     setStoredArsipList(getStoredArsip());
     setIsUploading(false);
@@ -433,16 +429,18 @@ export default function FormUploadView({
     }
 
     setIsUploading(true);
-    setProgressPercent(15);
-    setProgressStatus(`Menyiapkan ${count} file...`);
+    setProgressPercent(20);
+    setProgressStatus(`Mengunggah ${count} berkas secara paralel ke Google Drive...`);
 
     const categories = Object.keys(kolektifFiles);
     const todayStr = new Date().toLocaleDateString('id-ID');
     const prefix = jenisArsip === 'Arsip Siswa' ? 'SSW' : jenisArsip === 'Arsip Guru' ? 'GRU' : 'LYN';
     const currentArsip = getStoredArsip();
 
-    for (let idx = 0; idx < categories.length; idx++) {
-      const katKey = categories[idx];
+    let completedCount = 0;
+
+    // Run parallel high-speed batch uploads
+    const uploadPromises = categories.map(async (katKey, idx) => {
       const fileObj = kolektifFiles[katKey];
       const existing = currentArsip.find(it => 
         it.kategoriUtama === jenisArsip &&
@@ -450,16 +448,9 @@ export default function FormUploadView({
         it.kategori.trim().toLowerCase() === katKey.trim().toLowerCase()
       );
 
-      const percent = Math.min(95, Math.round(((idx + 1) / count) * 90));
-      setProgressPercent(percent);
-      setProgressStatus(`Mengunggah ke Google Drive (${idx + 1}/${count})...`);
-
       const randomNum = Math.floor(1000 + Math.random() * 9000) + idx;
       const newId = (replaceDuplicates && existing) ? existing.id : `${prefix}-${randomNum}`;
-
-      // Raw original file upload without compression
-      let itemBase64 = fileObj.base64;
-      let itemUkuran = `${(fileObj.file.size / (1024 * 1024)).toFixed(2)} MB`;
+      const itemUkuran = `${(fileObj.file.size / (1024 * 1024)).toFixed(2)} MB`;
 
       const itemToSave: ArsipItem = {
         id: newId,
@@ -473,10 +464,9 @@ export default function FormUploadView({
         ukuran: itemUkuran,
         linkDrive: '',
         uploader: 'admin@alhicam.sch.id',
-        fileDataUrl: itemBase64
+        fileDataUrl: fileObj.base64
       };
 
-      // 1. Unggah berkas fisik biner (FormData) ke Google Drive Private Storage
       const driveUpload = await uploadFileToGoogleDriveApi(fileObj.file, {
         id: newId,
         subjek: namaSubjek,
@@ -488,15 +478,13 @@ export default function FormUploadView({
       });
 
       if (!driveUpload.success || !driveUpload.fileId) {
-        setIsUploading(false);
-        setErrorMessage(`Gagal mengunggah berkas "${katKey}" ke Google Drive: ${driveUpload.error || 'Terjadi kesalahan'}`);
-        return;
+        throw new Error(`Gagal mengunggah berkas "${katKey}": ${driveUpload.error || 'Terjadi kesalahan'}`);
       }
 
       itemToSave.linkDrive = `gdrive://${driveUpload.fileId}`;
 
       if (fileObj.base64) {
-        await saveFileAttachment(itemToSave.id, fileObj.base64);
+        saveFileAttachment(itemToSave.id, fileObj.base64).catch(() => {});
       }
 
       if (replaceDuplicates && existing) {
@@ -504,6 +492,18 @@ export default function FormUploadView({
       } else {
         saveArsipItem(itemToSave);
       }
+
+      completedCount++;
+      setProgressPercent(Math.round((completedCount / count) * 90) + 10);
+      setProgressStatus(`Selesai ${completedCount} dari ${count} berkas...`);
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+    } catch (err: any) {
+      setIsUploading(false);
+      setErrorMessage(err.message || 'Sebagian berkas gagal diunggah.');
+      return;
     }
 
     setProgressPercent(100);
