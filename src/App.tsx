@@ -49,6 +49,7 @@ import LegalisirView from './components/LegalisirView';
 import AuditLogView from './components/AuditLogView';
 import LaporanView from './components/LaporanView';
 import TongSampahView from './components/TongSampahView';
+import SettingsView from './components/SettingsView';
 import PreviewModal from './components/PreviewModal';
 import UserManagementModal from './components/UserManagementModal';
 import { 
@@ -102,7 +103,7 @@ import {
   fetchConfigFromServer
 } from './supabase';
 
-type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah';
+type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah' | 'pengaturan';
 type SubKategori = 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
 
 // Isolated live clock component so ticking every second doesn't re-render entire page/charts
@@ -298,21 +299,12 @@ export default function App() {
   // Modals
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [showSettingModal, setShowSettingModal] = useState(false);
-  const [settingTab, setSettingTab] = useState<'tampilan' | 'bahasa' | 'akun' | 'cloud' | 'tentang'>('tampilan');
   const [previewItem, setPreviewItem] = useState<ArsipItem | null>(null);
 
   // Security & RBAC: Super Administrator privileges
   const isSuperAdmin = currentUser?.role === 'Super Administrator' || 
     currentUser?.email?.toLowerCase().replace(/^@/, '') === 'superadmin' || 
     currentUser?.email?.toLowerCase() === 'admin@alhicam.sch.id';
-
-  // Non-Superadmin (e.g. Guru/Pegawai) cannot view or stay in 'cloud' server tab
-  useEffect(() => {
-    if (!isSuperAdmin && settingTab === 'cloud') {
-      setSettingTab('tampilan');
-    }
-  }, [isSuperAdmin, settingTab]);
 
   // App User Preferences
   const [userPrefs, setUserPrefs] = useState(() => {
@@ -1095,11 +1087,6 @@ function doGet(e) {
     }
   };
 
-  const handleSaveSettings = () => {
-    saveStoredSyncConfig(syncConfig);
-    setShowSettingModal(false);
-  };
-
   const handleLoginSuccess = async (user: { email: string; name: string; role: string; avatarUrl?: string }) => {
     setCurrentUser(user);
     const now = Date.now();
@@ -1211,7 +1198,8 @@ function doGet(e) {
     legalisir: 'Verifikasi & Legalisir Digital',
     'audit-log': 'Log & Jejak Audit Pengarsipan',
     laporan: 'Statistik & Laporan Arsip',
-    sampah: 'Sampah & Pemulihan Berkas'
+    sampah: 'Sampah & Pemulihan Berkas',
+    pengaturan: 'Pengaturan & Konfigurasi Sistem'
   };
 
   return (
@@ -1461,10 +1449,14 @@ function doGet(e) {
           {/* Pengaturan Sistem */}
           <button
             onClick={() => {
-              setShowSettingModal(true);
+              setActivePage('pengaturan');
               setMobileSidebarOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all cursor-pointer"
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activePage === 'pengaturan'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+            }`}
           >
             <Settings className="w-4 h-4" />
             <span>Pengaturan Sistem</span>
@@ -1738,6 +1730,15 @@ function doGet(e) {
           {activePage === 'sampah' && (
             <TongSampahView />
           )}
+
+          {activePage === 'pengaturan' && (
+            <SettingsView
+              currentUser={currentUser}
+              onOpenUserManagement={() => setShowUserModal(true)}
+              userPrefs={userPrefs}
+              onSavePref={handleSavePref}
+            />
+          )}
         </div>
       </main>
 
@@ -1803,9 +1804,9 @@ function doGet(e) {
             <button
               onClick={() => {
                 setMobileProfileSheetOpen(false);
-                setShowSettingModal(true);
+                setActivePage('pengaturan');
               }}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-colors"
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
@@ -1943,15 +1944,15 @@ function doGet(e) {
 
         {/* Setting / Pengaturan Sistem */}
         <button
-          onClick={() => setShowSettingModal(true)}
+          onClick={() => setActivePage('pengaturan')}
           className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
-            showSettingModal
+            activePage === 'pengaturan'
               ? 'text-blue-600 font-bold'
               : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${
-            showSettingModal ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            activePage === 'pengaturan' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
           }`}>
             <Settings className="w-5 h-5" />
           </div>
@@ -2002,468 +2003,7 @@ function doGet(e) {
         />
       )}
 
-      {/* 8. MODAL PENGATURAN SISTEM & PREFERENSI APLIKASI */}
-      {showSettingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 animate-scaleUp overflow-hidden flex flex-col max-h-[90vh]">
-            
-            {/* Modal Header */}
-            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-                  <Settings className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">Pengaturan & Preferensi Sistem</h3>
-                  <p className="text-xs text-slate-500">Konfigurasi antarmuka, bahasa, akun, dan status server cloud</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowSettingModal(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-1.5 px-4 sm:px-6 py-2.5 bg-slate-100/70 border-b border-slate-200/80 overflow-x-auto no-scrollbar">
-              {[
-                { id: 'tampilan', label: 'Tampilan & Font', icon: Type },
-                { id: 'bahasa', label: 'Bahasa & Waktu', icon: Globe },
-                { id: 'akun', label: 'Keterangan Akun', icon: ShieldCheck },
-                ...(isSuperAdmin ? [{ id: 'cloud', label: 'Server & Cloud ⚡', icon: Cloud }] : []),
-                { id: 'tentang', label: 'Tentang Aplikasi', icon: Info }
-              ].map((tab) => {
-                const IconComponent = tab.icon;
-                const isActive = settingTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSettingTab(tab.id as any)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-white text-blue-600 shadow-sm border border-slate-200'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                    }`}
-                  >
-                    <IconComponent className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Modal Body / Tab Contents */}
-            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 text-slate-700 text-xs">
-              
-              {/* TAB 1: TAMPILAN & FONT */}
-              {settingTab === 'tampilan' && (
-                <div className="space-y-4 animate-fadeIn">
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                    <label className="block text-xs font-bold text-slate-800">
-                      Ukuran Huruf / Font Teks
-                    </label>
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {[
-                        { id: 'small', label: 'Kecil (Kompak)', desc: '12px standar' },
-                        { id: 'normal', label: 'Sedang (Normal)', desc: '14px optimal' },
-                        { id: 'large', label: 'Besar (Jelas)', desc: '16px nyaman' }
-                      ].map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => handleSavePref('fontSize', f.id)}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                            userPrefs.fontSize === f.id
-                              ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 text-blue-900'
-                              : 'bg-white border-slate-200 hover:bg-slate-100/80 text-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs">{f.label}</span>
-                            {userPrefs.fontSize === f.id && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                          </div>
-                          <span className="text-[10px] text-slate-400 block mt-1">{f.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <strong className="text-xs font-bold text-slate-800 block">Kerapatan Baris Tabel (Table Density)</strong>
-                      <span className="text-[11px] text-slate-500">Sesuaikan jarak antar baris pada rekap arsip & buku induk</span>
-                    </div>
-                    <select
-                      value={userPrefs.density}
-                      onChange={(e) => handleSavePref('density', e.target.value)}
-                      className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="compact">Rapat (Compact)</option>
-                      <option value="standard">Standar (Optimal)</option>
-                      <option value="spacious">Luas (Nyaman)</option>
-                    </select>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-                    <div>
-                      <strong className="text-xs font-bold text-slate-800 block">Animasi Halus & Efek Transisi</strong>
-                      <span className="text-[11px] text-slate-500">Aktifkan efek peralihan halus antar halaman dashboard</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleSavePref('animations', !userPrefs.animations)}
-                      className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                        userPrefs.animations ? 'bg-blue-600' : 'bg-slate-300'
-                      }`}
-                    >
-                      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                        userPrefs.animations ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: BAHASA & WAKTU */}
-              {settingTab === 'bahasa' && (
-                <div className="space-y-4 animate-fadeIn">
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                    <label className="block text-xs font-bold text-slate-800">
-                      Bahasa Sistem / Language
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { id: 'id', label: 'Bahasa Indonesia (Resmi)', flag: '🇮🇩' },
-                        { id: 'en', label: 'English (US)', flag: '🇺🇸' }
-                      ].map((l) => (
-                        <button
-                          key={l.id}
-                          type="button"
-                          onClick={() => handleSavePref('language', l.id)}
-                          className={`p-3.5 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
-                            userPrefs.language === l.id
-                              ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 text-blue-900 font-bold'
-                              : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className="text-base">{l.flag}</span>
-                            <span>{l.label}</span>
-                          </span>
-                          {userPrefs.language === l.id && <Check className="w-4 h-4 text-blue-600" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                    <strong className="text-xs font-bold text-slate-800 block">Format Waktu & Zona Wilayah</strong>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600">
-                      <div className="p-2.5 bg-white border border-slate-200 rounded-xl">
-                        <span className="text-[10px] text-slate-400 block uppercase font-mono">Format Tanggal</span>
-                        <span className="font-semibold text-slate-800 text-xs">DD/MM/YYYY (Contoh: 02/10/2026)</span>
-                      </div>
-                      <div className="p-2.5 bg-white border border-slate-200 rounded-xl">
-                        <span className="text-[10px] text-slate-400 block uppercase font-mono">Zona Waktu</span>
-                        <span className="font-semibold text-slate-800 text-xs">Asia/Jakarta (WIB GMT+7)</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: KETERANGAN AKUN & KEAMANAN */}
-              {settingTab === 'akun' && (
-                <div className="space-y-4 animate-fadeIn">
-                  <div className="p-4 bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-2xl text-white flex items-center justify-between gap-4 shadow-md">
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={currentUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=3b82f6&color=fff&size=120`}
-                        alt="Avatar"
-                        className="w-14 h-14 rounded-2xl border-2 border-cyan-400 object-cover shadow"
-                      />
-                      <div>
-                        <h4 className="text-sm font-bold text-white">{currentUser.name}</h4>
-                        <p className="text-xs text-cyan-300 font-mono mt-0.5">{currentUser.email}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold border border-cyan-500/30">
-                            {currentUser.role}
-                          </span>
-                          <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            Status: Aktif & Terverifikasi
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowSettingModal(false);
-                        setShowUserModal(true);
-                      }}
-                      className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md flex-shrink-0"
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      <span>Manajemen Akun</span>
-                    </button>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
-                    <strong className="text-xs font-bold text-slate-800 block">Keamanan & Masa Sesi Login</strong>
-                    <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl">
-                      <div className="flex items-center gap-2.5">
-                        <Clock className="w-4 h-4 text-blue-600" />
-                        <div>
-                          <span className="text-xs font-semibold text-slate-800 block">Auto-Logout Setelah 30 Menit Tidak Aktif</span>
-                          <span className="text-[10px] text-slate-500">Mencegah akses liar jika perangkat ditinggal terbuka</span>
-                        </div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                        Aktif
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: STATUS SERVER & CLOUD (SUPABASE CLOUD PRO) - SUPERADMIN ONLY */}
-              {settingTab === 'cloud' && isSuperAdmin && (
-                <div className="space-y-5 animate-fadeIn">
-                  
-                  {/* Security Restriction Banner */}
-                  <div className="p-3 bg-amber-950/60 border border-amber-600/40 rounded-2xl flex items-center gap-3 text-amber-200">
-                    <Shield className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                    <p className="text-[11px] leading-relaxed">
-                      <strong>Hak Akses Khusus Super Administrator</strong>: Tab Server & Cloud ini dikunci dan tidak dapat dilihat atau diubah oleh Guru/pengguna lain. Konfigurasi yang Anda simpan di sini akan otomatis berlaku untuk semua perangkat secara permanen.
-                    </p>
-                  </div>
-
-                  {/* Status Banner */}
-                  <div className="p-4 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/40 rounded-2xl flex items-start gap-3 shadow-md">
-                    <Database className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-white">Server Utama & Database Cloud: Supabase PostgreSQL</h4>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          SUPABASE CLOUD ACTIVE
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-                        Sistem E-Arsip SMP Al-Hikam terhubung secara eksklusif ke <strong>Supabase PostgreSQL Cloud</strong> dan <strong>Supabase Storage Bucket ('arsip')</strong>. Semua data dan berkas tersimpan di satu server terpadu.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Supabase Configuration Section */}
-                  <div className="p-4 sm:p-5 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <Database className="w-5 h-5 text-emerald-400" />
-                        <div>
-                          <h4 className="text-xs font-bold text-white">Konfigurasi Server Supabase Cloud</h4>
-                          <p className="text-[10px] text-slate-400">Project URL & Anon Key dari Dashboard Supabase</p>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
-                        PostgreSQL & Storage
-                      </span>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-[11px] font-semibold text-slate-300">
-                            Supabase Project URL
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handlePasteSupabaseUrl}
-                            className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg text-[10px] font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
-                          >
-                            <Clipboard className="w-3 h-3" />
-                            <span>📋 Tempel URL</span>
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="https://seklcpvkayaakgbsnlzt.supabase.co"
-                          value={supabaseConfig.url}
-                          onChange={(e) => handleSaveSupabaseConfig(e.target.value, supabaseConfig.anonKey)}
-                          onBlur={() => {
-                            if (supabaseConfig.url) {
-                              const clean = sanitizeSupabaseUrl(supabaseConfig.url);
-                              if (clean && clean !== supabaseConfig.url) {
-                                handleSaveSupabaseConfig(clean, supabaseConfig.anonKey);
-                              }
-                            }
-                          }}
-                          className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 placeholder-slate-600"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="block text-[11px] font-semibold text-slate-300">
-                            Supabase Anon Key / Public Key
-                          </label>
-                          <div className="flex items-center gap-2">
-                            {!supabaseConfig.anonKey && (
-                              <span className="text-[10px] text-amber-400 font-bold">⚠️ Masukkan Anon Key</span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={handlePasteSupabaseKey}
-                              className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg text-[10px] font-bold border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
-                            >
-                              <Clipboard className="w-3 h-3" />
-                              <span>📋 Tempel Key</span>
-                            </button>
-                          </div>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Salin anon key (eyJhY...) dari Dashboard Supabase"
-                          value={supabaseConfig.anonKey}
-                          onChange={(e) => handleSaveSupabaseConfig(supabaseConfig.url, e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500 placeholder-slate-600"
-                        />
-                        {!supabaseConfig.anonKey && (
-                          <p className="text-[11px] text-amber-300/90 bg-amber-950/40 p-2.5 rounded-xl border border-amber-800/50 mt-2 leading-relaxed">
-                            💡 <strong>Petunjuk:</strong> Klik tombol <strong>📋 Tempel Key</strong> di atas untuk menempelkan Anon Key yang sudah Anda salin dari Supabase!
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action Buttons for Supabase */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleTestSupabaseConnection}
-                          disabled={isTestingSupabase}
-                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${isTestingSupabase ? 'animate-spin' : ''}`} />
-                          <span>{isTestingSupabase ? 'Menguji...' : '⚡ Uji Database'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleTestSupabaseStorage}
-                          disabled={isTestingStorage}
-                          className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${isTestingStorage ? 'animate-spin' : ''}`} />
-                          <span>{isTestingStorage ? 'Menguji...' : '📦 Uji Storage (Bucket arsip)'}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleSyncLocalToSupabase}
-                          disabled={isSyncingToSupabase}
-                          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer flex items-center gap-1.5"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${isSyncingToSupabase ? 'animate-spin' : ''}`} />
-                          <span>{isSyncingToSupabase ? 'Menyinkronkan...' : '📤 Sync Data Ke Supabase'}</span>
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
-                          setCopiedSqlSchema(true);
-                          setTimeout(() => setCopiedSqlSchema(false), 3000);
-                        }}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        {copiedSqlSchema ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                        <span>{copiedSqlSchema ? '✓ Script SQL Tersalin!' : '📋 Salin Script SQL Schema'}</span>
-                      </button>
-                    </div>
-
-                    {supabaseTestStatus && (
-                      <div className={`p-3 rounded-xl text-xs font-medium ${
-                        supabaseTestStatus.includes('✓') 
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800' 
-                          : 'bg-amber-950/80 text-amber-300 border border-amber-800'
-                      }`}>
-                        {supabaseTestStatus}
-                      </div>
-                    )}
-
-                    {storageTestStatus && (
-                      <div className={`p-3 rounded-xl text-xs font-medium ${
-                        storageTestStatus.includes('✓') 
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800' 
-                          : 'bg-rose-950/80 text-rose-300 border border-rose-800'
-                      }`}>
-                        {storageTestStatus}
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              )}
-
-              {/* TAB 5: TENTANG APLIKASI */}
-              {settingTab === 'tentang' && (
-                <div className="space-y-4 animate-fadeIn text-center sm:text-left">
-                  <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-                    <img 
-                      src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
-                      alt="Logo SMP Al-Hikam" 
-                      className="w-16 h-16 object-contain"
-                    />
-                    <div>
-                      <h4 className="text-base font-bold text-slate-900">E-Arsip Digital SMP Al-Hikam Sendang Mulyo</h4>
-                      <p className="text-xs text-slate-600 mt-0.5">Sistem Manajemen Pengarsipan Digital Siswa, Guru & Dokumen Resmi Sekolah</p>
-                      <div className="flex items-center justify-center sm:justify-start gap-2 mt-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold">
-                          Server Utama: Supabase Cloud Pro
-                        </span>
-                        <span className="text-[10px] text-slate-400">Build: Oktober 2026</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 space-y-2 leading-relaxed">
-                    <p><strong>Database Cloud:</strong> Supabase PostgreSQL Database (<code className="text-emerald-700 font-mono">seklcpvkayaakgbsnlzt.supabase.co</code>)</p>
-                    <p><strong>Penyimpanan Berkas Fisik:</strong> Supabase Storage Bucket ('arsip')</p>
-                    <p><strong>Keterangan Pendukung:</strong> Aplikasi E-Arsip Digital SMP Al-Hikam Sendang Mulyo dirancang khusus untuk mempermudah tata kelola administrasi sekolah, pengarsipan berkas siswa (Ijazah, SKL, SPMB), pendataan kepegawaian guru/tendik, serta verifikasi dokumen resmi secara digital, aman, dan efisien.</p>
-                    <p><strong>Lisensi:</strong> Hak Cipta Terpelihara © 2026 SMP Al-Hikam Sendang Mulyo</p>
-                  </div>
-                </div>
-              )}
-
-
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 px-6 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
-              <span className="text-[11px] text-slate-500">
-                Pengaturan tersimpan otomatis di perangkat ini.
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowSettingModal(false)}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm"
-              >
-                Tutup Pengaturan
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* 9. PREVIEW DOKUMEN MODAL */}
+      {/* 8. PREVIEW DOKUMEN MODAL */}
       <PreviewModal
         item={previewItem}
         onClose={() => setPreviewItem(null)}
