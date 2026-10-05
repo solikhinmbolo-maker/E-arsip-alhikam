@@ -212,48 +212,135 @@ export async function getFileAttachment(id: string): Promise<string | null> {
   }
 }
 
-export function getStoredMasterSiswa(): MasterSiswaItem[] {
-  try {
-    const raw = localStorage.getItem(DB_KEYS.MASTER_SISWA);
-    if (!raw) {
-      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify([]));
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify([]));
-      return [];
-    }
-    if (parsed.length > 0 && parsed[0]?.nama === 'Andika Pratama') {
-      safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify([]));
-      return [];
-    }
-    return parsed;
-  } catch {
-    return [];
+export function isTeacherRecord(item: any): boolean {
+  if (!item) return false;
+  const j = (item.jabatan || item.jenisKelamin || '').toString().toLowerCase().trim();
+  const n = (item.nuptk || item.nip || '').toString().trim();
+
+  // If valid NUPTK or NIP (> 6 numeric digits)
+  if (n && n !== '-' && n.length >= 6 && !n.startsWith('00') && /^\d+$/.test(n)) {
+    return true;
   }
+
+  // Teacher/staff keywords
+  const teacherKeywords = [
+    'guru', 'pendidik', 'pengajar', 'kepala', 'waka', 'bendahara', 
+    'sekretaris', 'tu', 'staf', 'tendik', 'walikelas', 'pembina', 
+    'operator', 'nip', 'nuptk', 'pamong', 'ustadz', 'ustadzah', 'pns', 'p3k', 'gtt'
+  ];
+
+  if (teacherKeywords.some(kw => j.includes(kw))) {
+    return true;
+  }
+
+  return false;
+}
+
+export function sanitizeAndReconcileMasterData(
+  rawSiswa: MasterSiswaItem[],
+  rawGuru: MasterGuruItem[]
+): { cleanSiswa: MasterSiswaItem[]; cleanGuru: MasterGuruItem[] } {
+  const cleanSiswa: MasterSiswaItem[] = [];
+  const cleanGuru: MasterGuruItem[] = [];
+
+  const seenSiswaNames = new Set<string>();
+  const seenGuruNames = new Set<string>();
+
+  const processSiswaCandidate = (item: MasterSiswaItem) => {
+    if (!item || !item.nama || !item.nama.trim()) return;
+    const cleanName = item.nama.trim();
+    const lowerName = cleanName.toLowerCase();
+
+    if (isTeacherRecord(item)) {
+      if (!seenGuruNames.has(lowerName)) {
+        seenGuruNames.add(lowerName);
+        cleanGuru.push({
+          id: item.id.startsWith('G') ? item.id : `G_${item.id}`,
+          nama: cleanName,
+          nuptk: item.nisn && item.nisn !== '-' ? item.nisn : '-',
+          jabatan: item.jenisKelamin && item.jenisKelamin.length > 2 ? item.jenisKelamin : 'Guru Pengajar'
+        });
+      }
+    } else {
+      if (!seenSiswaNames.has(lowerName)) {
+        seenSiswaNames.add(lowerName);
+        cleanSiswa.push({
+          ...item,
+          nama: cleanName
+        });
+      }
+    }
+  };
+
+  const processGuruCandidate = (item: MasterGuruItem) => {
+    if (!item || !item.nama || !item.nama.trim()) return;
+    const cleanName = item.nama.trim();
+    const lowerName = cleanName.toLowerCase();
+
+    if (isTeacherRecord(item)) {
+      if (!seenGuruNames.has(lowerName)) {
+        seenGuruNames.add(lowerName);
+        cleanGuru.push({
+          ...item,
+          nama: cleanName
+        });
+      }
+    } else {
+      if (!seenSiswaNames.has(lowerName)) {
+        seenSiswaNames.add(lowerName);
+        cleanSiswa.push({
+          id: item.id.startsWith('S') ? item.id : `S_${item.id}`,
+          nama: cleanName,
+          nisn: item.nuptk && item.nuptk !== '-' && /^\d+$/.test(item.nuptk) ? item.nuptk : '-',
+          tahun: '2025',
+          jenisKelamin: 'L'
+        });
+      }
+    }
+  };
+
+  (rawSiswa || []).forEach(processSiswaCandidate);
+  (rawGuru || []).forEach(processGuruCandidate);
+
+  return { cleanSiswa, cleanGuru };
+}
+
+export function getSanitizedMasterData(): { siswa: MasterSiswaItem[]; guru: MasterGuruItem[] } {
+  let rawSiswa: MasterSiswaItem[] = [];
+  let rawGuru: MasterGuruItem[] = [];
+
+  try {
+    const rawS = localStorage.getItem(DB_KEYS.MASTER_SISWA);
+    if (rawS) {
+      const p = JSON.parse(rawS);
+      if (Array.isArray(p)) rawSiswa = p;
+    }
+  } catch {}
+
+  try {
+    const rawG = localStorage.getItem(DB_KEYS.MASTER_GURU);
+    if (rawG) {
+      const p = JSON.parse(rawG);
+      if (Array.isArray(p)) rawGuru = p;
+    }
+  } catch {}
+
+  const { cleanSiswa, cleanGuru } = sanitizeAndReconcileMasterData(rawSiswa, rawGuru);
+
+  if (cleanSiswa.length !== rawSiswa.length || cleanGuru.length !== rawGuru.length) {
+    safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(cleanSiswa));
+    safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(cleanGuru));
+  }
+
+  return { siswa: cleanSiswa, guru: cleanGuru };
+}
+
+export function getStoredMasterSiswa(): MasterSiswaItem[] {
+  return getSanitizedMasterData().siswa;
 }
 
 export function getStoredMasterGuru(): MasterGuruItem[] {
-  try {
-    const raw = localStorage.getItem(DB_KEYS.MASTER_GURU);
-    if (!raw) {
-      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify([]));
-      return [];
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify([]));
-      return [];
-    }
-    if (parsed.length > 0 && parsed[0]?.nama === 'Drs. H. Solikhin, M.Pd') {
-      safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify([]));
-      return [];
-    }
-    return parsed;
-  } catch {
-    return [];
-  }
+  return getSanitizedMasterData().guru;
 }
 
 // Safe LocalStorage setter with Quota Protection & automatic trimming

@@ -29,6 +29,7 @@ import {
   getStoredMasterSiswa, 
   getStoredMasterGuru, 
   getStoredArsip,
+  getSanitizedMasterData,
   saveMasterSiswa, 
   deleteMasterSiswa, 
   saveMasterGuru, 
@@ -36,7 +37,7 @@ import {
   KATEGORI_SISWA,
   KATEGORI_GURU
 } from '../data/mockDatabase';
-import { clearMasterSiswaInSupabase, clearMasterGuruInSupabase } from '../supabase';
+import { clearMasterSiswaInSupabase, clearMasterGuruInSupabase, fetchSanitizedMasterDataFromSupabase } from '../supabase';
 
 interface BukuIndukViewProps {
   onNavigateToArsip: (sub: 'Arsip Siswa' | 'Arsip Guru', namaSubjek: string) => void;
@@ -63,14 +64,24 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
   const [filterTahun, setFilterTahun] = useState('SEMUA');
 
   // Master Data State
-  const [siswaList, setSiswaList] = useState<MasterSiswaItem[]>(() => getStoredMasterSiswa());
-  const [guruList, setGuruList] = useState<MasterGuruItem[]>(() => getStoredMasterGuru());
+  const [siswaList, setSiswaList] = useState<MasterSiswaItem[]>(() => getSanitizedMasterData().siswa);
+  const [guruList, setGuruList] = useState<MasterGuruItem[]>(() => getSanitizedMasterData().guru);
+
+  const reloadMasterData = async () => {
+    const supaData = await fetchSanitizedMasterDataFromSupabase().catch(() => null);
+    if (supaData) {
+      setSiswaList(supaData.siswa);
+      setGuruList(supaData.guru);
+    } else {
+      const { siswa, guru } = getSanitizedMasterData();
+      setSiswaList(siswa);
+      setGuruList(guru);
+    }
+  };
 
   useEffect(() => {
-    const handleCloudUpdate = () => {
-      setSiswaList(getStoredMasterSiswa());
-      setGuruList(getStoredMasterGuru());
-    };
+    reloadMasterData();
+    const handleCloudUpdate = () => reloadMasterData();
     window.addEventListener('earsip:cloud-synced', handleCloudUpdate);
     return () => window.removeEventListener('earsip:cloud-synced', handleCloudUpdate);
   }, []);

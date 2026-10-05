@@ -1,5 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { ArsipItem, MasterSiswaItem, MasterGuruItem, getAvatarForUser, saveAvatarForUser, sanitizeUserStorageKey, getPublicStorageAvatarUrl } from './data/mockDatabase';
+import { 
+  ArsipItem, 
+  MasterSiswaItem, 
+  MasterGuruItem, 
+  getAvatarForUser, 
+  saveAvatarForUser, 
+  sanitizeUserStorageKey, 
+  getPublicStorageAvatarUrl,
+  sanitizeAndReconcileMasterData
+} from './data/mockDatabase';
 
 export interface SupabaseConfig {
   url: string;
@@ -879,34 +888,53 @@ export async function syncAllMasterGuruToSupabase(items: MasterGuruItem[]): Prom
     return { success: false, count: 0, error: err?.message };
   }
 }
+export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
+  siswa: MasterSiswaItem[];
+  guru: MasterGuruItem[];
+} | null> {
+  const client = getSupabaseClient();
+  if (!client) return null;
+
+  try {
+    const [{ data: rawSiswaData }, { data: rawGuruData }] = await Promise.all([
+      client.from('master_siswa').select('*'),
+      client.from('master_guru').select('*')
+    ]);
+
+    const rawSiswaList: MasterSiswaItem[] = Array.isArray(rawSiswaData)
+      ? rawSiswaData.map((row: any) => ({
+          id: row.id,
+          nisn: row.nisn || '',
+          nama: row.nama || '',
+          jenisKelamin: row.jenis_kelamin || row.kelas || row.jabatan || '',
+          tahun: row.angkatan || ''
+        }))
+      : [];
+
+    const rawGuruList: MasterGuruItem[] = Array.isArray(rawGuruData)
+      ? rawGuruData.map((row: any) => ({
+          id: row.id,
+          nuptk: row.nuptk || '',
+          nama: row.nama || '',
+          jabatan: row.jabatan || ''
+        }))
+      : [];
+
+    const { cleanSiswa, cleanGuru } = sanitizeAndReconcileMasterData(rawSiswaList, rawGuruList);
+
+    return { siswa: cleanSiswa, guru: cleanGuru };
+  } catch (err) {
+    console.warn('Supabase fetch sanitized master exception:', err);
+    return null;
+  }
+}
 
 /**
  * Fetch all Siswa from Supabase
  */
 export async function fetchMasterSiswaFromSupabase(): Promise<MasterSiswaItem[] | null> {
-  const client = getSupabaseClient();
-  if (!client) return null;
-  try {
-    const { data, error } = await client
-      .from('master_siswa')
-      .select('*')
-      .order('nama', { ascending: true });
-    if (error) {
-      console.warn('Supabase fetch master_siswa error:', error);
-      return null;
-    }
-    if (!Array.isArray(data)) return [];
-    return data.map((row: any) => ({
-      id: row.id,
-      nisn: row.nisn || '',
-      nama: row.nama || '',
-      jenisKelamin: row.jenis_kelamin || row.kelas || '',
-      tahun: row.angkatan || ''
-    }));
-  } catch (err) {
-    console.warn('Supabase fetch master_siswa exception:', err);
-    return null;
-  }
+  const res = await fetchSanitizedMasterDataFromSupabase();
+  return res ? res.siswa : null;
 }
 
 export async function clearMasterSiswaInSupabase(): Promise<boolean> {
@@ -935,28 +963,8 @@ export async function clearMasterGuruInSupabase(): Promise<boolean> {
  * Fetch all Guru from Supabase
  */
 export async function fetchMasterGuruFromSupabase(): Promise<MasterGuruItem[] | null> {
-  const client = getSupabaseClient();
-  if (!client) return null;
-  try {
-    const { data, error } = await client
-      .from('master_guru')
-      .select('*')
-      .order('nama', { ascending: true });
-    if (error) {
-      console.warn('Supabase fetch master_guru error:', error);
-      return null;
-    }
-    if (!Array.isArray(data)) return [];
-    return data.map((row: any) => ({
-      id: row.id,
-      nuptk: row.nuptk || '',
-      nama: row.nama || '',
-      jabatan: row.jabatan || ''
-    }));
-  } catch (err) {
-    console.warn('Supabase fetch master_guru exception:', err);
-    return null;
-  }
+  const res = await fetchSanitizedMasterDataFromSupabase();
+  return res ? res.guru : null;
 }
 
 /**

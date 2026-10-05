@@ -18,10 +18,10 @@ import {
   ArsipItem, 
   KATEGORI_SISWA, 
   KATEGORI_GURU,
-  getStoredMasterSiswa, 
-  getStoredMasterGuru, 
+  getSanitizedMasterData, 
   getStoredArsip 
 } from '../data/mockDatabase';
+import { fetchSanitizedMasterDataFromSupabase } from '../supabase';
 
 interface RekapArsipViewProps {
   onPreview: (item: ArsipItem) => void;
@@ -31,24 +31,41 @@ export default function RekapArsipView({ onPreview }: RekapArsipViewProps) {
   const [targetKelompok, setTargetKelompok] = useState<'Siswa' | 'Guru'>('Siswa');
   const [searchName, setSearchName] = useState('');
   const [mobileViewMode, setMobileViewMode] = useState<'cards' | 'table'>('cards');
-  const [dataVersion, setDataVersion] = useState(0);
+
+  const [masterSiswa, setMasterSiswa] = useState<MasterSiswaItem[]>(() => getSanitizedMasterData().siswa);
+  const [masterGuru, setMasterGuru] = useState<MasterGuruItem[]>(() => getSanitizedMasterData().guru);
+  const [allArsip, setAllArsip] = useState<ArsipItem[]>(() => getStoredArsip());
+
+  const reloadData = async () => {
+    const { siswa: localSiswa, guru: localGuru } = getSanitizedMasterData();
+    const localArsip = getStoredArsip();
+
+    setAllArsip(localArsip);
+
+    const supaData = await fetchSanitizedMasterDataFromSupabase().catch(() => null);
+
+    if (supaData) {
+      setMasterSiswa(supaData.siswa);
+      setMasterGuru(supaData.guru);
+    } else {
+      setMasterSiswa(localSiswa);
+      setMasterGuru(localGuru);
+    }
+  };
 
   useEffect(() => {
-    const handleCloudUpdate = () => setDataVersion(v => v + 1);
+    reloadData();
+    const handleCloudUpdate = () => reloadData();
     window.addEventListener('earsip:cloud-synced', handleCloudUpdate);
     return () => window.removeEventListener('earsip:cloud-synced', handleCloudUpdate);
   }, []);
 
-  const masterSiswa = useMemo(() => getStoredMasterSiswa(), [dataVersion]);
-  const masterGuru = useMemo(() => getStoredMasterGuru(), [dataVersion]);
-  const allArsip = useMemo(() => getStoredArsip(), [dataVersion]);
-
-  // Matriks Siswa
+  // Matriks Siswa (Langsung dari Master Data Siswa)
   const siswaMatrix = useMemo(() => {
     return masterSiswa.map((siswa, idx) => {
       const userArchives = allArsip.filter(
         a => a.kategoriUtama === 'Arsip Siswa' && 
-        (a.subjek.toLowerCase().includes(siswa.nama.toLowerCase()) || a.identitas === siswa.nisn)
+        (a.subjek.toLowerCase().includes(siswa.nama.toLowerCase()) || (siswa.nisn && siswa.nisn !== '-' && a.identitas === siswa.nisn))
       );
 
       const statusMap: { [kat: string]: boolean } = {};
@@ -78,12 +95,12 @@ export default function RekapArsipView({ onPreview }: RekapArsipViewProps) {
     });
   }, [masterSiswa, allArsip]);
 
-  // Matriks Guru
+  // Matriks Guru (Langsung dari Master Data Guru)
   const guruMatrix = useMemo(() => {
     return masterGuru.map((guru, idx) => {
       const userArchives = allArsip.filter(
         a => a.kategoriUtama === 'Arsip Guru' && 
-        (a.subjek.toLowerCase().includes(guru.nama.toLowerCase()) || a.identitas === guru.nuptk)
+        (a.subjek.toLowerCase().includes(guru.nama.toLowerCase()) || (guru.nuptk && guru.nuptk !== '-' && a.identitas === guru.nuptk))
       );
 
       const statusMap: { [kat: string]: boolean } = {};
