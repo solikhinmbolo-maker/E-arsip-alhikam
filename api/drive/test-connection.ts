@@ -7,7 +7,7 @@ export default async function handler(req: any, res: any) {
   }
 
   const scriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL?.trim();
-  const scriptSecret = process.env.GOOGLE_APPS_SCRIPT_SECRET?.trim() || '';
+  const scriptSecret = process.env.GOOGLE_APPS_SCRIPT_SECRET?.trim() || 'eArsipSecretAlHikam2026_SecureKey';
 
   if (!scriptUrl) {
     res.statusCode = 200;
