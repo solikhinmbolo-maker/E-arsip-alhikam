@@ -240,20 +240,42 @@ export function sanitizeAndReconcileMasterData(
   rawSiswa: MasterSiswaItem[],
   rawGuru: MasterGuruItem[]
 ): { cleanSiswa: MasterSiswaItem[]; cleanGuru: MasterGuruItem[] } {
-  const cleanSiswa: MasterSiswaItem[] = [];
   const cleanGuru: MasterGuruItem[] = [];
+  const guruNamesSet = new Set<string>();
 
-  const seenSiswaNames = new Set<string>();
-  const seenGuruNames = new Set<string>();
-
-  const processSiswaCandidate = (item: MasterSiswaItem) => {
+  // 1. Process Master Guru first to register all valid teachers & staff
+  (rawGuru || []).forEach(item => {
     if (!item || !item.nama || !item.nama.trim()) return;
     const cleanName = item.nama.trim();
     const lowerName = cleanName.toLowerCase();
 
+    if (!guruNamesSet.has(lowerName)) {
+      guruNamesSet.add(lowerName);
+      cleanGuru.push({
+        ...item,
+        nama: cleanName
+      });
+    }
+  });
+
+  const cleanSiswa: MasterSiswaItem[] = [];
+  const siswaNamesSet = new Set<string>();
+
+  // 2. Process Master Siswa, strictly excluding any teacher/staff entries
+  (rawSiswa || []).forEach(item => {
+    if (!item || !item.nama || !item.nama.trim()) return;
+    const cleanName = item.nama.trim();
+    const lowerName = cleanName.toLowerCase();
+
+    // If already registered in Master Guru, DO NOT include in Master Siswa!
+    if (guruNamesSet.has(lowerName)) {
+      return;
+    }
+
+    // Check if record in rawSiswa is actually a teacher based on job title/keywords
     if (isTeacherRecord(item)) {
-      if (!seenGuruNames.has(lowerName)) {
-        seenGuruNames.add(lowerName);
+      if (!guruNamesSet.has(lowerName)) {
+        guruNamesSet.add(lowerName);
         cleanGuru.push({
           id: item.id.startsWith('G') ? item.id : `G_${item.id}`,
           nama: cleanName,
@@ -261,46 +283,17 @@ export function sanitizeAndReconcileMasterData(
           jabatan: item.jenisKelamin && item.jenisKelamin.length > 2 ? item.jenisKelamin : 'Guru Pengajar'
         });
       }
-    } else {
-      if (!seenSiswaNames.has(lowerName)) {
-        seenSiswaNames.add(lowerName);
-        cleanSiswa.push({
-          ...item,
-          nama: cleanName
-        });
-      }
+      return;
     }
-  };
 
-  const processGuruCandidate = (item: MasterGuruItem) => {
-    if (!item || !item.nama || !item.nama.trim()) return;
-    const cleanName = item.nama.trim();
-    const lowerName = cleanName.toLowerCase();
-
-    if (isTeacherRecord(item)) {
-      if (!seenGuruNames.has(lowerName)) {
-        seenGuruNames.add(lowerName);
-        cleanGuru.push({
-          ...item,
-          nama: cleanName
-        });
-      }
-    } else {
-      if (!seenSiswaNames.has(lowerName)) {
-        seenSiswaNames.add(lowerName);
-        cleanSiswa.push({
-          id: item.id.startsWith('S') ? item.id : `S_${item.id}`,
-          nama: cleanName,
-          nisn: item.nuptk && item.nuptk !== '-' && /^\d+$/.test(item.nuptk) ? item.nuptk : '-',
-          tahun: '2025',
-          jenisKelamin: 'L'
-        });
-      }
+    if (!siswaNamesSet.has(lowerName)) {
+      siswaNamesSet.add(lowerName);
+      cleanSiswa.push({
+        ...item,
+        nama: cleanName
+      });
     }
-  };
-
-  (rawSiswa || []).forEach(processSiswaCandidate);
-  (rawGuru || []).forEach(processGuruCandidate);
+  });
 
   return { cleanSiswa, cleanGuru };
 }

@@ -44,7 +44,6 @@ import LoginPage from './components/LoginPage';
 import DashboardView from './components/DashboardView';
 import FormUploadView from './components/FormUploadView';
 import FormUnduhView from './components/FormUnduhView';
-import RekapArsipView from './components/RekapArsipView';
 import BukuIndukView from './components/BukuIndukView';
 import LegalisirView from './components/LegalisirView';
 import AuditLogView from './components/AuditLogView';
@@ -103,7 +102,7 @@ import {
   fetchConfigFromServer
 } from './supabase';
 
-type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'rekap' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah';
+type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah';
 type SubKategori = 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
 
 // Isolated live clock component so ticking every second doesn't re-render entire page/charts
@@ -1207,7 +1206,6 @@ function doGet(e) {
     dashboard: 'Dashboard Executive',
     upload: `Upload Dokumen (${activeSubKategori})`,
     unduh: `Unduh Dokumen (${activeSubKategori})`,
-    rekap: 'Matriks Rekap Kelengkapan Berkas',
     'buku-induk': 'Master Data (Siswa & Guru)',
     legalisir: 'Verifikasi & Legalisir Digital',
     'audit-log': 'Log & Jejak Audit Pengarsipan',
@@ -1368,22 +1366,6 @@ function doGet(e) {
               </div>
             )}
           </div>
-
-          {/* Rekap Arsip */}
-          <button
-            onClick={() => {
-              setActivePage('rekap');
-              setMobileSidebarOpen(false);
-            }}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-              activePage === 'rekap'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-            }`}
-          >
-            <CheckSquare className="w-4 h-4" />
-            <span>Rekap Arsip</span>
-          </button>
 
           {/* Verifikasi & Legalisir */}
           <button
@@ -1722,12 +1704,6 @@ function doGet(e) {
             />
           )}
 
-          {activePage === 'rekap' && (
-            <RekapArsipView
-              onPreview={(item) => setPreviewItem(item)}
-            />
-          )}
-
           {activePage === 'buku-induk' && (
             <BukuIndukView
               onNavigateToArsip={(sub, nama) => {
@@ -1940,21 +1916,21 @@ function doGet(e) {
           <span className="text-[10px] tracking-tight">Unduh</span>
         </button>
 
-        {/* Rekap */}
+        {/* Log & Jejak Audit */}
         <button
-          onClick={() => setActivePage('rekap')}
+          onClick={() => setActivePage('audit-log')}
           className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
-            activePage === 'rekap'
+            activePage === 'audit-log'
               ? 'text-blue-600 font-bold'
               : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${
-            activePage === 'rekap' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            activePage === 'audit-log' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
           }`}>
-            <CheckSquare className="w-5 h-5" />
+            <History className="w-5 h-5" />
           </div>
-          <span className="text-[10px] tracking-tight">Rekap</span>
+          <span className="text-[10px] tracking-tight">Log Audit</span>
         </button>
 
         {/* Setting / Pengaturan Sistem */}

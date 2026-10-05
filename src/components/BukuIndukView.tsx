@@ -288,7 +288,7 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
 
       setSiswaList(updatedList);
       setIsSaving(false);
-      setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data siswa ke Master Data & Rekap!`);
+      setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data siswa ke Master Data!`);
     } else {
       const validRows = batchGuruRows.filter(r => r.nama.trim() && r.nuptk.trim());
       if (validRows.length === 0) {
@@ -313,10 +313,10 @@ export default function BukuIndukView({ onNavigateToArsip }: BukuIndukViewProps)
 
       setGuruList(updatedList);
       setIsSaving(false);
-      setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data guru/tendik ke Master Data & Rekap!`);
+      setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data guru/tendik ke Master Data!`);
     }
 
-    // Trigger global cloud sync event for instant Rekap Arsip updates
+    // Trigger global cloud sync event for instant Master Data updates
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
     }

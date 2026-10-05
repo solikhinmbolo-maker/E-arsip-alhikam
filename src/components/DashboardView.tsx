@@ -28,7 +28,7 @@ import { getSupabaseClient } from '../supabase';
 Chart.register(...registerables);
 
 interface DashboardViewProps {
-  onNavigate: (view: 'upload' | 'unduh' | 'rekap' | 'laporan', subcategory?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya') => void;
+  onNavigate: (view: 'upload' | 'unduh' | 'audit-log' | 'laporan', subcategory?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya') => void;
   dataVersion?: number;
 }
 

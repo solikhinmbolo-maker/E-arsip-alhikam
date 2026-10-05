@@ -922,6 +922,28 @@ export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
 
     const { cleanSiswa, cleanGuru } = sanitizeAndReconcileMasterData(rawSiswaList, rawGuruList);
 
+    // Auto-purge misplaced records from Supabase tables asynchronously
+    const guruNames = new Set(cleanGuru.map(g => g.nama.trim().toLowerCase()));
+    const siswaNames = new Set(cleanSiswa.map(s => s.nama.trim().toLowerCase()));
+
+    // Delete teachers from master_siswa table
+    const misplacedTeacherIdsInSiswaTable = (Array.isArray(rawSiswaData) ? rawSiswaData : [])
+      .filter((row: any) => row.id && row.nama && guruNames.has(row.nama.trim().toLowerCase()))
+      .map((row: any) => row.id);
+
+    if (misplacedTeacherIdsInSiswaTable.length > 0) {
+      client.from('master_siswa').delete().in('id', misplacedTeacherIdsInSiswaTable).then(() => {});
+    }
+
+    // Delete students from master_guru table
+    const misplacedStudentIdsInGuruTable = (Array.isArray(rawGuruData) ? rawGuruData : [])
+      .filter((row: any) => row.id && row.nama && !guruNames.has(row.nama.trim().toLowerCase()) && siswaNames.has(row.nama.trim().toLowerCase()))
+      .map((row: any) => row.id);
+
+    if (misplacedStudentIdsInGuruTable.length > 0) {
+      client.from('master_guru').delete().in('id', misplacedStudentIdsInGuruTable).then(() => {});
+    }
+
     return { siswa: cleanSiswa, guru: cleanGuru };
   } catch (err) {
     console.warn('Supabase fetch sanitized master exception:', err);
