@@ -109,30 +109,43 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     return allArsip.slice(0, 5);
   }, [allArsip]);
 
-  // Real-time Supabase Storage Calculation (20.0 GB Limit)
+  // Real-time Storage Calculation (20.0 GB Limit)
   const TOTAL_STORAGE_MB = 20 * 1024; // 20 GB
   const [remoteStorageMB, setRemoteStorageMB] = useState<number | null>(null);
 
-  // Compute used storage from local archives metadata
+  // Compute used storage from all uploaded archives metadata (Google Drive + Supabase)
   const localCalculatedMB = useMemo(() => {
     let sumMB = 0;
     allArsip.forEach(item => {
-      if (!item.ukuran) return;
-      const str = item.ukuran.toLowerCase();
-      const mbMatch = str.match(/([\d.]+)\s*mb/);
+      if (!item.ukuran) {
+        sumMB += 0.5; // fallback default 500 KB if no metadata
+        return;
+      }
+      const raw = String(item.ukuran).trim().replace(',', '.').toLowerCase();
+      const mbMatch = raw.match(/([\d.]+)\s*mb/);
       if (mbMatch && mbMatch[1]) {
         sumMB += parseFloat(mbMatch[1]) || 0;
       } else {
-        const kbMatch = str.match(/([\d.]+)\s*kb/);
+        const kbMatch = raw.match(/([\d.]+)\s*kb/);
         if (kbMatch && kbMatch[1]) {
           sumMB += (parseFloat(kbMatch[1]) || 0) / 1024;
+        } else {
+          const bMatch = raw.match(/([\d.]+)\s*b/);
+          if (bMatch && bMatch[1]) {
+            sumMB += (parseFloat(bMatch[1]) || 0) / (1024 * 1024);
+          } else {
+            const num = parseFloat(raw);
+            if (!isNaN(num) && num > 0) {
+              sumMB += num;
+            }
+          }
         }
       }
     });
     return sumMB;
   }, [allArsip]);
 
-  // Query actual files in Supabase Storage bucket 'arsip'
+  // Query actual files in Supabase Storage bucket 'arsip' (if any files stored directly)
   useEffect(() => {
     let isMounted = true;
     const fetchRemoteSize = async () => {
@@ -159,12 +172,13 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     return () => { isMounted = false; };
   }, [allArsip, dataVersion]);
 
-  const activeUsedMB = remoteStorageMB !== null ? remoteStorageMB : localCalculatedMB;
+  // Choose the larger and true calculated storage to avoid empty bucket override
+  const activeUsedMB = Math.max(localCalculatedMB, remoteStorageMB || 0);
   const usedStorageDisplay = activeUsedMB >= 1024 
     ? `${(activeUsedMB / 1024).toFixed(2)} GB`
-    : `${activeUsedMB > 0 ? activeUsedMB.toFixed(1) : '0.0'} MB`;
+    : `${activeUsedMB > 0 ? (activeUsedMB >= 10 ? activeUsedMB.toFixed(1) : activeUsedMB.toFixed(2)) : '0.00'} MB`;
   const totalStorageDisplay = '20.0 GB';
-  const storagePercentage = Math.max(0.2, Math.min(100, (activeUsedMB / TOTAL_STORAGE_MB) * 100));
+  const storagePercentage = Math.max(0.1, Math.min(100, (activeUsedMB / TOTAL_STORAGE_MB) * 100));
 
   // Siswa per angkatan
   const siswaPerTahun: { [th: string]: number } = {};
