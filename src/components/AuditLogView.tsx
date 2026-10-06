@@ -33,7 +33,8 @@ import {
   AuditLogItem, 
   getStoredAuditLogs,
   clearStoredAuditLogs,
-  getCurrentOperatorEmail
+  getCurrentOperatorEmail,
+  syncAuditLogsFromCloud
 } from '../data/mockDatabase';
 import { fetchAuditLogsFromSupabase } from '../supabase';
 
@@ -46,37 +47,16 @@ export default function AuditLogView() {
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Reload logs from local storage and optionally merge cloud logs
+  // Reload logs from cloud and local storage
   const reloadLogs = useCallback(async () => {
-    const local = getStoredAuditLogs();
     try {
-      const cloud = await fetchAuditLogsFromSupabase();
-      if (cloud && cloud.length > 0) {
-        // Merge cloud with local by unique id
-        const mergedMap = new Map<string, AuditLogItem>();
-        local.forEach(l => mergedMap.set(l.id, l));
-        cloud.forEach((c: any) => {
-          if (!mergedMap.has(c.id)) {
-            mergedMap.set(c.id, {
-              id: c.id,
-              waktu: c.waktu,
-              aksi: c.aksi,
-              kategori: c.kategori,
-              subjek: c.subjek,
-              detail: c.detail,
-              operator: c.operator || 'admin@alhicam.sch.id',
-              status: c.status || 'SUCCESS'
-            });
-          }
-        });
-        const combined = Array.from(mergedMap.values()).sort((a, b) => {
-          return b.waktu.localeCompare(a.waktu);
-        });
-        setLogs(combined);
+      const unified = await syncAuditLogsFromCloud();
+      if (Array.isArray(unified)) {
+        setLogs(unified);
         return;
       }
     } catch {}
-    setLogs(local);
+    setLogs(getStoredAuditLogs());
   }, []);
 
   // Real-time Event Listener: Updates view immediately on any app event

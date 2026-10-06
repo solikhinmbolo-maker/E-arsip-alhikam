@@ -271,21 +271,23 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
 
     if (!Array.isArray(data)) return [];
 
-    return data.map((row: any) => ({
-      id: row.id,
-      tanggal: row.tanggal || '',
-      tahun: row.tahun || '',
-      identitas: row.identitas || '-',
-      subjek: row.subjek || '',
-      kategori: row.kategori || '',
-      kategoriUtama: row.kategori_utama || 'Arsip Siswa',
-      namaFileAsli: row.nama_file_asli || '',
-      ukuran: row.ukuran || '',
-      linkDrive: row.link_drive || '',
-      uploader: row.uploader || 'admin@alhicam.sch.id',
-      isTrash: Boolean(row.is_trash),
-      deletedAt: row.deleted_at || undefined
-    }));
+    return data
+      .filter((row: any) => !row.id.startsWith('SYS_') && row.kategori_utama !== 'SystemRegistry')
+      .map((row: any) => ({
+        id: row.id,
+        tanggal: row.tanggal || '',
+        tahun: row.tahun || '',
+        identitas: row.identitas || '-',
+        subjek: row.subjek || '',
+        kategori: row.kategori || '',
+        kategoriUtama: row.kategori_utama || 'Arsip Siswa',
+        namaFileAsli: row.nama_file_asli || '',
+        ukuran: row.ukuran || '',
+        linkDrive: row.link_drive || '',
+        uploader: row.uploader || 'admin@alhicam.sch.id',
+        isTrash: Boolean(row.is_trash),
+        deletedAt: row.deleted_at || undefined
+      }));
   } catch (err) {
     console.warn('Supabase fetch failed:', err);
     return null;
@@ -1408,9 +1410,9 @@ export function subscribeToSupabaseUsers(onUpdate: (users: any[]) => void) {
 }
 
 /**
- * Save Audit Log to Supabase PostgreSQL Database
+ * Save Audit Log and full registry snapshot to Supabase Cloud
  */
-export async function saveAuditLogToSupabase(log: any): Promise<boolean> {
+export async function saveAuditLogToSupabase(log: any, fullLogsSnapshot?: any[]): Promise<boolean> {
   const client = getSupabaseClient();
   if (!client) return false;
 
@@ -1426,14 +1428,90 @@ export async function saveAuditLogToSupabase(log: any): Promise<boolean> {
       status: log.status || 'SUCCESS'
     };
 
-    const { error } = await client
-      .from('audit_logs')
-      .upsert([payload], { onConflict: 'id' });
+    // 1. Try upserting into table 'audit_logs'
+    try {
+      await client
+        .from('audit_logs')
+        .upsert([payload], { onConflict: 'id' });
+    } catch {}
 
-    if (error) {
-      // Table may not exist yet, fallback safely
-      return false;
+    // 2. Snapshot to 'arsip' table as guaranteed system registry row
+    if (fullLogsSnapshot && Array.isArray(fullLogsSnapshot)) {
+      const snapshotPayload = {
+        id: 'SYS_AUDIT_LOG_SNAPSHOT',
+        tanggal: new Date().toLocaleDateString('id-ID'),
+        tahun: new Date().getFullYear().toString(),
+        identitas: '-',
+        subjek: 'Jejak Audit Global Sistem',
+        kategori: 'Audit Trail',
+        kategori_utama: 'SystemRegistry',
+        nama_file_asli: 'audit_logs.json',
+        ukuran: `${(JSON.stringify(fullLogsSnapshot).length / 1024).toFixed(1)} KB`,
+        link_drive: JSON.stringify(fullLogsSnapshot.slice(0, 250)),
+        uploader: 'system',
+        is_trash: false
+      };
+
+      try {
+        await client
+          .from('arsip')
+          .upsert([snapshotPayload], { onConflict: 'id' });
+      } catch {}
     }
+
+    // 3. Save file snapshot to Supabase Storage Bucket 'arsip'
+    if (fullLogsSnapshot && Array.isArray(fullLogsSnapshot)) {
+      const blob = new Blob([JSON.stringify(fullLogsSnapshot.slice(0, 250))], { type: 'application/json' });
+      try {
+        await client.storage
+          .from('arsip')
+          .upload('system_meta/audit_logs.json', blob, { upsert: true });
+      } catch {}
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('saveAuditLogToSupabase warning:', err);
+    return false;
+  }
+}
+
+/**
+ * Save complete array of audit logs to Supabase
+ */
+export async function syncAllAuditLogsToSupabase(logs: any[]): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client || !Array.isArray(logs)) return false;
+
+  try {
+    const snapshotPayload = {
+      id: 'SYS_AUDIT_LOG_SNAPSHOT',
+      tanggal: new Date().toLocaleDateString('id-ID'),
+      tahun: new Date().getFullYear().toString(),
+      identitas: '-',
+      subjek: 'Jejak Audit Global Sistem',
+      kategori: 'Audit Trail',
+      kategori_utama: 'SystemRegistry',
+      nama_file_asli: 'audit_logs.json',
+      ukuran: `${(JSON.stringify(logs).length / 1024).toFixed(1)} KB`,
+      link_drive: JSON.stringify(logs.slice(0, 250)),
+      uploader: 'system',
+      is_trash: false
+    };
+
+    try {
+      await client
+        .from('arsip')
+        .upsert([snapshotPayload], { onConflict: 'id' });
+    } catch {}
+
+    const blob = new Blob([JSON.stringify(logs.slice(0, 250))], { type: 'application/json' });
+    try {
+      await client.storage
+        .from('arsip')
+        .upload('system_meta/audit_logs.json', blob, { upsert: true });
+    } catch {}
+
     return true;
   } catch {
     return false;
@@ -1441,28 +1519,66 @@ export async function saveAuditLogToSupabase(log: any): Promise<boolean> {
 }
 
 /**
- * Fetch Audit Logs from Supabase PostgreSQL Database
+ * Fetch authoritative Audit Logs from Supabase Cloud
  */
-export async function fetchAuditLogsFromSupabase(): Promise<any[]> {
+export async function fetchAuditLogsFromSupabase(): Promise<any[] | null> {
   const client = getSupabaseClient();
-  if (!client) return [];
+  if (!client) return null;
 
   try {
-    const { data, error } = await client
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(250);
+    // 1. Try 'audit_logs' dedicated table
+    try {
+      const { data: tableData, error: tableErr } = await client
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(250);
 
-    if (error || !data) return [];
-    return data;
-  } catch {
-    return [];
+      if (!tableErr && Array.isArray(tableData) && tableData.length > 0) {
+        return tableData;
+      }
+    } catch {}
+
+    // 2. Try snapshot row in 'arsip' table
+    try {
+      const { data: rowData, error: rowErr } = await client
+        .from('arsip')
+        .select('link_drive')
+        .eq('id', 'SYS_AUDIT_LOG_SNAPSHOT')
+        .single();
+
+      if (!rowErr && rowData?.link_drive) {
+        const parsed = JSON.parse(rowData.link_drive);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+
+    // 3. Try storage bucket file
+    try {
+      const { data: fileBlob, error: fileErr } = await client.storage
+        .from('arsip')
+        .download('system_meta/audit_logs.json');
+
+      if (!fileErr && fileBlob) {
+        const text = await fileBlob.text();
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+
+    return null;
+  } catch (err) {
+    console.warn('fetchAuditLogsFromSupabase error:', err);
+    return null;
   }
 }
 
 /**
- * Subscribe to realtime changes on Supabase 'audit_logs' table
+ * Subscribe to realtime changes on Supabase audit logs across all devices
  */
 export function subscribeToSupabaseAuditLogs(onUpdate: (logs: any[]) => void) {
   const client = getSupabaseClient();
@@ -1473,7 +1589,16 @@ export function subscribeToSupabaseAuditLogs(onUpdate: (logs: any[]) => void) {
   });
 
   const channel = client
-    .channel('audit_logs_realtime_channel')
+    .channel('audit_logs_realtime_broadcast')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'arsip', filter: 'id=eq.SYS_AUDIT_LOG_SNAPSHOT' },
+      () => {
+        fetchAuditLogsFromSupabase().then(logs => {
+          if (logs && logs.length > 0) onUpdate(logs);
+        });
+      }
+    )
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'audit_logs' },

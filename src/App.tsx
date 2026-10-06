@@ -73,7 +73,8 @@ import {
   getStoredMasterGuru,
   getAvatarForUser,
   saveAvatarForUser,
-  getPermanentDeletedIds
+  getPermanentDeletedIds,
+  syncAuditLogsFromCloud
 } from './data/mockDatabase';
 import { 
   subscribeToArsip, 
@@ -100,7 +101,8 @@ import {
   subscribeToSupabaseUsers,
   fetchUsersFromSupabase,
   syncConfigToServer,
-  fetchConfigFromServer
+  fetchConfigFromServer,
+  subscribeToSupabaseAuditLogs
 } from './supabase';
 
 type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah' | 'pengaturan';
@@ -601,6 +603,18 @@ export default function App() {
       }
     }).catch(() => {});
 
+    // Pull authoritative Audit Logs from Cloud across all devices
+    syncAuditLogsFromCloud().catch(() => {});
+
+    const unsubAuditLogs = subscribeToSupabaseAuditLogs(() => {
+      syncAuditLogsFromCloud().catch(() => {});
+    });
+
+    const handleWindowFocus = () => {
+      syncAuditLogsFromCloud().catch(() => {});
+    };
+    window.addEventListener('focus', handleWindowFocus);
+
     // Cross-Device Server Configuration Auto-Sync:
     // When opened on ANY other device (phone, laptop, teacher's PC), auto-fetch pre-configured credentials
     const currentLocalCfg = getStoredSupabaseConfig();
@@ -622,6 +636,8 @@ export default function App() {
       unsubSiswa();
       unsubGuru();
       unsubSupabase();
+      unsubAuditLogs();
+      window.removeEventListener('focus', handleWindowFocus);
     };
   }, []);
 

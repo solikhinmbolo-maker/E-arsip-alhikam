@@ -13,7 +13,9 @@ import {
   saveGuruToSupabase,
   deleteMasterSiswaFromSupabase,
   deleteMasterGuruFromSupabase,
-  saveAuditLogToSupabase
+  saveAuditLogToSupabase,
+  syncAllAuditLogsToSupabase,
+  fetchAuditLogsFromSupabase
 } from '../supabase';
 
 export interface MasterSiswaItem {
@@ -536,7 +538,7 @@ export function getAllRawArsip(): ArsipItem[] {
     }
     const items: ArsipItem[] = JSON.parse(raw);
     const deletedIds = getPermanentDeletedIds();
-    const validItems = items.filter(it => !deletedIds.has(it.id));
+    const validItems = items.filter(it => !deletedIds.has(it.id) && !it.id.startsWith('SYS_') && it.kategoriUtama !== ('SystemRegistry' as any));
 
     // Enrich with fileDataUrl from memory cache if available
     return validItems.map(item => {
@@ -1091,9 +1093,9 @@ export function addAuditLog(log: {
     window.dispatchEvent(new CustomEvent('earsip:audit-updated', { detail: newLog }));
   }
 
-  // Cloud sync to Supabase in background
+  // Multi-tier Cloud sync to Supabase (saves individual log & full array snapshot)
   try {
-    saveAuditLogToSupabase(newLog).catch(() => {});
+    saveAuditLogToSupabase(newLog, updated).catch(() => {});
   } catch {}
 
   return updated;
@@ -1119,7 +1121,65 @@ export function clearStoredAuditLogs(): AuditLogItem[] {
     window.dispatchEvent(new CustomEvent('earsip:audit-updated', { detail: clearActionLog }));
   }
 
+  // Sync clear action to cloud
+  try {
+    syncAllAuditLogsToSupabase(freshList).catch(() => {});
+  } catch {}
+
   return freshList;
+}
+
+/**
+ * Fetch and merge cloud audit logs from Supabase across all devices & browsers
+ */
+export async function syncAuditLogsFromCloud(): Promise<AuditLogItem[]> {
+  try {
+    const cloud = await fetchAuditLogsFromSupabase();
+    if (Array.isArray(cloud) && cloud.length > 0) {
+      const local = getStoredAuditLogs();
+      const map = new Map<string, AuditLogItem>();
+
+      // 1. Put cloud logs into map
+      cloud.forEach((c: any) => {
+        if (c && c.id) {
+          map.set(c.id, {
+            id: c.id,
+            waktu: c.waktu,
+            aksi: c.aksi,
+            kategori: c.kategori,
+            subjek: c.subjek,
+            detail: c.detail,
+            operator: c.operator || 'admin@alhicam.sch.id',
+            status: c.status || 'SUCCESS'
+          });
+        }
+      });
+
+      // 2. Put local logs that might not yet be in cloud
+      local.forEach(l => {
+        if (!map.has(l.id)) {
+          map.set(l.id, l);
+        }
+      });
+
+      const merged = Array.from(map.values()).slice(0, 250);
+      safeSetItem(DB_AUDIT_KEY, JSON.stringify(merged));
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('earsip:audit-updated'));
+      }
+      return merged;
+    } else {
+      // If cloud is empty, seed cloud with local logs
+      const local = getStoredAuditLogs();
+      if (local.length > 0) {
+        syncAllAuditLogsToSupabase(local).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn('syncAuditLogsFromCloud error:', err);
+  }
+  return getStoredAuditLogs();
 }
 
 // =====================================================================
