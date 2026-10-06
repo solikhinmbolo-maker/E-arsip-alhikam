@@ -109,8 +109,8 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     return allArsip.slice(0, 5);
   }, [allArsip]);
 
-  // Real-time Supabase Storage Calculation (1.0 GB Free Tier limit)
-  const TOTAL_STORAGE_MB = 1024; // 1 GB
+  // Real-time Supabase Storage Calculation (20.0 GB Limit)
+  const TOTAL_STORAGE_MB = 20 * 1024; // 20 GB
   const [remoteStorageMB, setRemoteStorageMB] = useState<number | null>(null);
 
   // Compute used storage from local archives metadata
@@ -163,7 +163,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   const usedStorageDisplay = activeUsedMB >= 1024 
     ? `${(activeUsedMB / 1024).toFixed(2)} GB`
     : `${activeUsedMB > 0 ? activeUsedMB.toFixed(1) : '0.0'} MB`;
-  const totalStorageDisplay = '1.0 GB';
+  const totalStorageDisplay = '20.0 GB';
   const storagePercentage = Math.max(0.2, Math.min(100, (activeUsedMB / TOTAL_STORAGE_MB) * 100));
 
   // Siswa per angkatan
