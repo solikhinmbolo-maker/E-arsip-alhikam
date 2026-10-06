@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { ArsipItem, getStoredArsip, moveToTrashArsipItem, getFileAttachment, addAuditLog } from '../data/mockDatabase';
+import { getSupabaseClient } from '../supabase';
 
 interface FormUnduhViewProps {
   kategoriMenu?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -123,42 +124,205 @@ export default function FormUnduhView({
     });
   }, [scopedData, filterTahun, filterJenis, searchTerm]);
 
-  // Handle Robust Download
+// Helper to convert base64 data URI to Blob for clean browser downloads
+function dataUriToBlob(dataUrl: string): Blob | null {
+  try {
+    if (!dataUrl || !dataUrl.startsWith('data:')) return null;
+    const parts = dataUrl.split(',');
+    if (parts.length < 2) return null;
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const byteCharacters = atob(parts[1]);
+    const byteArray = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteArray[i] = byteCharacters.charCodeAt(i);
+    }
+    return new Blob([byteArray], { type: mimeType });
+  } catch {
+    return null;
+  }
+}
+
+// Helper to extract Google Drive File ID
+function extractDriveIdForDownload(link?: string): string | null {
+  if (!link) return null;
+  const clean = link.trim();
+  if (clean.includes('/folders/')) return null;
+  if (clean.startsWith('gdrive://')) {
+    const id = clean.replace('gdrive://', '').trim();
+    if (id && id.length > 10) return id;
+  }
+  const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]{15,})/) ||
+                clean.match(/\/d\/([a-zA-Z0-9_-]{15,})/) ||
+                clean.match(/id=([a-zA-Z0-9_-]{15,})/);
+  if (match) return match[1];
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(clean)) return clean;
+  return null;
+}
+
+  // Handle Direct File Download (Never redirecting to Google Drive view tab)
   const handleDownload = async (item: ArsipItem) => {
     setIsDownloading(true);
     setDownloadingItemName(item.namaFileAsli || item.subjek);
-    setDownloadProgress(30);
+    setDownloadProgress(20);
+
+    const fallbackFilename = item.namaFileAsli || `${item.subjek}_${item.kategori.replace(/\s+/g, '_')}`;
 
     try {
+      // 1. Check local base64attachment (IndexedDB / Memory Cache)
       let fileContent = item.fileDataUrl || await getFileAttachment(item.id);
-      setDownloadProgress(70);
+      setDownloadProgress(50);
 
-      const element = document.createElement('a');
-      if (fileContent) {
-        element.setAttribute('href', fileContent);
-      } else if (item.linkDrive && item.linkDrive.startsWith('http')) {
-        element.setAttribute('href', item.linkDrive);
-        element.setAttribute('target', '_blank');
-      } else {
-        const fallbackText = `Dokumen E-Arsip Al-Hicam\nNama: ${item.subjek}\nKategori: ${item.kategori}\nTahun: ${item.tahun}\nID: ${item.id}`;
-        const blob = new Blob([fallbackText], { type: 'text/plain;charset=utf-8' });
-        element.setAttribute('href', URL.createObjectURL(blob));
+      if (fileContent && fileContent.startsWith('data:')) {
+        const blob = dataUriToBlob(fileContent);
+        if (blob) {
+          setDownloadProgress(80);
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fallbackFilename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          setDownloadProgress(100);
+          await new Promise(r => setTimeout(r, 200));
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+          addAuditLog({
+            aksi: 'UNDUH',
+            kategori: item.kategoriUtama || item.kategori,
+            subjek: item.subjek,
+            detail: `Unduh berkas lokal "${fallbackFilename}" (${item.ukuran || '-'})`,
+            status: 'SUCCESS'
+          });
+          return;
+        }
       }
 
-      element.setAttribute('download', item.namaFileAsli || `${item.subjek}_${item.kategori}.txt`);
-      document.body.appendChild(element);
+      // 2. Check Supabase Storage Bucket 'arsip'
+      const client = getSupabaseClient();
+      if (client) {
+        setDownloadProgress(60);
+        try {
+          const { data: supaBlob, error } = await client.storage.from('arsip').download(item.id);
+          if (!error && supaBlob) {
+            setDownloadProgress(90);
+            const blobUrl = URL.createObjectURL(supaBlob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = fallbackFilename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            setDownloadProgress(100);
+            await new Promise(r => setTimeout(r, 200));
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+            addAuditLog({
+              aksi: 'UNDUH',
+              kategori: item.kategoriUtama || item.kategori,
+              subjek: item.subjek,
+              detail: `Unduh berkas Supabase "${fallbackFilename}" (${item.ukuran || '-'})`,
+              status: 'SUCCESS'
+            });
+            return;
+          }
+        } catch {}
+      }
+
+      // 3. Check Google Drive Direct Binary Download
+      const driveId = extractDriveIdForDownload(item.linkDrive);
+      if (driveId) {
+        setDownloadProgress(70);
+        const directUrls = [
+          `https://lh3.googleusercontent.com/d/${driveId}`,
+          `https://drive.google.com/uc?export=download&id=${driveId}`
+        ];
+
+        let fetchedBlob: Blob | null = null;
+        for (const url of directUrls) {
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              const b = await res.blob();
+              if (b.size > 100) {
+                fetchedBlob = b;
+                break;
+              }
+            }
+          } catch {}
+        }
+
+        if (fetchedBlob) {
+          setDownloadProgress(90);
+          const blobUrl = URL.createObjectURL(fetchedBlob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fallbackFilename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          setDownloadProgress(100);
+          await new Promise(r => setTimeout(r, 200));
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+          addAuditLog({
+            aksi: 'UNDUH',
+            kategori: item.kategoriUtama || item.kategori,
+            subjek: item.subjek,
+            detail: `Unduh berkas Google Drive "${fallbackFilename}" (${item.ukuran || '-'})`,
+            status: 'SUCCESS'
+          });
+          return;
+        }
+
+        // Trigger Google Drive download stream without target="_blank" so it downloads directly in browser
+        setDownloadProgress(90);
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = `https://drive.google.com/uc?export=download&id=${driveId}`;
+        document.body.appendChild(iframe);
+        setDownloadProgress(100);
+        await new Promise(r => setTimeout(r, 1000));
+        document.body.removeChild(iframe);
+
+        addAuditLog({
+          aksi: 'UNDUH',
+          kategori: item.kategoriUtama || item.kategori,
+          subjek: item.subjek,
+          detail: `Unduh berkas Google Drive Stream "${fallbackFilename}" (${item.ukuran || '-'})`,
+          status: 'SUCCESS'
+        });
+        return;
+      }
+
+      // 4. Fallback text document file
+      setDownloadProgress(80);
+      const fallbackText = `DOKUMEN E-ARSIP DIGITAL SMP AL-HIKAM JOMBANG\n---------------------------------------------\nNama Subjek : ${item.subjek}\nKategori    : ${item.kategori} (${item.kategoriUtama})\nTahun       : ${item.tahun}\nNomor ID    : ${item.id}\nTanggal     : ${item.tanggal}\nUploader    : ${item.uploader}\n---------------------------------------------\n`;
+      const blob = new Blob([fallbackText], { type: 'text/plain;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fallbackFilename.endsWith('.txt') ? fallbackFilename : `${fallbackFilename}.txt`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
       setDownloadProgress(100);
-      await new Promise(r => setTimeout(r, 300));
-      element.click();
-      document.body.removeChild(element);
+      await new Promise(r => setTimeout(r, 200));
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
 
       addAuditLog({
         aksi: 'UNDUH',
         kategori: item.kategoriUtama || item.kategori,
         subjek: item.subjek,
-        detail: `Unduh berkas "${item.namaFileAsli || item.kategori}" (${item.ukuran || '-'})`,
+        detail: `Unduh dokumen arsip "${fallbackFilename}"`,
         status: 'SUCCESS'
       });
+
     } catch (err) {
       console.error('Download error:', err);
     } finally {
