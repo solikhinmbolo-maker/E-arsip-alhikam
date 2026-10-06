@@ -443,16 +443,6 @@ export default function FormUnduhView({
 
                       <button
                         type="button"
-                        onClick={() => handlePrint(item)}
-                        className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1"
-                        title="Cetak Dokumen"
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>Cetak</span>
-                      </button>
-
-                      <button
-                        type="button"
                         onClick={() => handleDownload(item)}
                         className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1"
                         title="Unduh Berkas Langsung"

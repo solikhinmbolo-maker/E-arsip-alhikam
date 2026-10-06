@@ -229,10 +229,23 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
 
   const handlePrintClick = () => {
     if (drivePreviewUrl) {
-      window.open(drivePreviewUrl, '_blank');
+      const win = window.open(drivePreviewUrl, '_blank');
+      if (win) {
+        setTimeout(() => {
+          try { win.print(); } catch {}
+        }, 1500);
+      }
       return;
     }
-    onPrint(item);
+    if (blobUrl || fileData) {
+      const win = window.open();
+      if (win) {
+        win.document.write(`<html><head><title>Cetak Dokumen - ${item?.namaFileAsli || item?.subjek}</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;"><iframe src="${blobUrl || fileData}" style="border:none;width:100%;height:100%;" onload="window.print();"></iframe></body></html>`);
+        win.document.close();
+      }
+      return;
+    }
+    window.print();
   };
 
   return (
@@ -297,9 +310,16 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
         <div className="flex-1 bg-slate-950 p-2 sm:p-4 overflow-y-auto flex items-center justify-center relative">
           
           {isLoadingFile ? (
-            <div className="flex flex-col items-center gap-3 text-slate-400 py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-              <span className="text-xs font-medium">Memuat berkas dokumen...</span>
+            <div className="flex flex-col items-center justify-center p-12 text-center bg-slate-900/90 border border-slate-800 rounded-3xl shadow-2xl max-w-md mx-auto my-auto space-y-4 animate-fadeIn">
+              <div className="w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center mx-auto shadow-inner">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-white mb-1">Sedang memuat berkas dari server...</h4>
+                <p className="text-xs text-slate-400">
+                  Mohon tunggu sebentar, dokumen sedang disinkronkan dari penyimpanan Cloud Google Drive.
+                </p>
+              </div>
             </div>
           ) : drivePreviewUrl ? (
             /* Primary Multi-Device Viewer: Embedded Google Drive Native Viewer for Word, PDF, Excel, & Images */
@@ -438,13 +458,6 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak</span>
-            </button>
-            <button
-              onClick={handleDownloadClick}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow transition-all cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Unduh Asli</span>
             </button>
           </div>
         </div>
