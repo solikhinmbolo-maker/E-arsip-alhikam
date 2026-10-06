@@ -106,7 +106,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   const guruCompletenessPct = totalGuru > 0 ? Math.min(100, Math.round((guruWithArsipCount / totalGuru) * 100)) : 0;
 
   const recentActivity = useMemo(() => {
-    return allArsip.slice(0, 3);
+    return allArsip.slice(0, 5);
   }, [allArsip]);
 
   // Real-time Supabase Storage Calculation (1.0 GB Free Tier limit)
@@ -476,83 +476,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           </span>
         </div>
 
-        {/* Widget 1: Status Kelengkapan & Storage Meter (PURE WHITE COMPACT CARD) */}
-        <div className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2.5">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">Kesehatan Arsip Digital</span>
-              <h3 className="text-xs font-bold text-slate-900 mt-1">Tingkat Kelengkapan Dokumen</h3>
-            </div>
-            <div className="p-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/60">
-              <ShieldCheck className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {/* Siswa Completeness Bar */}
-            <div>
-              <div className="flex items-center justify-between text-[11px] mb-0.5">
-                <span className="text-slate-800 font-semibold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-600" />
-                  Arsip Siswa
-                </span>
-                <span className="font-bold text-blue-600">{siswaCompletenessPct}%</span>
-              </div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-                  style={{ width: `${siswaCompletenessPct}%` }} 
-                />
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                {siswaWithArsipCount} dari {totalSiswa} siswa terdata di database
-              </span>
-            </div>
-
-            {/* Guru Completeness Bar */}
-            <div>
-              <div className="flex items-center justify-between text-[11px] mb-0.5">
-                <span className="text-slate-800 font-semibold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                  Arsip Guru
-                </span>
-                <span className="font-bold text-emerald-600">{guruCompletenessPct}%</span>
-              </div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-emerald-600 rounded-full transition-all duration-500" 
-                  style={{ width: `${guruCompletenessPct}%` }} 
-                />
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                {guruWithArsipCount} dari {totalGuru} guru terdata di database
-              </span>
-            </div>
-
-            {/* Storage Cloud Meter */}
-            <div className="pt-1.5 border-t border-slate-100">
-              <div className="flex items-center justify-between text-[11px] mb-0.5">
-                <span className="text-slate-800 font-semibold flex items-center gap-1.5">
-                  <HardDrive className="w-3.5 h-3.5 text-indigo-600" />
-                  Supabase Cloud Storage
-                </span>
-                <span className="font-bold text-indigo-600">{usedStorageDisplay}</span>
-              </div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-600 rounded-full transition-all duration-500" 
-                  style={{ width: `${storagePercentage}%` }} 
-                />
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5">
-                <span>Terpakai dari {totalStorageDisplay}</span>
-                <span className="text-indigo-600 font-semibold">{(100 - storagePercentage).toFixed(0)}% Sisa Storage</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Widget 2: Recent Upload Activity Stream (MATCHING WIDGET 1 TYPOGRAPHY & HEADER) */}
+        {/* Widget: Recent Upload Activity Stream (Aktivitas Upload Terbaru - 5 Berkas) */}
         <div className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div>

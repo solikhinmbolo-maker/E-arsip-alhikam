@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, 
   CloudUpload, 
@@ -625,6 +625,10 @@ export default function App() {
     };
   }, []);
 
+  const [showGasModal, setShowGasModal] = useState(false);
+  const [gasScriptContent, setGasScriptContent] = useState('');
+  const gasTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
   const handleCopyGAS = () => {
     const code = `// ================================================================
 // GOOGLE APPS SCRIPT WEBHOOK E-ARSIP SMP AL-HIKAM (V3.6 ENTERPRISE)
@@ -1015,9 +1019,13 @@ function doGet(e) {
   }
 }`;
 
-    navigator.clipboard.writeText(code);
-    setCopiedGAS(true);
-    setTimeout(() => setCopiedGAS(false), 3000);
+    setGasScriptContent(code);
+    setShowGasModal(true);
+    try {
+      navigator.clipboard.writeText(code);
+      setCopiedGAS(true);
+      setTimeout(() => setCopiedGAS(false), 3000);
+    } catch {}
   };
 
   // State for Real-Time Cloud Synchronization across All Devices
@@ -2062,6 +2070,70 @@ function doGet(e) {
           }
         }}
       />
+
+      {/* 9. MODAL SALIN GOOGLE APPS SCRIPT V3.6 ENTERPRISE */}
+      {showGasModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0F172A] border border-slate-700 rounded-3xl p-5 sm:p-6 max-w-lg w-full text-white shadow-2xl animate-scaleUp flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+                  <Copy className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold">Script Google Apps Script V3.6</h3>
+                  <p className="text-[11px] text-slate-400">Salin kode di bawah ini ke script.google.com</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGasModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white bg-slate-800/80 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 my-2 min-h-[220px] relative">
+              <textarea
+                ref={gasTextareaRef}
+                readOnly
+                value={gasScriptContent}
+                onClick={(e) => e.currentTarget.select()}
+                className="w-full h-full min-h-[220px] max-h-[50vh] p-3 bg-slate-900 border border-slate-700 rounded-2xl text-[11px] font-mono text-cyan-300 focus:outline-none focus:border-blue-500 resize-none select-all"
+                placeholder="Memuat skrip..."
+              />
+              <span className="absolute bottom-3 right-3 text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700">
+                Ketuk teks untuk memilih semua
+              </span>
+            </div>
+
+            <div className="flex gap-2.5 mt-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  if (gasTextareaRef.current) {
+                    gasTextareaRef.current.select();
+                    document.execCommand('copy');
+                    alert('✓ Script berhasil disalin ke clipboard! Silakan paste di Google Apps Script.');
+                  }
+                }}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Salin Teks ke Clipboard</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowGasModal(false)}
+                className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
