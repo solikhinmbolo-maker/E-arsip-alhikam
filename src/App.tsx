@@ -1763,6 +1763,7 @@ function doGet(e) {
               onOpenUserManagement={() => setShowUserModal(true)}
               userPrefs={userPrefs}
               onSavePref={handleSavePref}
+              onCopyGAS={handleCopyGAS}
             />
           )}
         </div>

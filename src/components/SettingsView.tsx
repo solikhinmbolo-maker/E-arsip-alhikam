@@ -78,6 +78,7 @@ interface SettingsViewProps {
     animations: boolean;
   };
   onSavePref: (key: string, value: any) => void;
+  onCopyGAS?: () => void;
 }
 
 // Sound Feedback Generator via Web Audio API (Native, lightweight, no external assets needed)
@@ -123,7 +124,8 @@ export default function SettingsView({
   currentUser,
   onOpenUserManagement,
   userPrefs,
-  onSavePref
+  onSavePref,
+  onCopyGAS
 }: SettingsViewProps) {
   const isSuperAdmin = currentUser?.role === 'Super Administrator' || 
     currentUser?.email?.toLowerCase().replace(/^@/, '') === 'superadmin' || 
@@ -1366,6 +1368,16 @@ export default function SettingsView({
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-blue-500 disabled:opacity-60"
                 placeholder="https://script.google.com/macros/s/.../exec"
               />
+              {onCopyGAS && (
+                <button
+                  type="button"
+                  onClick={onCopyGAS}
+                  className="mt-3 w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>📋 Salin Script Google Apps Script V3.6 Enterprise</span>
+                </button>
+              )}
             </div>
 
             {testConnStatus && (
