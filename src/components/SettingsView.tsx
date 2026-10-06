@@ -34,7 +34,8 @@ import {
   ExternalLink,
   Server,
   Smartphone,
-  ShieldCheck
+  ShieldCheck,
+  Edit3
 } from 'lucide-react';
 import { 
   GoogleSyncConfig, 
@@ -46,7 +47,9 @@ import {
   getTrashArsip, 
   getStoredMasterSiswa, 
   getStoredMasterGuru,
-  restoreSampleArsipData
+  restoreSampleArsipData,
+  renameKategoriCascade,
+  addAuditLog
 } from '../data/mockDatabase';
 import { 
   getStoredSupabaseConfig, 
@@ -205,55 +208,108 @@ export default function SettingsView({
   const [newKatGuru, setNewKatGuru] = useState('');
   const [newKatLainnya, setNewKatLainnya] = useState('');
 
+  // State for Editing Category Name with Automatic Cascade
+  const [editingCategory, setEditingCategory] = useState<{
+    type: 'siswa' | 'guru' | 'lainnya';
+    oldName: string;
+    newName: string;
+  } | null>(null);
+
   const handleAddKategori = (type: 'siswa' | 'guru' | 'lainnya') => {
     if (type === 'siswa' && newKatSiswa.trim()) {
-      if (kategoriSiswa.includes(newKatSiswa.trim())) {
-        showNotification('Kategori sudah ada.', 'error');
+      if (kategoriSiswa.some(k => k.trim().toLowerCase() === newKatSiswa.trim().toLowerCase())) {
+        showNotification('Kategori sudah ada dalam daftar.', 'error');
         return;
       }
       const updated = [...kategoriSiswa, newKatSiswa.trim()];
       setKategoriSiswa(updated);
       localStorage.setItem('EARSIP_CUSTOM_KAT_SISWA', JSON.stringify(updated));
+      addAuditLog({
+        aksi: 'PENGATURAN',
+        kategori: 'Arsip Siswa',
+        subjek: newKatSiswa.trim(),
+        detail: `Menambahkan kategori baru Arsip Siswa: "${newKatSiswa.trim()}"`,
+        operator: currentUser?.email || 'admin@alhicam.sch.id',
+        status: 'SUCCESS'
+      });
       setNewKatSiswa('');
-      showNotification('✓ Kategori Siswa ditambahkan');
+      window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
+      showNotification('✓ Kategori Siswa baru berhasil ditambahkan');
     } else if (type === 'guru' && newKatGuru.trim()) {
-      if (kategoriGuru.includes(newKatGuru.trim())) {
-        showNotification('Kategori sudah ada.', 'error');
+      if (kategoriGuru.some(k => k.trim().toLowerCase() === newKatGuru.trim().toLowerCase())) {
+        showNotification('Kategori sudah ada dalam daftar.', 'error');
         return;
       }
       const updated = [...kategoriGuru, newKatGuru.trim()];
       setKategoriGuru(updated);
       localStorage.setItem('EARSIP_CUSTOM_KAT_GURU', JSON.stringify(updated));
+      addAuditLog({
+        aksi: 'PENGATURAN',
+        kategori: 'Arsip Guru',
+        subjek: newKatGuru.trim(),
+        detail: `Menambahkan kategori baru Arsip Guru: "${newKatGuru.trim()}"`,
+        operator: currentUser?.email || 'admin@alhicam.sch.id',
+        status: 'SUCCESS'
+      });
       setNewKatGuru('');
-      showNotification('✓ Kategori Guru ditambahkan');
+      window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
+      showNotification('✓ Kategori Guru baru berhasil ditambahkan');
     } else if (type === 'lainnya' && newKatLainnya.trim()) {
-      if (kategoriLainnya.includes(newKatLainnya.trim())) {
-        showNotification('Kategori sudah ada.', 'error');
+      if (kategoriLainnya.some(k => k.trim().toLowerCase() === newKatLainnya.trim().toLowerCase())) {
+        showNotification('Kategori sudah ada dalam daftar.', 'error');
         return;
       }
       const updated = [...kategoriLainnya, newKatLainnya.trim()];
       setKategoriLainnya(updated);
       localStorage.setItem('EARSIP_CUSTOM_KAT_LAINNYA', JSON.stringify(updated));
+      addAuditLog({
+        aksi: 'PENGATURAN',
+        kategori: 'Arsip Lainnya',
+        subjek: newKatLainnya.trim(),
+        detail: `Menambahkan kategori baru Arsip Surat/Umum: "${newKatLainnya.trim()}"`,
+        operator: currentUser?.email || 'admin@alhicam.sch.id',
+        status: 'SUCCESS'
+      });
       setNewKatLainnya('');
-      showNotification('✓ Kategori Surat/Lembaga ditambahkan');
+      window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
+      showNotification('✓ Kategori Surat/Lembaga baru berhasil ditambahkan');
     }
   };
 
-  const handleRemoveKategori = (type: 'siswa' | 'guru' | 'lainnya', item: string) => {
-    if (type === 'siswa') {
-      const updated = kategoriSiswa.filter(k => k !== item);
-      setKategoriSiswa(updated);
-      localStorage.setItem('EARSIP_CUSTOM_KAT_SISWA', JSON.stringify(updated));
-    } else if (type === 'guru') {
-      const updated = kategoriGuru.filter(k => k !== item);
-      setKategoriGuru(updated);
-      localStorage.setItem('EARSIP_CUSTOM_KAT_GURU', JSON.stringify(updated));
-    } else {
-      const updated = kategoriLainnya.filter(k => k !== item);
-      setKategoriLainnya(updated);
-      localStorage.setItem('EARSIP_CUSTOM_KAT_LAINNYA', JSON.stringify(updated));
+  const handleSaveEditCategory = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editingCategory) return;
+    const { type, oldName, newName } = editingCategory;
+    const trimmedNew = newName.trim();
+    if (!trimmedNew) {
+      showNotification('Nama kategori tidak boleh kosong.', 'error');
+      return;
     }
-    showNotification(`Kategori "${item}" dihapus`);
+    if (trimmedNew.toLowerCase() === oldName.trim().toLowerCase()) {
+      setEditingCategory(null);
+      return;
+    }
+
+    let kategoriUtama: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya' = 'Arsip Siswa';
+    if (type === 'guru') kategoriUtama = 'Arsip Guru';
+    else if (type === 'lainnya') kategoriUtama = 'Arsip Lainnya';
+
+    const res = renameKategoriCascade(kategoriUtama, oldName, trimmedNew);
+
+    if (type === 'siswa') {
+      setKategoriSiswa(res.updatedCategories);
+    } else if (type === 'guru') {
+      setKategoriGuru(res.updatedCategories);
+    } else {
+      setKategoriLainnya(res.updatedCategories);
+    }
+
+    setEditingCategory(null);
+    showNotification(
+      res.updatedCount > 0
+        ? `✓ Kategori diubah jadi "${trimmedNew}" (${res.updatedCount} berkas disesuaikan otomatis)`
+        : `✓ Kategori diubah menjadi "${trimmedNew}"`
+    );
   };
 
   const handleResetKategoriDefault = () => {
@@ -263,6 +319,7 @@ export default function SettingsView({
     localStorage.removeItem('EARSIP_CUSTOM_KAT_SISWA');
     localStorage.removeItem('EARSIP_CUSTOM_KAT_GURU');
     localStorage.removeItem('EARSIP_CUSTOM_KAT_LAINNYA');
+    window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
     showNotification('✓ Kategori dikembalikan ke standar');
   };
 
@@ -914,23 +971,25 @@ export default function SettingsView({
               {/* Kolom 1: Kategori Siswa */}
               <div className="p-3.5 sm:p-5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col justify-between space-y-3">
                 <div>
-                  <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-600" />
-                    Arsip Siswa ({kategoriSiswa.length})
-                  </span>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-600" />
+                      Arsip Siswa ({kategoriSiswa.length})
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil untuk edit</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                     {kategoriSiswa.map((kat, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
-                        <span className="truncate">{kat}</span>
-                        {kategoriSiswa.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveKategori('siswa', kat)}
-                            className="text-slate-400 hover:text-red-500 p-0.5"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <div key={idx} className="flex items-center justify-between p-2 sm:p-2.5 bg-white border border-slate-200/90 hover:border-blue-300 rounded-xl text-xs font-semibold text-slate-800 transition-colors group shadow-2xs">
+                        <span className="truncate flex-1 pr-2">{kat}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory({ type: 'siswa', oldName: kat, newName: kat })}
+                          className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                          title={`Ubah / Edit nama kategori "${kat}"`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -948,7 +1007,8 @@ export default function SettingsView({
                   <button
                     type="button"
                     onClick={() => handleAddKategori('siswa')}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold"
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                    title="Tambah Kategori Siswa Baru"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -958,23 +1018,25 @@ export default function SettingsView({
               {/* Kolom 2: Kategori Guru */}
               <div className="p-3.5 sm:p-5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col justify-between space-y-3">
                 <div>
-                  <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-amber-600" />
-                    Arsip Guru & Tendik ({kategoriGuru.length})
-                  </span>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-600" />
+                      Arsip Guru & Tendik ({kategoriGuru.length})
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil untuk edit</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                     {kategoriGuru.map((kat, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
-                        <span className="truncate">{kat}</span>
-                        {kategoriGuru.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveKategori('guru', kat)}
-                            className="text-slate-400 hover:text-red-500 p-0.5"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <div key={idx} className="flex items-center justify-between p-2 sm:p-2.5 bg-white border border-slate-200/90 hover:border-amber-300 rounded-xl text-xs font-semibold text-slate-800 transition-colors group shadow-2xs">
+                        <span className="truncate flex-1 pr-2">{kat}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory({ type: 'guru', oldName: kat, newName: kat })}
+                          className="text-slate-400 hover:text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                          title={`Ubah / Edit nama kategori "${kat}"`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -992,7 +1054,8 @@ export default function SettingsView({
                   <button
                     type="button"
                     onClick={() => handleAddKategori('guru')}
-                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold"
+                    className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                    title="Tambah Kategori Guru Baru"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -1002,23 +1065,25 @@ export default function SettingsView({
               {/* Kolom 3: Kategori Lainnya */}
               <div className="p-3.5 sm:p-5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col justify-between space-y-3">
                 <div>
-                  <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-purple-600" />
-                    Arsip Surat & Lembaga ({kategoriLainnya.length})
-                  </span>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-purple-600" />
+                      Arsip Surat & Lembaga ({kategoriLainnya.length})
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil untuk edit</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                     {kategoriLainnya.map((kat, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
-                        <span className="truncate">{kat}</span>
-                        {kategoriLainnya.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveKategori('lainnya', kat)}
-                            className="text-slate-400 hover:text-red-500 p-0.5"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      <div key={idx} className="flex items-center justify-between p-2 sm:p-2.5 bg-white border border-slate-200/90 hover:border-purple-300 rounded-xl text-xs font-semibold text-slate-800 transition-colors group shadow-2xs">
+                        <span className="truncate flex-1 pr-2">{kat}</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingCategory({ type: 'lainnya', oldName: kat, newName: kat })}
+                          className="text-slate-400 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                          title={`Ubah / Edit nama kategori "${kat}"`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1036,7 +1101,8 @@ export default function SettingsView({
                   <button
                     type="button"
                     onClick={() => handleAddKategori('lainnya')}
-                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold"
+                    className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                    title="Tambah Kategori Surat/Lembaga Baru"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -1894,6 +1960,89 @@ export default function SettingsView({
 
           </div>
 
+        </div>
+      )}
+
+      {/* Modal Edit / Ubah Nama Kategori dengan Cascade ke Seluruh Arsip */}
+      {editingCategory && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fadeIn font-['Poppins']">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full shadow-2xl animate-scaleUp border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                    Ubah Nama Kategori
+                  </h3>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {editingCategory.type === 'siswa' ? 'Kategori Arsip Siswa' : editingCategory.type === 'guru' ? 'Kategori Arsip Guru & Tendik' : 'Kategori Arsip Surat & Lembaga'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingCategory(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nama Kategori Saat Ini
+                </label>
+                <input
+                  type="text"
+                  value={editingCategory.oldName}
+                  disabled
+                  className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-600 font-medium cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nama Kategori Baru <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editingCategory.newName}
+                  onChange={(e) => setEditingCategory(prev => prev ? { ...prev, newName: e.target.value } : null)}
+                  placeholder="Masukkan nama kategori baru..."
+                  required
+                  autoFocus
+                  className="w-full px-3.5 py-2.5 bg-white border border-blue-400 focus:border-blue-600 rounded-xl text-xs sm:text-sm text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+              </div>
+
+              <div className="p-3 bg-blue-50/80 border border-blue-200/80 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
+                <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <p className="leading-relaxed text-[11px]">
+                  <strong>Sinkronisasi Otomatis:</strong> Seluruh berkas yang sudah diunggah sebelumnya dengan nama kategori ini akan <strong>otomatis disesuaikan</strong> ke nama baru, sehingga data tetap terbaca lengkap di menu Unduh Dokumen, Buku Induk, Laporan, dan Berkas Terkait.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingCategory(null)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Simpan Perubahan</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

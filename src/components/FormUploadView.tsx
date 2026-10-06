@@ -47,7 +47,8 @@ import {
   saveMasterGuru,
   saveFileAttachment,
   compressImageDataUrl,
-  compressDocumentHighQuality
+  compressDocumentHighQuality,
+  getCurrentOperatorEmail
 } from '../data/mockDatabase';
 import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi, saveArsipToSupabase } from '../supabase';
 
@@ -161,18 +162,29 @@ export default function FormUploadView({
 
   // Load Master Data & Existing Archives
   useEffect(() => {
-    const sList = getStoredMasterSiswa();
-    const gList = getStoredMasterGuru();
-    setMasterSiswa(sList);
-    setMasterGuru(gList);
-    setStoredArsipList(getStoredArsip());
+    const refreshData = () => {
+      const sList = getStoredMasterSiswa();
+      const gList = getStoredMasterGuru();
+      setMasterSiswa(sList);
+      setMasterGuru(gList);
+      setStoredArsipList(getStoredArsip());
 
-    const distinctTahun = Array.from(new Set(sList.map(s => s.tahun))).sort().reverse();
-    setTahunList(distinctTahun);
+      const distinctTahun = Array.from(new Set(sList.map(s => s.tahun))).sort().reverse();
+      setTahunList(distinctTahun);
 
-    if (distinctTahun.length > 0 && !tahun) {
-      setTahun(distinctTahun[0]);
-    }
+      if (distinctTahun.length > 0 && !tahun) {
+        setTahun(distinctTahun[0]);
+      }
+    };
+
+    refreshData();
+
+    window.addEventListener('earsip:categories-updated', refreshData);
+    window.addEventListener('earsip:cloud-synced', refreshData);
+    return () => {
+      window.removeEventListener('earsip:categories-updated', refreshData);
+      window.removeEventListener('earsip:cloud-synced', refreshData);
+    };
   }, []);
 
   // Real-time Auto Duplicate Detection for Individual Mode
@@ -369,7 +381,7 @@ export default function FormUploadView({
       namaFileAsli: selectedFile.name,
       ukuran: finalUkuran,
       linkDrive: '',
-      uploader: 'admin@alhicam.sch.id',
+      uploader: getCurrentOperatorEmail(),
       fileDataUrl: optimizedBase64
     };
 
@@ -483,7 +495,7 @@ export default function FormUploadView({
         namaFileAsli: fileObj.file.name,
         ukuran: itemUkuran,
         linkDrive: '',
-        uploader: 'admin@alhicam.sch.id',
+        uploader: getCurrentOperatorEmail(),
         fileDataUrl: fileObj.base64
       };
 

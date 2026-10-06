@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ShieldAlert, ArrowRight, CheckCircle2, KeyRound, Clock, ShieldCheck, HelpCircle, Send, User, ArrowLeft } from 'lucide-react';
 import { getStoredUserList, saveStoredUserList } from './UserManagementModal';
 import { fetchUsersFromSupabase, authenticateFromSupabaseDirect } from '../supabase';
-import { saveAvatarForUser } from '../data/mockDatabase';
+import { saveAvatarForUser, addAuditLog } from '../data/mockDatabase';
 
 interface LoginPageProps {
   onLoginSuccess: (user: { email: string; name: string; role: string; avatarUrl?: string }) => void;
@@ -89,6 +89,14 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
       setLoadingStatus('Mengalihkan...');
       await new Promise(r => setTimeout(r, 400));
       setLoading(false);
+      addAuditLog({
+        aksi: 'AUTH',
+        kategori: 'Autentikasi Pengguna',
+        subjek: directResult.user.name || directResult.user.email,
+        detail: `Masuk (Login) ke sistem dengan peran "${directResult.user.role}"`,
+        operator: directResult.user.email,
+        status: 'SUCCESS'
+      });
       onLoginSuccess(directResult.user);
       return;
     }
@@ -150,6 +158,14 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
       const validPassword = matchedUser.password || (matchedUser.id === 'master-superadmin' ? 'superadmin123' : '');
 
       if (password.trim() === (validPassword || '').trim()) {
+        addAuditLog({
+          aksi: 'AUTH',
+          kategori: 'Autentikasi Pengguna',
+          subjek: matchedUser.name || matchedUser.email,
+          detail: `Masuk (Login) ke sistem dengan peran "${matchedUser.role}"`,
+          operator: matchedUser.email,
+          status: 'SUCCESS'
+        });
         onLoginSuccess({
           email: matchedUser.email,
           name: matchedUser.name,

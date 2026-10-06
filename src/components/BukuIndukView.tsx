@@ -39,8 +39,8 @@ import {
   deleteMasterSiswa, 
   saveMasterGuru, 
   deleteMasterGuru,
-  KATEGORI_SISWA,
-  KATEGORI_GURU
+  getActiveKategoriSiswa,
+  getActiveKategoriGuru
 } from '../data/mockDatabase';
 import { clearMasterSiswaInSupabase, clearMasterGuruInSupabase, fetchSanitizedMasterDataFromSupabase } from '../supabase';
 
@@ -147,13 +147,13 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
   // Archive coverage helper
   const getArchiveCoverage = (nama: string, isSiswa: boolean) => {
-    const targetKategori = isSiswa ? KATEGORI_SISWA : KATEGORI_GURU;
+    const targetKategori = isSiswa ? getActiveKategoriSiswa() : getActiveKategoriGuru();
     const existing = arsipList.filter(a => 
       a.kategoriUtama === (isSiswa ? 'Arsip Siswa' : 'Arsip Guru') &&
       a.subjek.trim().toLowerCase() === nama.trim().toLowerCase()
     );
     const count = existing.length;
-    const total = targetKategori.length;
+    const total = targetKategori.length || 1;
     const pct = Math.min(100, Math.round((count / total) * 100));
     return { count, total, pct, isComplete: count >= 3 };
   };
@@ -1139,7 +1139,7 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
             {/* Progress & Stat Banner */}
             {(() => {
               const coverage = getArchiveCoverage(viewingPerson.nama, viewingPerson.isSiswa);
-              const targetKategori = viewingPerson.isSiswa ? KATEGORI_SISWA : KATEGORI_GURU;
+              const targetKategori = viewingPerson.isSiswa ? getActiveKategoriSiswa() : getActiveKategoriGuru();
               const personArsip = arsipList.filter(a => 
                 a.kategoriUtama === (viewingPerson.isSiswa ? 'Arsip Siswa' : 'Arsip Guru') &&
                 a.subjek.trim().toLowerCase() === viewingPerson.nama.trim().toLowerCase()

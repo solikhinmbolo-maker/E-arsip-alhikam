@@ -1408,6 +1408,89 @@ export function subscribeToSupabaseUsers(onUpdate: (users: any[]) => void) {
 }
 
 /**
+ * Save Audit Log to Supabase PostgreSQL Database
+ */
+export async function saveAuditLogToSupabase(log: any): Promise<boolean> {
+  const client = getSupabaseClient();
+  if (!client) return false;
+
+  try {
+    const payload = {
+      id: log.id,
+      waktu: log.waktu,
+      aksi: log.aksi,
+      kategori: log.kategori,
+      subjek: log.subjek,
+      detail: log.detail,
+      operator: log.operator || 'admin@alhicam.sch.id',
+      status: log.status || 'SUCCESS'
+    };
+
+    const { error } = await client
+      .from('audit_logs')
+      .upsert([payload], { onConflict: 'id' });
+
+    if (error) {
+      // Table may not exist yet, fallback safely
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Fetch Audit Logs from Supabase PostgreSQL Database
+ */
+export async function fetchAuditLogsFromSupabase(): Promise<any[]> {
+  const client = getSupabaseClient();
+  if (!client) return [];
+
+  try {
+    const { data, error } = await client
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(250);
+
+    if (error || !data) return [];
+    return data;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Subscribe to realtime changes on Supabase 'audit_logs' table
+ */
+export function subscribeToSupabaseAuditLogs(onUpdate: (logs: any[]) => void) {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  fetchAuditLogsFromSupabase().then(logs => {
+    if (logs && logs.length > 0) onUpdate(logs);
+  });
+
+  const channel = client
+    .channel('audit_logs_realtime_channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'audit_logs' },
+      () => {
+        fetchAuditLogsFromSupabase().then(logs => {
+          if (logs && logs.length > 0) onUpdate(logs);
+        });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+/**
  * Ready-to-use SQL Schema for Supabase SQL Editor
  */
 export const SUPABASE_SQL_SCHEMA = `-- =========================================================

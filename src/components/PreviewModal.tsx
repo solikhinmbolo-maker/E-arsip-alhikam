@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   HardDrive
 } from 'lucide-react';
-import { ArsipItem, getFileAttachment, saveFileAttachment, replaceArsipItem, getStoredSyncConfig, compressImageDataUrl } from '../data/mockDatabase';
+import { ArsipItem, getFileAttachment, saveFileAttachment, replaceArsipItem, getStoredSyncConfig, compressImageDataUrl, addAuditLog } from '../data/mockDatabase';
 import mammoth from 'mammoth';
 
 interface PreviewModalProps {
@@ -220,6 +220,15 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
   };
 
   const handleDownloadClick = () => {
+    if (item) {
+      addAuditLog({
+        aksi: 'UNDUH',
+        kategori: item.kategoriUtama || item.kategori,
+        subjek: item.subjek,
+        detail: `Unduh berkas "${item.namaFileAsli || item.kategori}" dari pratinjau modal`,
+        status: 'SUCCESS'
+      });
+    }
     if (driveDirectDownloadUrl) {
       window.open(driveDirectDownloadUrl, '_blank');
       return;
@@ -228,6 +237,15 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
   };
 
   const handlePrintClick = async () => {
+    if (item) {
+      addAuditLog({
+        aksi: 'PREVIEW',
+        kategori: item.kategoriUtama || item.kategori,
+        subjek: item.subjek,
+        detail: `Cetak dokumen resmi "${item.namaFileAsli || item.kategori}" [ID: ${item.id}]`,
+        status: 'SUCCESS'
+      });
+    }
     try {
       let dataUrl = fileData || blobUrl;
       if (!dataUrl) {

@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   X
 } from 'lucide-react';
-import { ArsipItem, getStoredArsip, moveToTrashArsipItem, getFileAttachment } from '../data/mockDatabase';
+import { ArsipItem, getStoredArsip, moveToTrashArsipItem, getFileAttachment, addAuditLog } from '../data/mockDatabase';
 
 interface FormUnduhViewProps {
   kategoriMenu?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -76,9 +76,13 @@ export default function FormUnduhView({
   };
 
   useEffect(() => {
-    const handleCloudUpdate = () => setDataVersion((v: number) => v + 1);
-    window.addEventListener('earsip:cloud-synced', handleCloudUpdate);
-    return () => window.removeEventListener('earsip:cloud-synced', handleCloudUpdate);
+    const handleUpdate = () => setDataVersion((v: number) => v + 1);
+    window.addEventListener('earsip:cloud-synced', handleUpdate);
+    window.addEventListener('earsip:categories-updated', handleUpdate);
+    return () => {
+      window.removeEventListener('earsip:cloud-synced', handleUpdate);
+      window.removeEventListener('earsip:categories-updated', handleUpdate);
+    };
   }, []);
 
   // Get data directly from stored active archives
@@ -147,6 +151,14 @@ export default function FormUnduhView({
       await new Promise(r => setTimeout(r, 300));
       element.click();
       document.body.removeChild(element);
+
+      addAuditLog({
+        aksi: 'UNDUH',
+        kategori: item.kategoriUtama || item.kategori,
+        subjek: item.subjek,
+        detail: `Unduh berkas "${item.namaFileAsli || item.kategori}" (${item.ukuran || '-'})`,
+        status: 'SUCCESS'
+      });
     } catch (err) {
       console.error('Download error:', err);
     } finally {
@@ -157,6 +169,13 @@ export default function FormUnduhView({
 
   // Handle Print
   const handlePrint = (item: ArsipItem) => {
+    addAuditLog({
+      aksi: 'PREVIEW',
+      kategori: item.kategoriUtama || item.kategori,
+      subjek: item.subjek,
+      detail: `Pratinjau dan cetak dokumen "${item.namaFileAsli || item.kategori}" [ID: ${item.id}]`,
+      status: 'SUCCESS'
+    });
     onPreview(item);
     setTimeout(() => {
       window.print();

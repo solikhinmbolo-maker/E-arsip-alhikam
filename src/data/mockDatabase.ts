@@ -12,7 +12,8 @@ import {
   saveSiswaToSupabase,
   saveGuruToSupabase,
   deleteMasterSiswaFromSupabase,
-  deleteMasterGuruFromSupabase
+  deleteMasterGuruFromSupabase,
+  saveAuditLogToSupabase
 } from '../supabase';
 
 export interface MasterSiswaItem {
@@ -109,6 +110,90 @@ export function getActiveKategoriLainnya(): string[] {
     if (saved) return JSON.parse(saved);
   } catch {}
   return KATEGORI_LAINNYA;
+}
+
+/**
+ * Renames a category across category configurations and cascades the change to all stored archive items.
+ * If user renamed "KTP" to "KTP/Identitas", all archives belonging to Andi or anyone else with kategori="KTP"
+ * will have their kategori changed to "KTP/Identitas" so they remain visible across all menus (Unduh, Buku Induk, Laporan, dsb).
+ */
+export function renameKategoriCascade(
+  kategoriUtama: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya',
+  oldKategoriName: string,
+  newKategoriName: string
+): { updatedCount: number; updatedCategories: string[] } {
+  const oldTrim = oldKategoriName.trim();
+  const newTrim = newKategoriName.trim();
+  if (!oldTrim || !newTrim) {
+    return { updatedCount: 0, updatedCategories: [] };
+  }
+
+  // 1. Update Category Configuration List in LocalStorage
+  let storageKey = 'EARSIP_CUSTOM_KAT_SISWA';
+  let defaultList = getActiveKategoriSiswa();
+  if (kategoriUtama === 'Arsip Guru') {
+    storageKey = 'EARSIP_CUSTOM_KAT_GURU';
+    defaultList = getActiveKategoriGuru();
+  } else if (kategoriUtama === 'Arsip Lainnya') {
+    storageKey = 'EARSIP_CUSTOM_KAT_LAINNYA';
+    defaultList = getActiveKategoriLainnya();
+  }
+
+  const updatedCategories = defaultList.map(kat => 
+    kat.trim().toLowerCase() === oldTrim.toLowerCase() ? newTrim : kat
+  );
+  localStorage.setItem(storageKey, JSON.stringify(updatedCategories));
+
+  // 2. Cascade Rename across all stored archive items in DB_KEYS.ARSIP_ITEMS
+  let updatedCount = 0;
+  try {
+    const raw = localStorage.getItem(DB_KEYS.ARSIP_ITEMS);
+    if (raw) {
+      const items: ArsipItem[] = JSON.parse(raw);
+      const updatedItems = items.map(item => {
+        if (
+          item.kategoriUtama === kategoriUtama &&
+          item.kategori.trim().toLowerCase() === oldTrim.toLowerCase()
+        ) {
+          updatedCount++;
+          const updatedItem: ArsipItem = {
+            ...item,
+            kategori: newTrim
+          };
+          // Sync to Supabase in background
+          saveArsipToSupabase(updatedItem).catch(() => {});
+          return updatedItem;
+        }
+        return item;
+      });
+
+      safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(updatedItems));
+    }
+  } catch (err) {
+    console.error('Error cascading category rename to archives:', err);
+  }
+
+  // 3. Add Audit Log
+  try {
+    addAuditLog({
+      aksi: 'UPDATE',
+      kategori: 'Pengaturan Kategori',
+      subjek: kategoriUtama,
+      detail: `Mengubah kategori "${oldTrim}" menjadi "${newTrim}" (${updatedCount} berkas disesuaikan)`,
+      operator: 'admin@alhicam.sch.id',
+      status: 'SUCCESS'
+    });
+  } catch {}
+
+  // 4. Notify app of change
+  try {
+    window.dispatchEvent(new CustomEvent('earsip:categories-updated', {
+      detail: { kategoriUtama, oldKategoriName: oldTrim, newKategoriName: newTrim, updatedCount }
+    }));
+    window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+  } catch {}
+
+  return { updatedCount, updatedCategories };
 }
 
 export interface LegalisirConfig {
@@ -473,7 +558,7 @@ export function getTrashArsip(): ArsipItem[] {
   return getAllRawArsip().filter(item => item.isTrash === true);
 }
 
-export function saveArsipItem(item: ArsipItem): ArsipItem[] {
+export function saveArsipItem(item: ArsipItem, customOperator?: string): ArsipItem[] {
   // 1. If item has file attachment, store safely in IndexedDB & Memory Cache
   if (item.fileDataUrl) {
     fileBlobCache.set(item.id, item.fileDataUrl);
@@ -494,6 +579,17 @@ export function saveArsipItem(item: ArsipItem): ArsipItem[] {
 
   // Sync exclusively to Supabase PostgreSQL Cloud
   saveArsipToSupabase(item).catch(() => {});
+
+  // Add Real-time Audit Log
+  const op = customOperator || item.uploader || getCurrentOperatorEmail();
+  addAuditLog({
+    aksi: 'UPLOAD',
+    kategori: item.kategoriUtama || item.kategori,
+    subjek: item.subjek,
+    detail: `Unggah berkas "${item.kategori}" (${item.namaFileAsli || 'Dokumen'}${item.ukuran ? ` - ${item.ukuran}` : ''}) untuk subjek ${item.subjek} [ID: ${item.id}]`,
+    operator: op,
+    status: 'SUCCESS'
+  });
 
   // Return list with enriched item for immediate UI update
   return [item, ...current];
@@ -569,7 +665,7 @@ export function checkDuplicateArsip(params: {
 /**
  * Replace an existing archive document with updated file and metadata (Anti-duplication replace)
  */
-export function replaceArsipItem(existingId: string, newItem: ArsipItem): ArsipItem[] {
+export function replaceArsipItem(existingId: string, newItem: ArsipItem, customOperator?: string): ArsipItem[] {
   // If item has file attachment, store safely
   if (newItem.fileDataUrl) {
     fileBlobCache.set(newItem.id, newItem.fileDataUrl);
@@ -588,6 +684,18 @@ export function replaceArsipItem(existingId: string, newItem: ArsipItem): ArsipI
 
   safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(updatedClean));
   saveArsipToFirestore(newItem).catch(() => {});
+  saveArsipToSupabase(newItem).catch(() => {});
+
+  // Add Real-time Audit Log
+  const op = customOperator || newItem.uploader || getCurrentOperatorEmail();
+  addAuditLog({
+    aksi: 'UPDATE',
+    kategori: newItem.kategoriUtama || newItem.kategori,
+    subjek: newItem.subjek,
+    detail: `Pembaruan / Timpa berkas "${newItem.kategori}" (${newItem.namaFileAsli || 'Dokumen'}${newItem.ukuran ? ` - ${newItem.ukuran}` : ''}) untuk ${newItem.subjek} [ID: ${newItem.id}]`,
+    operator: op,
+    status: 'SUCCESS'
+  });
 
   return current.map(item => item.id === existingId ? newItem : item);
 }
@@ -595,7 +703,7 @@ export function replaceArsipItem(existingId: string, newItem: ArsipItem): ArsipI
 /**
  * Move document to Trash (Soft Delete)
  */
-export async function moveToTrashArsipItem(id: string): Promise<ArsipItem[]> {
+export async function moveToTrashArsipItem(id: string, customOperator?: string): Promise<ArsipItem[]> {
   const all = getAllRawArsip();
   let trashedTarget: ArsipItem | null = null;
 
@@ -615,6 +723,14 @@ export async function moveToTrashArsipItem(id: string): Promise<ArsipItem[]> {
 
   if (trashedTarget) {
     await saveArsipToSupabase(trashedTarget).catch(() => {});
+    addAuditLog({
+      aksi: 'DELETE',
+      kategori: (trashedTarget as ArsipItem).kategoriUtama || (trashedTarget as ArsipItem).kategori,
+      subjek: (trashedTarget as ArsipItem).subjek,
+      detail: `Pemindahan berkas "${(trashedTarget as ArsipItem).kategori}" (${(trashedTarget as ArsipItem).namaFileAsli || (trashedTarget as ArsipItem).subjek}) ke Tong Sampah`,
+      operator: customOperator || getCurrentOperatorEmail(),
+      status: 'WARNING'
+    });
   }
 
   if (typeof window !== 'undefined') {
@@ -626,7 +742,7 @@ export async function moveToTrashArsipItem(id: string): Promise<ArsipItem[]> {
 /**
  * Restore document from Trash back to active archives
  */
-export async function restoreFromTrashArsipItem(id: string): Promise<ArsipItem[]> {
+export async function restoreFromTrashArsipItem(id: string, customOperator?: string): Promise<ArsipItem[]> {
   const all = getAllRawArsip();
   let restoredTarget: ArsipItem | null = null;
 
@@ -646,6 +762,14 @@ export async function restoreFromTrashArsipItem(id: string): Promise<ArsipItem[]
 
   if (restoredTarget) {
     await saveArsipToSupabase(restoredTarget).catch(() => {});
+    addAuditLog({
+      aksi: 'UPDATE',
+      kategori: (restoredTarget as ArsipItem).kategoriUtama || (restoredTarget as ArsipItem).kategori,
+      subjek: (restoredTarget as ArsipItem).subjek,
+      detail: `Pemulihan berkas "${(restoredTarget as ArsipItem).kategori}" (${(restoredTarget as ArsipItem).subjek}) dari Tong Sampah ke Arsip Aktif`,
+      operator: customOperator || getCurrentOperatorEmail(),
+      status: 'SUCCESS'
+    });
   }
 
   if (typeof window !== 'undefined') {
@@ -657,10 +781,11 @@ export async function restoreFromTrashArsipItem(id: string): Promise<ArsipItem[]
 /**
  * Permanently delete document from Firestore, local storage, and IndexedDB
  */
-export async function deletePermanentlyArsipItem(id: string): Promise<ArsipItem[]> {
+export async function deletePermanentlyArsipItem(id: string, customOperator?: string): Promise<ArsipItem[]> {
   recordPermanentDeletedId(id);
 
   const all = getAllRawArsip();
+  const target = all.find(item => item.id === id);
   const remaining = all.filter(item => item.id !== id);
 
   safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(remaining));
@@ -671,6 +796,17 @@ export async function deletePermanentlyArsipItem(id: string): Promise<ArsipItem[
 
   await deleteArsipFromSupabase(id).catch(() => false);
 
+  if (target) {
+    addAuditLog({
+      aksi: 'DELETE',
+      kategori: target.kategoriUtama || target.kategori,
+      subjek: target.subjek,
+      detail: `Penghapusan permanen berkas "${target.kategori}" (${target.subjek}) dari Database & Penyimpanan Cloud`,
+      operator: customOperator || getCurrentOperatorEmail(),
+      status: 'WARNING'
+    });
+  }
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
   }
@@ -680,7 +816,7 @@ export async function deletePermanentlyArsipItem(id: string): Promise<ArsipItem[
 /**
  * Empty all items in Trash permanently
  */
-export async function emptyTrashArsip(): Promise<ArsipItem[]> {
+export async function emptyTrashArsip(customOperator?: string): Promise<ArsipItem[]> {
   const all = getAllRawArsip();
   const trashed = all.filter(i => i.isTrash === true);
   const activeOnly = all.filter(i => !i.isTrash);
@@ -698,6 +834,15 @@ export async function emptyTrashArsip(): Promise<ArsipItem[]> {
       return deleteArsipFromSupabase(t.id).catch(() => false);
     })
   );
+
+  addAuditLog({
+    aksi: 'DELETE',
+    kategori: 'Tong Sampah',
+    subjek: `Pembersihan ${trashed.length} Berkas Sampah`,
+    detail: `Pengosongan seluruh ${trashed.length} berkas di Tong Sampah secara permanen`,
+    operator: customOperator || getCurrentOperatorEmail(),
+    status: 'WARNING'
+  });
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
@@ -809,15 +954,27 @@ export async function deleteMasterGuru(id: string): Promise<MasterGuruItem[]> {
 // AUDIT LOG & JEJAK AKTIVITAS
 // =====================================================================
 
+export function getCurrentOperatorEmail(): string {
+  try {
+    const rawAuth = localStorage.getItem('EARSIP_AUTH_USER');
+    if (rawAuth) {
+      const parsed = JSON.parse(rawAuth);
+      if (parsed?.email) return parsed.email;
+      if (parsed?.name) return parsed.name;
+    }
+  } catch {}
+  return 'admin@alhicam.sch.id';
+}
+
 export interface AuditLogItem {
   id: string;
   waktu: string;
-  aksi: 'UPLOAD' | 'UPDATE' | 'UNDUH' | 'PREVIEW' | 'DELETE' | 'LEGALISIR';
+  aksi: 'UPLOAD' | 'UPDATE' | 'UNDUH' | 'PREVIEW' | 'DELETE' | 'LEGALISIR' | 'PENGATURAN' | 'AUTH' | 'MASTER_DATA';
   kategori: string;
   subjek: string;
   detail: string;
   operator: string;
-  status: 'SUCCESS' | 'WARNING';
+  status: 'SUCCESS' | 'WARNING' | 'INFO';
 }
 
 export const INITIAL_AUDIT_LOGS: AuditLogItem[] = [
@@ -882,25 +1039,87 @@ export function getStoredAuditLogs(): AuditLogItem[] {
       safeSetItem(DB_AUDIT_KEY, JSON.stringify(INITIAL_AUDIT_LOGS));
       return INITIAL_AUDIT_LOGS;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return INITIAL_AUDIT_LOGS;
   } catch {
     return INITIAL_AUDIT_LOGS;
   }
 }
 
-export function addAuditLog(log: Omit<AuditLogItem, 'id' | 'waktu'>): AuditLogItem[] {
+export function addAuditLog(log: {
+  aksi: 'UPLOAD' | 'UPDATE' | 'UNDUH' | 'PREVIEW' | 'DELETE' | 'LEGALISIR' | 'PENGATURAN' | 'AUTH' | 'MASTER_DATA';
+  kategori: string;
+  subjek: string;
+  detail: string;
+  operator?: string;
+  status?: 'SUCCESS' | 'WARNING' | 'INFO';
+}): AuditLogItem[] {
   const current = getStoredAuditLogs();
   const now = new Date();
-  const dateStr = now.toLocaleDateString('id-ID');
-  const timeStr = now.toLocaleTimeString('id-ID');
+  
+  // Format DD/MM/YYYY HH:mm:ss in local time
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+  const timestampStr = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  const resolvedOperator = log.operator || getCurrentOperatorEmail();
+
   const newLog: AuditLogItem = {
-    ...log,
-    id: `LOG-${Math.floor(1000 + Math.random() * 9000)}`,
-    waktu: `${dateStr} ${timeStr}`
+    id: `LOG-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+    waktu: timestampStr,
+    aksi: log.aksi,
+    kategori: log.kategori,
+    subjek: log.subjek,
+    detail: log.detail,
+    operator: resolvedOperator,
+    status: log.status || 'SUCCESS'
   };
-  const updated = [newLog, ...current.slice(0, 100)];
+
+  // Keep up to 250 latest logs
+  const updated = [newLog, ...current.slice(0, 249)];
   safeSetItem(DB_AUDIT_KEY, JSON.stringify(updated));
+
+  // Dispatch real-time live event for instant UI reflection
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('earsip:audit-updated', { detail: newLog }));
+  }
+
+  // Cloud sync to Supabase in background
+  try {
+    saveAuditLogToSupabase(newLog).catch(() => {});
+  } catch {}
+
   return updated;
+}
+
+export function clearStoredAuditLogs(): AuditLogItem[] {
+  const operator = getCurrentOperatorEmail();
+  const clearActionLog: AuditLogItem = {
+    id: `LOG-${Date.now()}`,
+    waktu: new Date().toLocaleString('id-ID'),
+    aksi: 'DELETE',
+    kategori: 'Audit Trail',
+    subjek: 'Pembersihan Log',
+    detail: 'Seluruh riwayat jejak audit lama telah dibersihkan oleh Administrator',
+    operator: operator,
+    status: 'WARNING'
+  };
+
+  const freshList = [clearActionLog];
+  safeSetItem(DB_AUDIT_KEY, JSON.stringify(freshList));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('earsip:audit-updated', { detail: clearActionLog }));
+  }
+
+  return freshList;
 }
 
 // =====================================================================
