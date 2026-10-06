@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CloudUpload, 
   FileText, 
@@ -23,16 +23,8 @@ import {
   X,
   Plus,
   Sparkles,
-  ShieldCheck,
-  Camera,
-  Scan,
-  Smartphone,
-  FolderOpen,
-  Image as ImageIcon,
-  SlidersHorizontal,
-  ExternalLink
+  ShieldCheck
 } from 'lucide-react';
-import DocumentScannerModal from './DocumentScannerModal';
 import { 
   MasterSiswaItem, 
   MasterGuruItem, 
@@ -118,17 +110,6 @@ export default function FormUploadView({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{ count: number; name: string }>({ count: 1, name: '' });
   const [errorMessage, setErrorMessage] = useState('');
-
-  // Mobile Scanner & Picker State
-  const [showMobileSourceSheet, setShowMobileSourceSheet] = useState(false);
-  const [showScannerModal, setShowScannerModal] = useState(false);
-  const [kolektifTargetKat, setKolektifTargetKat] = useState<string | null>(null);
-
-  // Hidden Input Refs for different picker modes
-  const appScannerInputRef = useRef<HTMLInputElement | null>(null);
-  const cameraDirectInputRef = useRef<HTMLInputElement | null>(null);
-  const fileManagerInputRef = useRef<HTMLInputElement | null>(null);
-  const desktopInputRef = useRef<HTMLInputElement | null>(null);
 
   // Quick Add State for Siswa & Guru
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
@@ -296,80 +277,30 @@ export default function FormUploadView({
     return file;
   };
 
-  // Process individual file (from standard input, scanner modal, camera, or file manager)
-  const processIndividualFile = (file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal 50 MB.`);
-      return;
-    }
-    
-    setSelectedFile(file);
-    setErrorMessage('');
-
-    // Auto-fill namaDokumen if empty
-    if (!namaDokumen && namaSubjek) {
-      setNamaDokumen(`${kategori || 'Dokumen'} - ${namaSubjek} (${tahun || new Date().getFullYear()})`);
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFileBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // File change handler for input elements
+  // File dropzone handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (kolektifTargetKat) {
-        handleKolektifFile(kolektifTargetKat, file);
-        setKolektifTargetKat(null);
-      } else {
-        processIndividualFile(file);
+      
+      if (file.size > 50 * 1024 * 1024) {
+        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal 50 MB.`);
+        return;
       }
-      // Reset input value so re-selecting same file triggers change
-      e.target.value = '';
+      
+      setSelectedFile(file);
+      setErrorMessage('');
+
+      // Auto-fill namaDokumen if empty
+      if (!namaDokumen && namaSubjek) {
+        setNamaDokumen(`${kategori || 'Dokumen'} - ${namaSubjek} (${tahun || new Date().getFullYear()})`);
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFileBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  };
-
-  // Scanner modal completion callback
-  const handleScanComplete = (scannedFile: File) => {
-    if (kolektifTargetKat) {
-      handleKolektifFile(kolektifTargetKat, scannedFile);
-      setKolektifTargetKat(null);
-    } else {
-      processIndividualFile(scannedFile);
-    }
-  };
-
-  // Trigger mobile picker actions
-  const openMobileAppScanner = (kat?: string) => {
-    if (kat) setKolektifTargetKat(kat);
-    else setKolektifTargetKat(null);
-    setShowMobileSourceSheet(false);
-    appScannerInputRef.current?.click();
-  };
-
-  const openMobileCameraDirect = (kat?: string) => {
-    if (kat) setKolektifTargetKat(kat);
-    else setKolektifTargetKat(null);
-    setShowMobileSourceSheet(false);
-    cameraDirectInputRef.current?.click();
-  };
-
-  const openMobileFileManager = (kat?: string) => {
-    if (kat) setKolektifTargetKat(kat);
-    else setKolektifTargetKat(null);
-    setShowMobileSourceSheet(false);
-    fileManagerInputRef.current?.click();
-  };
-
-  const openBuiltinScanner = (kat?: string) => {
-    if (kat) setKolektifTargetKat(kat);
-    else setKolektifTargetKat(null);
-    setShowMobileSourceSheet(false);
-    setShowScannerModal(true);
   };
 
   // Kolektif file picker
@@ -1013,134 +944,30 @@ export default function FormUploadView({
               />
             </div>
 
-            {/* Hidden Picker Inputs */}
-            {/* 1. Android App Chooser (TopScanner, CamScanner, Google Drive, Gallery, etc.) */}
-            <input 
-              ref={appScannerInputRef}
-              type="file" 
-              onChange={handleFileChange} 
-              className="hidden" 
-              accept="application/pdf,image/*,.doc,.docx"
-            />
-
-            {/* 2. Direct Camera Capture */}
-            <input 
-              ref={cameraDirectInputRef}
-              type="file" 
-              onChange={handleFileChange} 
-              className="hidden" 
-              accept="image/*"
-              capture="environment"
-            />
-
-            {/* 3. Direct File / PDF Manager */}
-            <input 
-              ref={fileManagerInputRef}
-              type="file" 
-              onChange={handleFileChange} 
-              className="hidden" 
-              accept=".pdf,.doc,.docx,application/pdf,image/*"
-            />
-
-            {/* 4. Desktop File Input */}
-            <input 
-              ref={desktopInputRef}
-              type="file" 
-              onChange={handleFileChange} 
-              className="hidden" 
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-            />
-
-            {/* Native Mobile & Desktop Attachment Picker */}
+            {/* Native Mobile Attachment Picker */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Pilih Berkas Dokumen <span className="text-red-500">*</span>
-                </label>
-                {/* Mobile scan quick trigger */}
-                <button
-                  type="button"
-                  onClick={() => openBuiltinScanner()}
-                  className="sm:hidden flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition-colors"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-500" />
-                  <span>AI Scanner</span>
-                </button>
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Pilih Berkas Dokumen <span className="text-red-500">*</span>
+              </label>
               
               {!selectedFile ? (
-                <div>
-                  {/* DESKTOP VIEW: Clean Drag & Drop / Click Zone (Preserved As-Is) */}
-                  <div 
-                    onClick={() => desktopInputRef.current?.click()}
-                    className="hidden sm:flex group flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed border-blue-200 hover:border-blue-500 bg-blue-50/40 hover:bg-blue-50/70 rounded-3xl cursor-pointer transition-all text-center"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-white text-blue-600 flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                      <CloudUpload className="w-6 h-6" />
-                    </div>
-                    <strong className="text-xs sm:text-sm text-slate-800 font-bold block">
-                      Klik atau Tarik File Dokumen ke Sini
-                    </strong>
-                    <span className="text-[11px] text-slate-500 mt-1 block">
-                      Format: PDF, Foto Scan (JPG/PNG), Word (Maks. 50MB)
-                    </span>
+                <label className="group flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed border-blue-200 hover:border-blue-500 bg-blue-50/40 hover:bg-blue-50/70 rounded-3xl cursor-pointer transition-all text-center">
+                  <input 
+                    type="file" 
+                    onChange={handleFileChange} 
+                    className="hidden" 
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  />
+                  <div className="w-12 h-12 rounded-2xl bg-white text-blue-600 flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                    <CloudUpload className="w-6 h-6" />
                   </div>
-
-                  {/* MOBILE VIEW: Feature-Rich Scanner & App Chooser Box */}
-                  <div className="sm:hidden space-y-2">
-                    <div 
-                      onClick={() => setShowMobileSourceSheet(true)}
-                      className="p-4 rounded-2xl border-2 border-dashed border-blue-300 bg-gradient-to-b from-blue-50/80 to-indigo-50/40 active:bg-blue-100/60 transition-all cursor-pointer text-center space-y-2 shadow-sm"
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-                          <CloudUpload className="w-5 h-5" />
-                        </div>
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
-                          <Scan className="w-5 h-5" />
-                        </div>
-                      </div>
-                      <div>
-                        <strong className="text-xs text-slate-900 font-bold block">
-                          Sentuh untuk Pilih / Scan Berkas
-                        </strong>
-                        <span className="text-[10px] text-slate-500 mt-0.5 block">
-                          Dukungan: TopScanner, CamScanner, AI Scanner & Kamera
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Mobile Quick Action Buttons */}
-                    <div className="grid grid-cols-3 gap-1.5 pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => openBuiltinScanner()}
-                        className="p-2 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 hover:bg-emerald-100/60 text-emerald-800 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
-                      >
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="truncate w-full text-center">AI Magic Scan</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => openMobileAppScanner()}
-                        className="p-2 bg-blue-50 border border-blue-200 hover:bg-blue-100/60 text-blue-800 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
-                      >
-                        <Smartphone className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="truncate w-full text-center">Top/CamScanner</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => openMobileFileManager()}
-                        className="p-2 bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-bold flex flex-col items-center justify-center gap-1 active:scale-95 transition-all shadow-xs"
-                      >
-                        <FolderOpen className="w-3.5 h-3.5 text-slate-600" />
-                        <span className="truncate w-full text-center">File / PDF</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  <strong className="text-xs sm:text-sm text-slate-800 font-bold block">
+                    Sentuh untuk Pilih File Dokumen
+                  </strong>
+                  <span className="text-[11px] text-slate-500 mt-1 block">
+                    Format: PDF, Foto Scan (JPG/PNG), Word (Maks. 50MB)
+                  </span>
+                </label>
               ) : (
                 <div className="space-y-2.5">
                   <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between">
@@ -1157,24 +984,15 @@ export default function FormUploadView({
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {/* Desktop Ganti */}
-                      <button 
-                        type="button"
-                        onClick={() => desktopInputRef.current?.click()}
-                        className="hidden sm:inline-flex px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
-                      >
-                        Ganti
-                      </button>
-
-                      {/* Mobile Ganti (Opens Bottom Sheet) */}
-                      <button 
-                        type="button"
-                        onClick={() => setShowMobileSourceSheet(true)}
-                        className="sm:hidden px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
-                      >
-                        Ganti
-                      </button>
-
+                      <label className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer transition-colors">
+                        <span>Ganti</span>
+                        <input 
+                          type="file" 
+                          onChange={handleFileChange} 
+                          className="hidden" 
+                          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        />
+                      </label>
                       <button
                         type="button"
                         onClick={() => {
@@ -1193,7 +1011,7 @@ export default function FormUploadView({
             </div>
           </div>
         ) : (
-          /* MODE KOLEKTIF - ADAPTED BEAUTIFULLY FOR MOBILE & SCANNER */
+          /* MODE KOLEKTIF - ADAPTED BEAUTIFULLY FOR MOBILE */
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -1254,8 +1072,7 @@ export default function FormUploadView({
                     <div className="flex-shrink-0">
                       {isAttached ? (
                         <div className="flex items-center gap-1">
-                          {/* Desktop Ganti */}
-                          <label className="hidden sm:inline-flex p-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-semibold cursor-pointer" title="Ganti Berkas">
+                          <label className="p-2 bg-amber-100 text-amber-800 rounded-xl text-xs font-semibold cursor-pointer" title="Ganti Berkas">
                             <RefreshCw className="w-3.5 h-3.5" />
                             <input
                               type="file"
@@ -1263,20 +1080,6 @@ export default function FormUploadView({
                               onChange={(e) => e.target.files && handleKolektifFile(kat, e.target.files[0])}
                             />
                           </label>
-
-                          {/* Mobile Ganti (Opens Mobile Sheet) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setKolektifTargetKat(kat);
-                              setShowMobileSourceSheet(true);
-                            }}
-                            className="sm:hidden p-2 bg-amber-100 active:bg-amber-200 text-amber-800 rounded-xl text-xs font-semibold cursor-pointer"
-                            title="Ganti Berkas (TopScanner/CamScanner/AI Scan)"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
-
                           <button
                             type="button"
                             onClick={() => removeKolektifFile(kat)}
@@ -1287,31 +1090,15 @@ export default function FormUploadView({
                           </button>
                         </div>
                       ) : (
-                        <div>
-                          {/* Desktop Pilih Button */}
-                          <label className="hidden sm:inline-flex px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm items-center gap-1">
-                            <Upload className="w-3 h-3" />
-                            <span>Pilih</span>
-                            <input
-                              type="file"
-                              className="hidden"
-                              onChange={(e) => e.target.files && handleKolektifFile(kat, e.target.files[0])}
-                            />
-                          </label>
-
-                          {/* Mobile Pilih Button (Opens Mobile Sheet with Scanner & App Chooser) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setKolektifTargetKat(kat);
-                              setShowMobileSourceSheet(true);
-                            }}
-                            className="sm:hidden px-3 py-1.5 bg-blue-600 active:bg-blue-700 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm flex items-center gap-1.5"
-                          >
-                            <Scan className="w-3 h-3" />
-                            <span>Pilih / Scan</span>
-                          </button>
-                        </div>
+                        <label className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-sm flex items-center gap-1">
+                          <Upload className="w-3 h-3" />
+                          <span>Pilih</span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => e.target.files && handleKolektifFile(kat, e.target.files[0])}
+                          />
+                        </label>
                       )}
                     </div>
                   </div>
@@ -1661,148 +1448,6 @@ export default function FormUploadView({
           </div>
         </div>
       )}
-
-      {/* Mobile Source Selection Bottom Sheet */}
-      {showMobileSourceSheet && (
-        <div className="fixed inset-0 z-[9999] sm:hidden flex flex-col justify-end bg-slate-950/70 backdrop-blur-xs animate-fadeIn">
-          <div 
-            className="fixed inset-0"
-            onClick={() => {
-              setShowMobileSourceSheet(false);
-              setKolektifTargetKat(null);
-            }}
-          />
-          <div className="relative bg-white rounded-t-3xl p-5 pt-3 shadow-2xl animate-slideUp z-10 border-t border-slate-200 space-y-4 max-h-[85vh] overflow-y-auto">
-            {/* Grab Handle */}
-            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-1" />
-
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">
-                  {kolektifTargetKat ? `Pilih / Scan: ${kolektifTargetKat}` : 'Pilih Sumber Berkas / Scan'}
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  Gunakan aplikasi scanner ponsel, pemindai langsung, atau file tersimpan
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMobileSourceSheet(false);
-                  setKolektifTargetKat(null);
-                }}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2.5">
-              {/* 1. Aplikasi Scanner HP (TopScanner, CamScanner, Google Drive) */}
-              <button
-                type="button"
-                onClick={() => openMobileAppScanner(kolektifTargetKat || undefined)}
-                className="w-full p-3.5 bg-blue-50/70 hover:bg-blue-100/70 active:scale-98 rounded-2xl border border-blue-200/90 text-left transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 flex-shrink-0 group-hover:scale-105 transition-transform">
-                  <Smartphone className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <strong className="text-xs font-bold text-slate-900">Aplikasi Scanner HP (TopScanner / CamScanner)</strong>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">Rekomendasi</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Buka pilihan aplikasi scanner dokumen yang terinstal di HP Anda lalu unggah hasil scan
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-blue-600 flex-shrink-0" />
-              </button>
-
-              {/* 2. Pemindai Dokumen Bawaan (AI Magic Scanner) */}
-              <button
-                type="button"
-                onClick={() => openBuiltinScanner(kolektifTargetKat || undefined)}
-                className="w-full p-3.5 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 hover:bg-emerald-100/70 active:scale-98 rounded-2xl border border-emerald-200 text-left transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/25 flex-shrink-0 group-hover:scale-105 transition-transform">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <strong className="text-xs font-bold text-slate-900">AI Magic Scanner (Pemindai Web Bawaan)</strong>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">Instan</span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Scan dokumen langsung dengan kamera & filter penjernih kertas otomatis tanpa perlu instal aplikasi
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              </button>
-
-              {/* 3. Kamera Foto Langsung */}
-              <button
-                type="button"
-                onClick={() => openMobileCameraDirect(kolektifTargetKat || undefined)}
-                className="w-full p-3.5 bg-slate-50 hover:bg-slate-100/80 active:scale-98 rounded-2xl border border-slate-200 text-left transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
-                  <Camera className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <strong className="text-xs font-bold text-slate-900">Kamera Foto Ponsel Langsung</strong>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Buka kamera belakang langsung untuk memotret fisik berkas dokumen
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-              </button>
-
-              {/* 4. File Manager / Memori HP (PDF, Word, Gambar) */}
-              <button
-                type="button"
-                onClick={() => openMobileFileManager(kolektifTargetKat || undefined)}
-                className="w-full p-3.5 bg-slate-50 hover:bg-slate-100/80 active:scale-98 rounded-2xl border border-slate-200 text-left transition-all flex items-center gap-3.5 group cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 flex-shrink-0 group-hover:scale-105 transition-transform">
-                  <FolderOpen className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <strong className="text-xs font-bold text-slate-900">File Manager & Galeri (PDF / Word)</strong>
-                  <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                    Pilih file PDF, Word, atau gambar dokumen yang sudah tersimpan di memori ponsel
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-              </button>
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMobileSourceSheet(false);
-                  setKolektifTargetKat(null);
-                }}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                Tutup Pilihan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Built-in Document Scanner Modal */}
-      <DocumentScannerModal
-        isOpen={showScannerModal}
-        onClose={() => {
-          setShowScannerModal(false);
-          setKolektifTargetKat(null);
-        }}
-        onScanComplete={handleScanComplete}
-        docTitle={kolektifTargetKat || namaDokumen || 'Dokumen_Scan'}
-      />
 
     </div>
   );
