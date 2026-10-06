@@ -235,73 +235,51 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
         if (cached) dataUrl = cached;
       }
 
+      const effectiveSrc = dataUrl || (driveFileId ? `https://drive.google.com/file/d/${driveFileId}/preview` : item.linkDrive);
+
       const printWindow = window.open('', '_blank', 'width=950,height=800');
       if (printWindow) {
-        const nowStr = new Date().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
+        const nowStr = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
         const uploaderName = item.uploader || 'Administrator Arsip';
 
         let contentHtml = '';
         const isImg = item.namaFileAsli && /\.(jpe?g|png|webp|gif)$/i.test(item.namaFileAsli);
-        const isPdf = item.namaFileAsli && /\.pdf$/i.test(item.namaFileAsli);
 
-        if (dataUrl && (isImg || dataUrl.startsWith('data:image'))) {
-          contentHtml = `<div style="text-align:center;margin:20px 0;"><img src="${dataUrl}" style="max-width:100%;max-height:75vh;object-fit:contain;border:1px solid #ccc;border-radius:8px;" /></div>`;
-        } else if (dataUrl && (isPdf || dataUrl.startsWith('data:application/pdf'))) {
-          contentHtml = `<iframe src="${dataUrl}" style="width:100%;height:72vh;border:1px solid #ccc;border-radius:8px;"></iframe>`;
-        } else if (docxHtml) {
-          contentHtml = `<div style="font-family:serif;font-size:14px;line-height:1.6;padding:20px;background:#fff;color:#000;border:1px solid #e2e8f0;border-radius:8px;">${docxHtml}</div>`;
+        if (isImg && effectiveSrc) {
+          contentHtml = `<div style="text-align:center;margin:10px 0;"><img src="${effectiveSrc}" style="max-width:100%;max-height:82vh;object-fit:contain;" /></div>`;
         } else {
-          const fallbackSrc = dataUrl || item.linkDrive || driveDirectDownloadUrl || '';
-          contentHtml = `<iframe src="${fallbackSrc}" style="width:100%;height:72vh;border:1px solid #ccc;border-radius:8px;"></iframe>`;
+          contentHtml = `<iframe src="${effectiveSrc}" style="width:100%;height:82vh;border:none;"></iframe>`;
         }
 
         printWindow.document.write(`
           <!DOCTYPE html>
           <html>
             <head>
-              <title>Cetak Dokumen - ${item.namaFileAsli || item.subjek}</title>
+              <title>Cetak - ${item.namaFileAsli || item.subjek}</title>
               <style>
-                body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 25px; color: #111; background: #fff; }
-                .print-header { border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
-                .print-title h2 { margin: 0 0 5px 0; font-size: 18px; color: #1e3a8a; text-transform: uppercase; }
-                .print-title p { margin: 0; font-size: 12px; color: #555; }
-                .print-meta { font-size: 11px; color: #333; text-align: right; line-height: 1.5; }
-                .doc-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-                .doc-info div span { color: #64748b; font-weight: 600; display: inline-block; width: 110px; }
-                .print-footer { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #64748b; }
+                body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 15px; color: #111; background: #fff; }
+                .compact-header { border-bottom: 1px solid #1e3a8a; padding-bottom: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 600; color: #1e3a8a; }
+                .compact-footer { border-top: 1px solid #cbd5e1; padding-top: 6px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #64748b; }
+                .print-content { width: 100%; min-height: 80vh; }
                 @media print {
-                  body { padding: 10px; }
+                  body { padding: 5px; }
                   .no-print { display: none; }
                 }
               </style>
             </head>
             <body>
-              <div class="print-header">
-                <div class="print-title">
-                  <h2>SMP AL-HIKAM • E-ARSIP DIGITAL ENTERPRISE</h2>
-                  <p>Sistem Kearsipan & Administrasi Dokumen Resmi Sekolah</p>
-                </div>
-                <div class="print-meta">
-                  <div><strong>Tanggal Cetak:</strong> ${nowStr}</div>
-                  <div><strong>Dicetak Oleh:</strong> ${uploaderName}</div>
-                  <div><strong>ID Arsip:</strong> ${item.id}</div>
-                </div>
+              <div class="compact-header">
+                <div><strong>SMP AL-HIKAM</strong> • E-Arsip Digital | <span>Subjek: ${item.subjek}</span> | <span>ID: ${item.id}</span></div>
+                <div>Tgl: ${nowStr} | Oleh: ${uploaderName}</div>
               </div>
 
-              <div class="doc-info">
-                <div><span>Subjek / Nama:</span> <strong>${item.subjek}</strong></div>
-                <div><span>Kategori:</span> <strong style="color:#2563eb;">${item.kategori} (${item.kategoriUtama})</strong></div>
-                <div><span>Tahun Dokumen:</span> <strong>${item.tahun}</strong></div>
-                <div><span>Nama Berkas:</span> <strong>${item.namaFileAsli || 'Dokumen Arsip'}</strong></div>
-              </div>
-
-              <div class="print-body">
+              <div class="print-content">
                 ${contentHtml}
               </div>
 
-              <div class="print-footer">
-                <div>Dokumen Resmi Tercatat & Terverifikasi di Cloud Storage E-Arsip Al-Hicam</div>
-                <div>Dicetak otomatis melalui Aplikasi E-Arsip Al-Hicam V2.4</div>
+              <div class="compact-footer">
+                <div>Dokumen Resmi Tercatat di Cloud Storage E-Arsip Al-Hicam</div>
+                <div>Dicetak otomatis melalui E-Arsip Al-Hicam V2.4</div>
               </div>
 
               <script>
@@ -309,7 +287,7 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
                   setTimeout(() => {
                     window.focus();
                     window.print();
-                  }, 1000);
+                  }, 1500);
                 };
               </script>
             </body>
@@ -319,7 +297,7 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
         return;
       }
     } catch (err) {
-      console.error('Official print sheet error:', err);
+      console.error('Print sheet error:', err);
     }
     window.print();
   };
