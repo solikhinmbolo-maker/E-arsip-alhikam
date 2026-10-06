@@ -227,23 +227,99 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
     onDownload(item);
   };
 
-  const handlePrintClick = () => {
-    if (drivePreviewUrl) {
-      const win = window.open(drivePreviewUrl, '_blank');
-      if (win) {
-        setTimeout(() => {
-          try { win.print(); } catch {}
-        }, 1500);
+  const handlePrintClick = async () => {
+    try {
+      let dataUrl = fileData || blobUrl;
+      if (!dataUrl) {
+        const cached = await getFileAttachment(item.id);
+        if (cached) dataUrl = cached;
       }
-      return;
-    }
-    if (blobUrl || fileData) {
-      const win = window.open();
-      if (win) {
-        win.document.write(`<html><head><title>Cetak Dokumen - ${item?.namaFileAsli || item?.subjek}</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;"><iframe src="${blobUrl || fileData}" style="border:none;width:100%;height:100%;" onload="window.print();"></iframe></body></html>`);
-        win.document.close();
+
+      const printWindow = window.open('', '_blank', 'width=950,height=800');
+      if (printWindow) {
+        const nowStr = new Date().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
+        const uploaderName = item.uploader || 'Administrator Arsip';
+
+        let contentHtml = '';
+        const isImg = item.namaFileAsli && /\.(jpe?g|png|webp|gif)$/i.test(item.namaFileAsli);
+        const isPdf = item.namaFileAsli && /\.pdf$/i.test(item.namaFileAsli);
+
+        if (dataUrl && (isImg || dataUrl.startsWith('data:image'))) {
+          contentHtml = `<div style="text-align:center;margin:20px 0;"><img src="${dataUrl}" style="max-width:100%;max-height:75vh;object-fit:contain;border:1px solid #ccc;border-radius:8px;" /></div>`;
+        } else if (dataUrl && (isPdf || dataUrl.startsWith('data:application/pdf'))) {
+          contentHtml = `<iframe src="${dataUrl}" style="width:100%;height:72vh;border:1px solid #ccc;border-radius:8px;"></iframe>`;
+        } else if (docxHtml) {
+          contentHtml = `<div style="font-family:serif;font-size:14px;line-height:1.6;padding:20px;background:#fff;color:#000;border:1px solid #e2e8f0;border-radius:8px;">${docxHtml}</div>`;
+        } else {
+          const fallbackSrc = dataUrl || item.linkDrive || driveDirectDownloadUrl || '';
+          contentHtml = `<iframe src="${fallbackSrc}" style="width:100%;height:72vh;border:1px solid #ccc;border-radius:8px;"></iframe>`;
+        }
+
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Cetak Dokumen - ${item.namaFileAsli || item.subjek}</title>
+              <style>
+                body { font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 25px; color: #111; background: #fff; }
+                .print-header { border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+                .print-title h2 { margin: 0 0 5px 0; font-size: 18px; color: #1e3a8a; text-transform: uppercase; }
+                .print-title p { margin: 0; font-size: 12px; color: #555; }
+                .print-meta { font-size: 11px; color: #333; text-align: right; line-height: 1.5; }
+                .doc-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+                .doc-info div span { color: #64748b; font-weight: 600; display: inline-block; width: 110px; }
+                .print-footer { margin-top: 30px; border-top: 1px solid #cbd5e1; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #64748b; }
+                @media print {
+                  body { padding: 10px; }
+                  .no-print { display: none; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="print-header">
+                <div class="print-title">
+                  <h2>SMP AL-HIKAM • E-ARSIP DIGITAL ENTERPRISE</h2>
+                  <p>Sistem Kearsipan & Administrasi Dokumen Resmi Sekolah</p>
+                </div>
+                <div class="print-meta">
+                  <div><strong>Tanggal Cetak:</strong> ${nowStr}</div>
+                  <div><strong>Dicetak Oleh:</strong> ${uploaderName}</div>
+                  <div><strong>ID Arsip:</strong> ${item.id}</div>
+                </div>
+              </div>
+
+              <div class="doc-info">
+                <div><span>Subjek / Nama:</span> <strong>${item.subjek}</strong></div>
+                <div><span>Kategori:</span> <strong style="color:#2563eb;">${item.kategori} (${item.kategoriUtama})</strong></div>
+                <div><span>Tahun Dokumen:</span> <strong>${item.tahun}</strong></div>
+                <div><span>Nama Berkas:</span> <strong>${item.namaFileAsli || 'Dokumen Arsip'}</strong></div>
+              </div>
+
+              <div class="print-body">
+                ${contentHtml}
+              </div>
+
+              <div class="print-footer">
+                <div>Dokumen Resmi Tercatat & Terverifikasi di Cloud Storage E-Arsip Al-Hicam</div>
+                <div>Dicetak otomatis melalui Aplikasi E-Arsip Al-Hicam V2.4</div>
+              </div>
+
+              <script>
+                window.onload = function() {
+                  setTimeout(() => {
+                    window.focus();
+                    window.print();
+                  }, 1000);
+                };
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        return;
       }
-      return;
+    } catch (err) {
+      console.error('Official print sheet error:', err);
     }
     window.print();
   };
