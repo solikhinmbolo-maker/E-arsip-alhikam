@@ -1205,21 +1205,25 @@ function doGet(e) {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-['Poppins'] text-slate-800 antialiased selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
       
-      {/* 1. MOBILE DRAWER OVERLAY (Glassmorphism Dark Blur - Conditionally Rendered to Prevent Edge Bleed) */}
-      {(mobileSidebarOpen || mobileProfileSheetOpen) && (
-        <div 
-          onClick={() => {
-            setMobileSidebarOpen(false);
-            setMobileProfileSheetOpen(false);
-          }}
-          className="fixed inset-0 z-[90] bg-slate-950/80 backdrop-blur-md lg:hidden transition-opacity duration-500 ease-in-out animate-fadeIn"
-        />
-      )}
+      {/* 1. MOBILE DRAWER OVERLAY (Ultra-smooth hardware accelerated, zero jank, smooth fade in & out) */}
+      <div 
+        onClick={() => {
+          setMobileSidebarOpen(false);
+          setMobileProfileSheetOpen(false);
+        }}
+        aria-hidden="true"
+        className={`fixed inset-0 z-[90] bg-slate-950/75 lg:hidden transition-opacity duration-300 ease-out transform-gpu ${
+          mobileSidebarOpen || mobileProfileSheetOpen 
+            ? 'opacity-100 pointer-events-auto' 
+            : 'opacity-0 pointer-events-none'
+        }`}
+      />
 
-      {/* 2. SIDEBAR NAVIGATION (DESKTOP & ACCESSIBLE AS DRAWER) */}
+      {/* 2. SIDEBAR NAVIGATION (DESKTOP & ACCESSIBLE AS DRAWER - HARDWARE ACCELERATED & SILKY SMOOTH) */}
       <aside className={`
-        fixed top-0 bottom-0 left-0 z-[100] w-72 lg:w-64 max-w-[82vw] bg-[#0F172A] text-slate-200 flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-        ${mobileSidebarOpen ? 'translate-x-0 shadow-[0_0_60px_rgba(0,0,0,0.95)]' : '-translate-x-full lg:translate-x-0 lg:shadow-none'}
+        fixed top-0 bottom-0 left-0 z-[100] w-72 lg:w-64 max-w-[82vw] bg-[#0F172A] text-slate-200 flex flex-col
+        transform-gpu will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+        ${mobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full lg:translate-x-0 lg:shadow-none'}
       `}>
         {/* Sidebar Header with Logo */}
         <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
@@ -1489,8 +1493,8 @@ function doGet(e) {
         </div>
       </aside>
 
-      {/* 3. MAIN CONTENT CONTAINER */}
-      <main className={`flex-1 lg:ml-64 flex flex-col min-h-screen pb-24 lg:pb-8 w-full max-w-full overflow-x-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${mobileSidebarOpen ? 'filter blur-[3px] scale-[0.985] lg:filter-none lg:scale-100' : ''}`}>
+      {/* 3. MAIN CONTENT CONTAINER (Lag-free, no heavy filter blurs) */}
+      <main className="flex-1 lg:ml-64 flex flex-col min-h-screen pb-24 lg:pb-8 w-full max-w-full overflow-x-hidden">
         
         {/* ============================================================== */}
         {/* DESKTOP HEADER (TETAP SAMA PERSIS DENGAN YANG DISUKAI USER)     */}
@@ -1593,10 +1597,11 @@ function doGet(e) {
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="-ml-1.5 p-1 text-cyan-300 hover:text-white transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
+                  className="-ml-1.5 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
                   title="Buka Menu Lengkap E-Arsip"
+                  aria-label="Buka Menu Navigasi"
                 >
-                  <AlignLeft className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
+                  <Menu className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
                 </button>
 
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-md shadow-blue-500/30 flex items-center justify-center flex-shrink-0 border border-white/20">
@@ -1628,21 +1633,32 @@ function doGet(e) {
                 </div>
               </div>
             ) : (
-              /* Contextual Sub-page Header with Back Navigation */
-              <button
-                onClick={() => setActivePage('dashboard')}
-                className="flex items-center gap-2.5 text-slate-200 hover:text-white transition-colors cursor-pointer"
-              >
-                <div className="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-200 shadow-sm">
-                  <ArrowLeft className="w-4 h-4" />
-                </div>
-                <div className="text-left">
-                  <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest block leading-none">Kembali</span>
-                  <span className="text-sm font-bold text-white block mt-0.5 max-w-[210px] truncate">
-                    {pageTitles[activePage].split('(')[0]}
-                  </span>
-                </div>
-              </button>
+              /* Contextual Sub-page Header with Hamburger Menu & Back Navigation */
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="-ml-1.5 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
+                  title="Buka Menu Lengkap E-Arsip"
+                  aria-label="Buka Menu Navigasi"
+                >
+                  <Menu className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
+                </button>
+                <button
+                  onClick={() => setActivePage('dashboard')}
+                  className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-200 shadow-sm active:scale-95">
+                    <ArrowLeft className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest block leading-none">Kembali</span>
+                    <span className="text-sm font-bold text-white block mt-0.5 max-w-[170px] truncate">
+                      {pageTitles[activePage].split('(')[0]}
+                    </span>
+                  </div>
+                </button>
+              </div>
             )}
 
             {/* Right: Perfectly Centered & Balanced Profile Trigger */}
@@ -1743,11 +1759,12 @@ function doGet(e) {
       </main>
 
       {/* ============================================================== */}
-      {/* 4. MODERN MOBILE PROFILE & UTILITY SHEET (MODERN EXECUTIVE MENU) */}
+      {/* 4. MODERN MOBILE PROFILE & UTILITY SHEET (HARDWARE ACCELERATED) */}
       {/* ============================================================== */}
-      {mobileProfileSheetOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0F172A] border-t border-slate-800 text-white rounded-t-3xl p-5 shadow-2xl animate-scaleUp lg:hidden">
-          <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-4" />
+      <div className={`fixed bottom-0 left-0 right-0 z-[100] bg-[#0F172A] border-t border-slate-800 text-white rounded-t-3xl p-5 shadow-2xl lg:hidden transform-gpu will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        mobileProfileSheetOpen ? 'translate-y-0' : 'translate-y-full pointer-events-none'
+      }`}>
+        <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-4" />
 
           {/* User info card */}
           <div 
@@ -1862,7 +1879,6 @@ function doGet(e) {
             <span>Keluar dari Akun (Logout)</span>
           </button>
         </div>
-      )}
 
       {/* ============================================================== */}
       {/* 5. REFINED FLOATING BOTTOM NAVIGATION (MINIMALIST & NATIVE FEEL)*/}

@@ -32,7 +32,7 @@ interface DashboardViewProps {
   dataVersion?: number;
 }
 
-export default function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardViewProps) {
+function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardViewProps) {
   const desktopDonutRef = useRef<HTMLCanvasElement | null>(null);
   const desktopBarRef = useRef<HTMLCanvasElement | null>(null);
   const mobileDonutRef = useRef<HTMLCanvasElement | null>(null);
@@ -850,3 +850,5 @@ export default function DashboardView({ onNavigate, dataVersion: dataVersionProp
     </div>
   );
 }
+
+export default React.memo(DashboardView);
