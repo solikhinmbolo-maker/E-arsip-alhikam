@@ -627,7 +627,7 @@ export default function App() {
 
   const handleCopyGAS = () => {
     const code = `// ================================================================
-// GOOGLE APPS SCRIPT WEBHOOK E-ARSIP SMP AL-HIKAM (V3.5)
+// GOOGLE APPS SCRIPT WEBHOOK E-ARSIP SMP AL-HIKAM (V3.6 ENTERPRISE)
 // ================================================================
 
 // 1. JALANKAN FUNGSI INI SEKALI (KLIK RUN/JALANKAN DI APPS SCRIPT)
@@ -681,9 +681,17 @@ function getSpreadsheet(optId) {
   return SpreadsheetApp.openById('1fyWuUClt970_2RELzMq5jBGsjCcTXYZW_XZtTyxmyI');
 }
 
-// 2. WEBHOOK PENERIMA UPLOAD & SINKRONISASI
+// 2. WEBHOOK PENERIMA UPLOAD & SINKRONISASI (DENGAN LOCKSERVICE ENTERPRISE)
 function doPost(e) {
+  var lock = LockService.getScriptLock();
   try {
+    if (!lock.tryLock(30000)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: 'Server sibuk (lock timeout). Silakan coba beberapa saat lagi.'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     var contents = (e && e.postData) ? e.postData.contents : '{}';
     var data = JSON.parse(contents);
     var ss = getSpreadsheet(data.spreadsheetId);
@@ -810,6 +818,8 @@ function doPost(e) {
       status: 'error',
       message: err.toString()
     })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
   }
 }
 

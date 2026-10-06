@@ -57,6 +57,27 @@ function parseMultipartForm(req: any): Promise<{ fields: Record<string, string>;
   });
 }
 
+async function fetchWithRetry(url: string, options: any, retries = 3, delayMs = 2500): Promise<Response> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status >= 500 && attempt < retries) {
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+        continue;
+      }
+      return response;
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+        continue;
+      }
+    }
+  }
+  throw lastError || new Error('Gagal terhubung ke Google Apps Script setelah beberapa kali percobaan (Cold Start timeout).');
+}
+
 export default async function handler(req: any, res: any) {
   res.setHeader('Content-Type', 'application/json');
 
@@ -112,8 +133,8 @@ export default async function handler(req: any, res: any) {
       id: fields.id || ''
     };
 
-    // Forward to Google Apps Script Web App (follows Google 302 redirects automatically)
-    const scriptResponse = await fetch(scriptUrl, {
+    // Forward to Google Apps Script Web App (follows Google 302 redirects automatically with retry handling for cold starts)
+    const scriptResponse = await fetchWithRetry(scriptUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8'
