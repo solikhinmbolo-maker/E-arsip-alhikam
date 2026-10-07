@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   CloudUpload, 
   FileText, 
@@ -23,7 +23,8 @@ import {
   X,
   Plus,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Search
 } from 'lucide-react';
 import { 
   MasterSiswaItem, 
@@ -111,6 +112,7 @@ export default function FormUploadView({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successInfo, setSuccessInfo] = useState<{ count: number; name: string }>({ count: 1, name: '' });
   const [errorMessage, setErrorMessage] = useState('');
+  const [namaSearchFilter, setNamaSearchFilter] = useState('');
 
   // Quick Add State for Siswa & Guru
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
@@ -209,24 +211,50 @@ export default function FormUploadView({
     jenisArsip === 'Arsip Guru' ? getActiveKategoriGuru() : 
     getActiveKategoriLainnya();
 
-  // Filter siswa based on selected tahun
-  const siswaFilter = masterSiswa.filter(s => s.tahun === tahun);
+  // Filter & Sort siswa alphabetically (A-Z) by name
+  const sortedSiswaList = useMemo(() => {
+    return [...masterSiswa]
+      .filter((s: MasterSiswaItem) => s.tahun === tahun)
+      .sort((a: MasterSiswaItem, b: MasterSiswaItem) => a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' }));
+  }, [masterSiswa, tahun]);
+
+  const filteredSiswaList = useMemo(() => {
+    const q = namaSearchFilter.trim().toLowerCase();
+    if (!q) return sortedSiswaList;
+    return sortedSiswaList.filter((s: MasterSiswaItem) => 
+      s.nama.toLowerCase().includes(q) || s.nisn.toLowerCase().includes(q)
+    );
+  }, [sortedSiswaList, namaSearchFilter]);
+
+  // Filter & Sort guru alphabetically (A-Z) by name
+  const sortedGuruList = useMemo(() => {
+    return [...masterGuru]
+      .sort((a: MasterGuruItem, b: MasterGuruItem) => a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' }));
+  }, [masterGuru]);
+
+  const filteredGuruList = useMemo(() => {
+    const q = namaSearchFilter.trim().toLowerCase();
+    if (!q) return sortedGuruList;
+    return sortedGuruList.filter((g: MasterGuruItem) => 
+      g.nama.toLowerCase().includes(q) || g.nuptk.toLowerCase().includes(q) || g.jabatan.toLowerCase().includes(q)
+    );
+  }, [sortedGuruList, namaSearchFilter]);
 
   // Sync NISN on siswa change
   useEffect(() => {
     if (jenisArsip === 'Arsip Siswa') {
-      const match = siswaFilter.find(s => s.nama === namaSubjek);
+      const match = sortedSiswaList.find((s: MasterSiswaItem) => s.nama === namaSubjek);
       setIdentitas(match ? match.nisn : '');
     }
-  }, [namaSubjek, jenisArsip, siswaFilter]);
+  }, [namaSubjek, jenisArsip, sortedSiswaList]);
 
   // Sync NUPTK on guru change
   useEffect(() => {
     if (jenisArsip === 'Arsip Guru') {
-      const match = masterGuru.find(g => g.nama === namaSubjek);
+      const match = sortedGuruList.find((g: MasterGuruItem) => g.nama === namaSubjek);
       setIdentitas(match ? match.nuptk : '');
     }
-  }, [namaSubjek, jenisArsip, masterGuru]);
+  }, [namaSubjek, jenisArsip, sortedGuruList]);
 
   // Default initial kategori
   useEffect(() => {
@@ -844,42 +872,100 @@ export default function FormUploadView({
           </div>
 
           {jenisArsip === 'Arsip Siswa' ? (
-            <div className="relative">
-              <select
-                value={namaSubjek}
-                onChange={(e) => setNamaSubjek(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
-              >
-                <option value="" disabled>
-                  {siswaFilter.length === 0 
-                    ? '-- Belum ada data siswa di angkatan ini (Klik "+ Input Siswa Baru") --' 
-                    : '-- Pilih Nama Siswa --'}
-                </option>
-                {siswaFilter.map(s => (
-                  <option key={s.id} value={s.nama}>{s.nama} ({s.jenisKelamin})</option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+            <div className="space-y-2">
+              {/* Live Search Filter Box */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                <input
+                  type="text"
+                  value={namaSearchFilter}
+                  onChange={(e) => setNamaSearchFilter(e.target.value)}
+                  placeholder={`🔍 Cari nama siswa di Angkatan ${tahun || ''} (Ketik untuk memfilter list)...`}
+                  className="w-full pl-9 pr-8 py-2 bg-slate-100 hover:bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs"
+                />
+                {namaSearchFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setNamaSearchFilter('')}
+                    className="absolute right-2.5 top-2.5 p-0.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Hapus pencarian"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Dropdown Options Alphabetically Sorted A-Z */}
+              <div className="relative">
+                <select
+                  value={namaSubjek}
+                  onChange={(e) => setNamaSubjek(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>
+                    {filteredSiswaList.length === 0 
+                      ? (namaSearchFilter 
+                          ? `-- Tidak ditemukan siswa bernama "${namaSearchFilter}" di Angkatan ${tahun} --` 
+                          : `-- Belum ada data siswa di angkatan ini (Klik "+ Input Siswa Baru") --`)
+                      : `-- Pilih Nama Siswa --`}
+                  </option>
+                  {filteredSiswaList.map((s: MasterSiswaItem) => (
+                    <option key={s.id} value={s.nama}>
+                      {s.nama} ({s.jenisKelamin}) {s.nisn ? `- NISN: ${s.nisn}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+              </div>
             </div>
           ) : jenisArsip === 'Arsip Guru' ? (
-            <div className="relative">
-              <select
-                value={namaSubjek}
-                onChange={(e) => setNamaSubjek(e.target.value)}
-                required
-                className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
-              >
-                <option value="" disabled>
-                  {masterGuru.length === 0 
-                    ? '-- Belum ada data guru (Klik "+ Input Guru Baru") --' 
-                    : '-- Pilih Nama Guru --'}
-                </option>
-                {masterGuru.map(g => (
-                  <option key={g.id} value={g.nama}>{g.nama} - {g.jabatan}</option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+            <div className="space-y-2">
+              {/* Live Search Filter Box */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                <input
+                  type="text"
+                  value={namaSearchFilter}
+                  onChange={(e) => setNamaSearchFilter(e.target.value)}
+                  placeholder="🔍 Cari nama guru / PTK / jabatan (Ketik untuk memfilter list)..."
+                  className="w-full pl-9 pr-8 py-2 bg-slate-100 hover:bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none transition-all shadow-2xs"
+                />
+                {namaSearchFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setNamaSearchFilter('')}
+                    className="absolute right-2.5 top-2.5 p-0.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Hapus pencarian"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Dropdown Options Alphabetically Sorted A-Z */}
+              <div className="relative">
+                <select
+                  value={namaSubjek}
+                  onChange={(e) => setNamaSubjek(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>
+                    {filteredGuruList.length === 0 
+                      ? (namaSearchFilter 
+                          ? `-- Tidak ditemukan guru dengan kata kunci "${namaSearchFilter}" --` 
+                          : `-- Belum ada data guru (Klik "+ Input Guru Baru") --`)
+                      : `-- Pilih Nama Guru --`}
+                  </option>
+                  {filteredGuruList.map((g: MasterGuruItem) => (
+                    <option key={g.id} value={g.nama}>
+                      {g.nama} - {g.jabatan}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none" />
+              </div>
             </div>
           ) : (
             <input

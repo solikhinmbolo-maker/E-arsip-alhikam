@@ -463,6 +463,9 @@ export function sanitizeAndReconcileMasterData(
     }
   });
 
+  cleanSiswa.sort((a, b) => a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' }));
+  cleanGuru.sort((a, b) => a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' }));
+
   return { cleanSiswa, cleanGuru };
 }
 
