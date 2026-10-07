@@ -1458,7 +1458,14 @@ function doGet(e) {
       ]);
 
       if (Array.isArray(supaItems)) {
-        localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(supaItems));
+        const deletedIds = getPermanentDeletedIds();
+        const valid = supaItems.filter(it => !deletedIds.has(it.id));
+        const clean = valid.map(it => {
+          const copy = { ...it };
+          delete copy.fileDataUrl;
+          return copy;
+        });
+        localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
       }
       if (Array.isArray(supaSiswa) && supaSiswa.length > 0) {
         localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaSiswa));
@@ -1477,6 +1484,7 @@ function doGet(e) {
 
       setDbVersion(v => v + 1);
       window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+      showNotification('✓ Data berhasil disegarkan & disinkronkan langsung dari Server Cloud!');
     } catch (e) {
       console.warn('Manual refresh notice:', e);
     } finally {

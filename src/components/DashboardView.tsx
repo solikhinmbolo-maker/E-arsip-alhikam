@@ -228,50 +228,59 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
 
     if (instanceRef.current) {
       const chart = instanceRef.current;
-      chart.data.labels = labels;
-      if (chart.data.datasets[0]) {
-        chart.data.datasets[0].data = data;
-        chart.data.datasets[0].backgroundColor = donutColors.slice(0, labels.length || 1);
+      if (chart.canvas && document.contains(chart.canvas)) {
+        chart.data.labels = labels;
+        if (chart.data.datasets[0]) {
+          chart.data.datasets[0].data = data;
+          chart.data.datasets[0].backgroundColor = donutColors.slice(0, labels.length || 1);
+        }
+        chart.update();
+        return;
+      } else {
+        try { chart.destroy(); } catch {}
+        instanceRef.current = null;
       }
-      chart.update();
-      return;
     }
 
-    instanceRef.current = new Chart(canvas, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: donutColors.slice(0, labels.length || 1),
-          borderWidth: 3,
-          borderColor: '#ffffff',
-          hoverOffset: 8,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          animateRotate: true,
-          animateScale: true,
-          duration: 1000,
-          easing: 'easeOutQuart'
+    try {
+      instanceRef.current = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: donutColors.slice(0, labels.length || 1),
+            borderWidth: 3,
+            borderColor: '#ffffff',
+            hoverOffset: 8,
+            borderRadius: 4
+          }]
         },
-        cutout: '72%',
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#0F172A',
-            titleFont: { size: 12, weight: 'bold' },
-            bodyFont: { size: 11 },
-            padding: 10,
-            cornerRadius: 10
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            animateRotate: true,
+            animateScale: true,
+            duration: 2500, // Cinematic 2.5s slow-motion rotation & scale-in
+            easing: 'easeOutQuart'
+          },
+          cutout: '72%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0F172A',
+              titleFont: { size: 12, weight: 'bold' },
+              bodyFont: { size: 11 },
+              padding: 10,
+              cornerRadius: 10
+            }
           }
         }
-      }
-    });
+      });
+    } catch (err) {
+      console.warn('Failed to initialize donut chart:', err);
+    }
   };
 
   // Update or build Bar Chart smoothly without canvas destroy/flicker
@@ -287,88 +296,105 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
 
     if (instanceRef.current) {
       const chart = instanceRef.current;
-      chart.data.labels = barLabels;
-      if (chart.data.datasets[0]) {
-        chart.data.datasets[0].data = angkatanData;
-        chart.data.datasets[0].backgroundColor = gradient;
+      if (chart.canvas && document.contains(chart.canvas)) {
+        chart.data.labels = barLabels;
+        if (chart.data.datasets[0]) {
+          chart.data.datasets[0].data = angkatanData;
+          chart.data.datasets[0].backgroundColor = gradient;
+        }
+        chart.update();
+        return;
+      } else {
+        try { chart.destroy(); } catch {}
+        instanceRef.current = null;
       }
-      chart.update();
-      return;
     }
 
-    instanceRef.current = new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: barLabels,
-        datasets: [{
-          label: 'Jumlah Siswa',
-          data: angkatanData,
-          backgroundColor: gradient,
-          borderRadius: 12,
-          maxBarThickness: 52
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: 1000,
-          easing: 'easeOutExpo'
+    try {
+      instanceRef.current = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels: barLabels,
+          datasets: [{
+            label: 'Jumlah Siswa',
+            data: angkatanData,
+            backgroundColor: gradient,
+            borderRadius: 12,
+            maxBarThickness: 52
+          }]
         },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#0F172A',
-            titleFont: { size: 12, weight: 'bold' },
-            bodyFont: { size: 11 },
-            padding: 10,
-            cornerRadius: 10
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { size: 11, weight: 'bold' }, color: '#64748B' }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 2600, // Cinematic 2.6s slow-motion rise
+            easing: 'easeOutExpo',
+            delay: (ctx: any) => {
+              if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+              return ctx.dataIndex * 350; // Cascading delay: each bar rises one by one!
+            }
           },
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(226, 232, 240, 0.6)' },
-            ticks: { precision: 0, font: { size: 11 }, color: '#94A3B8' }
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0F172A',
+              titleFont: { size: 12, weight: 'bold' },
+              bodyFont: { size: 11 },
+              padding: 10,
+              cornerRadius: 10
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11, weight: 'bold' }, color: '#64748B' }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(226, 232, 240, 0.6)' },
+              ticks: { precision: 0, font: { size: 11 }, color: '#94A3B8' }
+            }
           }
         }
-      }
-    });
+      });
+    } catch (err) {
+      console.warn('Failed to initialize bar chart:', err);
+    }
   };
 
   useEffect(() => {
-    const donutChanged = prevDonutSignature.current !== currentDonutSignature;
-    const barChanged = prevBarSignature.current !== currentBarSignature;
+    const timer = setTimeout(() => {
+      const donutChanged = prevDonutSignature.current !== currentDonutSignature;
+      const barChanged = prevBarSignature.current !== currentBarSignature;
 
-    // Mobile Charts
-    if (mobileChartTab === 'kategori' && mobileDonutRef.current) {
-      if (!mobileDonutChart.current || donutChanged) {
-        updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
+      // Mobile Charts
+      if (mobileChartTab === 'kategori' && mobileDonutRef.current) {
+        if (!mobileDonutChart.current || donutChanged) {
+          updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
+        }
+      } else if (mobileChartTab === 'siswa' && mobileBarRef.current) {
+        if (!mobileBarChart.current || barChanged) {
+          updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
+        }
       }
-    } else if (mobileChartTab === 'siswa' && mobileBarRef.current) {
-      if (!mobileBarChart.current || barChanged) {
-        updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
-      }
-    }
 
-    // Desktop Charts
-    if (desktopDonutRef.current) {
-      if (!desktopDonutChart.current || donutChanged) {
-        updateOrBuildDonutChart(desktopDonutRef.current, desktopDonutChart);
+      // Desktop Charts
+      if (desktopDonutRef.current) {
+        if (!desktopDonutChart.current || donutChanged) {
+          updateOrBuildDonutChart(desktopDonutRef.current, desktopDonutChart);
+        }
       }
-    }
-    if (desktopBarRef.current) {
-      if (!desktopBarChart.current || barChanged) {
-        updateOrBuildBarChart(desktopBarRef.current, desktopBarChart);
+      if (desktopBarRef.current) {
+        if (!desktopBarChart.current || barChanged) {
+          updateOrBuildBarChart(desktopBarRef.current, desktopBarChart);
+        }
       }
-    }
 
-    prevDonutSignature.current = currentDonutSignature;
-    prevBarSignature.current = currentBarSignature;
+      prevDonutSignature.current = currentDonutSignature;
+      prevBarSignature.current = currentBarSignature;
+    }, 60);
+
+    return () => clearTimeout(timer);
   }, [mobileChartTab, currentDonutSignature, currentBarSignature]);
 
   // Clean destruction only when component truly unmounts

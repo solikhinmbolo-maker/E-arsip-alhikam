@@ -174,8 +174,8 @@ export default function FormUploadView({
       const distinctTahun = Array.from(new Set(sList.map(s => s.tahun))).sort().reverse();
       setTahunList(distinctTahun);
 
-      if (distinctTahun.length > 0 && !tahun) {
-        setTahun(distinctTahun[0]);
+      if (distinctTahun.length > 0) {
+        setTahun(prev => (prev ? prev : distinctTahun[0]));
       }
     };
 
@@ -909,7 +909,12 @@ export default function FormUploadView({
               <div className="relative">
                 <select
                   value={namaSubjek}
-                  onChange={(e) => setNamaSubjek(e.target.value)}
+                  onChange={(e) => {
+                    const selectedName = e.target.value;
+                    setNamaSubjek(selectedName);
+                    const match = sortedSiswaList.find((s: MasterSiswaItem) => s.nama === selectedName);
+                    if (match) setIdentitas(match.nisn || '-');
+                  }}
                   required
                   className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
                 >
@@ -957,7 +962,12 @@ export default function FormUploadView({
               <div className="relative">
                 <select
                   value={namaSubjek}
-                  onChange={(e) => setNamaSubjek(e.target.value)}
+                  onChange={(e) => {
+                    const selectedName = e.target.value;
+                    setNamaSubjek(selectedName);
+                    const match = sortedGuruList.find((g: MasterGuruItem) => g.nama === selectedName);
+                    if (match) setIdentitas(match.nuptk || '-');
+                  }}
                   required
                   className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
                 >

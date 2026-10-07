@@ -524,7 +524,6 @@ export function invalidateAuditCache() {
 }
 
 export function getSanitizedMasterData(): { siswa: MasterSiswaItem[]; guru: MasterGuruItem[] } {
-  if (_masterDataCache) return _masterDataCache;
   let rawSiswa: MasterSiswaItem[] = [];
   let rawGuru: MasterGuruItem[] = [];
 
@@ -551,8 +550,7 @@ export function getSanitizedMasterData(): { siswa: MasterSiswaItem[]; guru: Mast
     safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(cleanGuru));
   }
 
-  _masterDataCache = { siswa: cleanSiswa, guru: cleanGuru };
-  return _masterDataCache;
+  return { siswa: cleanSiswa, guru: cleanGuru };
 }
 
 export function getStoredMasterSiswa(): MasterSiswaItem[] {
@@ -627,28 +625,24 @@ export function recordMultiplePermanentDeletedIds(ids: string[]) {
 }
 
 export function getAllRawArsip(): ArsipItem[] {
-  if (_rawArsipCache) return _rawArsipCache;
   try {
     const raw = localStorage.getItem(DB_KEYS.ARSIP_ITEMS);
     if (!raw) {
-      _rawArsipCache = [];
-      return _rawArsipCache;
+      return [];
     }
     const items: ArsipItem[] = JSON.parse(raw);
     const deletedIds = getPermanentDeletedIds();
     const validItems = items.filter(it => !deletedIds.has(it.id) && !it.id.startsWith('SYS_') && it.kategoriUtama !== ('SystemRegistry' as any));
 
     // Enrich with fileDataUrl from memory cache if available
-    _rawArsipCache = validItems.map(item => {
+    return validItems.map(item => {
       if (fileBlobCache.has(item.id)) {
         return { ...item, fileDataUrl: fileBlobCache.get(item.id) };
       }
       return item;
     });
-    return _rawArsipCache;
   } catch {
-    _rawArsipCache = [];
-    return _rawArsipCache;
+    return [];
   }
 }
 
