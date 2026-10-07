@@ -342,6 +342,7 @@ export async function saveArsipToSupabase(item: ArsipItem): Promise<boolean> {
       console.error('Supabase upsert error:', error);
       return false;
     }
+    broadcastSupabaseDataChange('arsip');
     return true;
   } catch (err) {
     console.error('Supabase save exception:', err);
@@ -395,6 +396,7 @@ export async function syncAllArsipToSupabase(items: ArsipItem[]): Promise<{ succ
       syncedCount += chunk.length;
     }
 
+    broadcastSupabaseDataChange('arsip');
     return { success: true, count: syncedCount };
   } catch (err: any) {
     console.error('Supabase bulk sync exception:', err);
@@ -427,6 +429,7 @@ export async function deleteArsipFromSupabase(id: string): Promise<boolean> {
       console.error('Supabase delete error:', error);
       return false;
     }
+    broadcastSupabaseDataChange('arsip');
     return true;
   } catch (err) {
     console.error('Supabase delete exception:', err);
@@ -783,6 +786,7 @@ export async function saveSiswaToSupabase(item: MasterSiswaItem): Promise<boolea
       console.warn('Supabase save siswa error:', error);
       return false;
     }
+    broadcastSupabaseDataChange('siswa');
     return true;
   } catch (err) {
     console.warn('Supabase save siswa exception:', err);
@@ -810,6 +814,7 @@ export async function saveGuruToSupabase(item: MasterGuruItem): Promise<boolean>
       console.warn('Supabase save guru error:', error);
       return false;
     }
+    broadcastSupabaseDataChange('guru');
     return true;
   } catch (err) {
     console.warn('Supabase save guru exception:', err);
@@ -825,6 +830,7 @@ export async function deleteMasterSiswaFromSupabase(id: string): Promise<boolean
   if (!client) return false;
   try {
     const { error } = await client.from('master_siswa').delete().eq('id', id);
+    if (!error) broadcastSupabaseDataChange('siswa');
     return !error;
   } catch {
     return false;
@@ -839,6 +845,7 @@ export async function deleteMasterGuruFromSupabase(id: string): Promise<boolean>
   if (!client) return false;
   try {
     const { error } = await client.from('master_guru').delete().eq('id', id);
+    if (!error) broadcastSupabaseDataChange('guru');
     return !error;
   } catch {
     return false;
@@ -880,6 +887,7 @@ export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Pr
       }
       syncedCount += chunk.length;
     }
+    broadcastSupabaseDataChange('siswa');
     return { success: true, count: syncedCount };
   } catch (err: any) {
     console.error('Supabase bulk sync siswa exception:', err);
@@ -921,6 +929,7 @@ export async function syncAllMasterGuruToSupabase(items: MasterGuruItem[]): Prom
       }
       syncedCount += chunk.length;
     }
+    broadcastSupabaseDataChange('guru');
     return { success: true, count: syncedCount };
   } catch (err: any) {
     console.error('Supabase bulk sync guru exception:', err);
@@ -1457,6 +1466,40 @@ export async function testSupabaseStorage(): Promise<{ success: boolean; message
   }
 }
 
+let _realtimeBroadcastChannel: any = null;
+
+/**
+ * Broadcast real-time data change event to all connected devices & tabs
+ */
+export function broadcastSupabaseDataChange(type: 'arsip' | 'siswa' | 'guru' | 'users' | 'all') {
+  try {
+    const client = getSupabaseClient();
+    if (client) {
+      if (!_realtimeBroadcastChannel) {
+        _realtimeBroadcastChannel = client.channel('earsip_global_sync');
+        _realtimeBroadcastChannel.subscribe();
+      }
+      _realtimeBroadcastChannel.send({
+        type: 'broadcast',
+        event: 'earsip_data_changed',
+        payload: { type, timestamp: Date.now() }
+      }).catch(() => {});
+    }
+  } catch {}
+
+  try {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const bc = new BroadcastChannel('earsip_local_channel');
+      bc.postMessage({ type, timestamp: Date.now() });
+      bc.close();
+    }
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+  }
+}
+
 /**
  * Subscribe to realtime changes on Supabase 'arsip' table
  */
@@ -1480,6 +1523,88 @@ export function subscribeToSupabaseArsip(onUpdate: (items: ArsipItem[]) => void)
         });
       }
     )
+    .on('broadcast', { event: 'earsip_data_changed' }, (payload) => {
+      const pType = payload?.payload?.type;
+      if (!pType || pType === 'arsip' || pType === 'all') {
+        fetchArsipFromSupabase().then(items => {
+          if (items) onUpdate(items);
+        });
+      }
+    })
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+/**
+ * Subscribe to realtime changes on Supabase 'master_siswa' table
+ */
+export function subscribeToSupabaseMasterSiswa(onUpdate: (siswa: MasterSiswaItem[]) => void) {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  fetchMasterSiswaFromSupabase().then(siswa => {
+    if (siswa && siswa.length > 0) onUpdate(siswa);
+  });
+
+  const channel = client
+    .channel('master_siswa_realtime_channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'master_siswa' },
+      () => {
+        fetchMasterSiswaFromSupabase().then(siswa => {
+          if (siswa && siswa.length > 0) onUpdate(siswa);
+        });
+      }
+    )
+    .on('broadcast', { event: 'earsip_data_changed' }, (payload) => {
+      const pType = payload?.payload?.type;
+      if (!pType || pType === 'siswa' || pType === 'all') {
+        fetchMasterSiswaFromSupabase().then(siswa => {
+          if (siswa && siswa.length > 0) onUpdate(siswa);
+        });
+      }
+    })
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+/**
+ * Subscribe to realtime changes on Supabase 'master_guru' table
+ */
+export function subscribeToSupabaseMasterGuru(onUpdate: (guru: MasterGuruItem[]) => void) {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  fetchMasterGuruFromSupabase().then(guru => {
+    if (guru && guru.length > 0) onUpdate(guru);
+  });
+
+  const channel = client
+    .channel('master_guru_realtime_channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'master_guru' },
+      () => {
+        fetchMasterGuruFromSupabase().then(guru => {
+          if (guru && guru.length > 0) onUpdate(guru);
+        });
+      }
+    )
+    .on('broadcast', { event: 'earsip_data_changed' }, (payload) => {
+      const pType = payload?.payload?.type;
+      if (!pType || pType === 'guru' || pType === 'all') {
+        fetchMasterGuruFromSupabase().then(guru => {
+          if (guru && guru.length > 0) onUpdate(guru);
+        });
+      }
+    })
     .subscribe();
 
   return () => {
@@ -1509,6 +1634,37 @@ export function subscribeToSupabaseUsers(onUpdate: (users: any[]) => void) {
         });
       }
     )
+    .on('broadcast', { event: 'earsip_data_changed' }, (payload) => {
+      const pType = payload?.payload?.type;
+      if (!pType || pType === 'users' || pType === 'all') {
+        fetchUsersFromSupabase().then(users => {
+          if (users && users.length > 0) onUpdate(users);
+        });
+      }
+    })
+    .subscribe();
+
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+/**
+ * Global Realtime Broadcast Listener across all devices
+ */
+export function subscribeToGlobalRealtimeBroadcast(onChange: (type: string) => void) {
+  const client = getSupabaseClient();
+  if (!client) return () => {};
+
+  const channel = client.channel('earsip_global_sync');
+  channel
+    .on('broadcast', { event: 'earsip_data_changed' }, (payload) => {
+      if (payload?.payload?.type) {
+        onChange(payload.payload.type);
+      } else {
+        onChange('all');
+      }
+    })
     .subscribe();
 
   return () => {

@@ -89,6 +89,9 @@ import {
   testSupabaseConnection,
   testSupabaseStorage,
   subscribeToSupabaseArsip,
+  subscribeToSupabaseMasterSiswa,
+  subscribeToSupabaseMasterGuru,
+  subscribeToGlobalRealtimeBroadcast,
   SUPABASE_SQL_SCHEMA,
   sanitizeSupabaseUrl,
   getSupabaseClient,
@@ -98,6 +101,7 @@ import {
   fetchMasterSiswaFromSupabase,
   fetchMasterGuruFromSupabase,
   fetchArsipFromSupabase,
+  fetchSanitizedMasterDataFromSupabase,
   subscribeToSupabaseUsers,
   fetchUsersFromSupabase,
   syncConfigToServer,
@@ -549,7 +553,24 @@ export default function App() {
     setIsTestingConn(false);
   };
 
-  // Real-time Cloud Database Listeners (Multi-Device Auto Sync)
+  // Reference state tracker for smart auto-polling
+  const lastKnownStateRef = useRef<{
+    arsipCount: number;
+    latestArsipId: string;
+    latestArsipUpdated: string;
+    siswaCount: number;
+    guruCount: number;
+    userCount: number;
+  }>({
+    arsipCount: -1,
+    latestArsipId: '',
+    latestArsipUpdated: '',
+    siswaCount: -1,
+    guruCount: -1,
+    userCount: -1
+  });
+
+  // Real-time Cloud Database Listeners (Multi-Device Instant Auto Sync & Broadcast)
   useEffect(() => {
     testFirestoreConnection();
 
@@ -559,40 +580,27 @@ export default function App() {
       syncDebounceTimer = setTimeout(() => {
         setDbVersion(v => v + 1);
         window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
-      }, 90);
+      }, 80);
     };
 
+    // 1. Legacy Firestore Listeners
     const unsubArsip = subscribeToArsip((remoteItems) => {
       try {
         if (!Array.isArray(remoteItems)) return;
-        // If Supabase client is active, Supabase is the primary database
-        if (getSupabaseClient()) {
-          console.log('[Sync] Supabase is active, ignoring legacy Firebase snapshot update.');
-          return;
-        }
+        if (getSupabaseClient()) return;
 
-        // Preserve local file attachment blobs if available
         const localRaw = getAllRawArsip();
         const localMap = new Map<string, ArsipItem>();
         localRaw.forEach(it => localMap.set(it.id, it));
 
         const updatedList: ArsipItem[] = [];
-
         remoteItems.forEach(it => {
           const existingLocal = localMap.get(it.id);
           const activeBlob = it.fileDataUrl || existingLocal?.fileDataUrl;
-
-          if (activeBlob) {
-            saveFileAttachment(it.id, activeBlob);
-          }
-
-          updatedList.push({
-            ...it,
-            fileDataUrl: activeBlob
-          });
+          if (activeBlob) saveFileAttachment(it.id, activeBlob);
+          updatedList.push({ ...it, fileDataUrl: activeBlob });
         });
 
-        // Save authoritative list from Firestore to LocalStorage (without fileDataUrl to save quota)
         const clean = updatedList.map(it => {
           const copy = { ...it };
           delete copy.fileDataUrl;
@@ -607,7 +615,7 @@ export default function App() {
     });
 
     const unsubSiswa = subscribeToMasterSiswa((siswaList) => {
-      if (Array.isArray(siswaList) && siswaList.length > 0) {
+      if (Array.isArray(siswaList) && siswaList.length > 0 && !getSupabaseClient()) {
         try {
           localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(siswaList));
           triggerDebouncedSync();
@@ -616,7 +624,7 @@ export default function App() {
     });
 
     const unsubGuru = subscribeToMasterGuru((guruList) => {
-      if (Array.isArray(guruList) && guruList.length > 0) {
+      if (Array.isArray(guruList) && guruList.length > 0 && !getSupabaseClient()) {
         try {
           localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(guruList));
           triggerDebouncedSync();
@@ -624,19 +632,13 @@ export default function App() {
       }
     });
 
-    const unsubSupabase = subscribeToSupabaseArsip((supabaseItems) => {
+    // 2. Supabase Primary Realtime Listeners across all tables
+    const unsubSupabaseArsip = subscribeToSupabaseArsip((supabaseItems) => {
       try {
         if (!Array.isArray(supabaseItems)) return;
-
         const deletedIds = getPermanentDeletedIds();
         const validSupabaseItems = supabaseItems.filter(it => !deletedIds.has(it.id));
 
-        const localRaw = getAllRawArsip();
-        const localMap = new Map<string, ArsipItem>();
-        localRaw.forEach(it => localMap.set(it.id, it));
-
-        // Supabase is the single source of truth across all devices.
-        // We preserve local fileDataUrl from memory cache if available:
         const clean = validSupabaseItems.map(it => {
           const copy = { ...it };
           delete copy.fileDataUrl;
@@ -650,7 +652,53 @@ export default function App() {
       }
     });
 
-    // Pull authoritative archives from Supabase on startup
+    const unsubSupabaseSiswa = subscribeToSupabaseMasterSiswa((siswaList) => {
+      if (Array.isArray(siswaList) && siswaList.length > 0) {
+        try {
+          localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(siswaList));
+          triggerDebouncedSync();
+        } catch {}
+      }
+    });
+
+    const unsubSupabaseGuru = subscribeToSupabaseMasterGuru((guruList) => {
+      if (Array.isArray(guruList) && guruList.length > 0) {
+        try {
+          localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(guruList));
+          triggerDebouncedSync();
+        } catch {}
+      }
+    });
+
+    const unsubGlobalBroadcast = subscribeToGlobalRealtimeBroadcast(() => {
+      fetchArsipFromSupabase().then(items => {
+        if (items) {
+          const deletedIds = getPermanentDeletedIds();
+          const valid = items.filter(it => !deletedIds.has(it.id));
+          localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(valid.map(it => { const c = { ...it }; delete c.fileDataUrl; return c; })));
+        }
+      });
+      fetchSanitizedMasterDataFromSupabase().then(m => {
+        if (m) {
+          localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(m.siswa));
+          localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(m.guru));
+        }
+      });
+      triggerDebouncedSync();
+    });
+
+    // Local tab BroadcastChannel listener for browser multi-tab sync
+    let localBc: BroadcastChannel | null = null;
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        localBc = new BroadcastChannel('earsip_local_channel');
+        localBc.onmessage = () => {
+          triggerDebouncedSync();
+        };
+      }
+    } catch {}
+
+    // Pull authoritative records from Supabase on startup
     fetchArsipFromSupabase().then(supaItems => {
       const deletedIds = getPermanentDeletedIds();
       if (Array.isArray(supaItems) && supaItems.length > 0) {
@@ -670,28 +718,11 @@ export default function App() {
       }
     }).catch(() => {});
 
-    // Auto sync/seed master siswa and master guru from/to Supabase
-    fetchMasterSiswaFromSupabase().then(supaSiswa => {
-      if (supaSiswa && supaSiswa.length > 0) {
-        localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaSiswa));
+    fetchSanitizedMasterDataFromSupabase().then(supaMaster => {
+      if (supaMaster) {
+        localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaMaster.siswa));
+        localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(supaMaster.guru));
         triggerDebouncedSync();
-      } else {
-        const localSiswa = getStoredMasterSiswa();
-        if (localSiswa && localSiswa.length > 0) {
-          syncAllMasterSiswaToSupabase(localSiswa);
-        }
-      }
-    }).catch(() => {});
-
-    fetchMasterGuruFromSupabase().then(supaGuru => {
-      if (supaGuru && supaGuru.length > 0) {
-        localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(supaGuru));
-        triggerDebouncedSync();
-      } else {
-        const localGuru = getStoredMasterGuru();
-        if (localGuru && localGuru.length > 0) {
-          syncAllMasterGuruToSupabase(localGuru);
-        }
       }
     }).catch(() => {});
 
@@ -704,11 +735,99 @@ export default function App() {
 
     const handleWindowFocus = () => {
       syncAuditLogsFromCloud().catch(() => {});
+      fetchArsipFromSupabase().then(items => {
+        if (items) {
+          const deletedIds = getPermanentDeletedIds();
+          const valid = items.filter(it => !deletedIds.has(it.id));
+          localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(valid.map(it => { const c = { ...it }; delete c.fileDataUrl; return c; })));
+          triggerDebouncedSync();
+        }
+      }).catch(() => {});
     };
     window.addEventListener('focus', handleWindowFocus);
 
-    // Cross-Device Server Configuration Auto-Sync:
-    // When opened on ANY other device (phone, laptop, teacher's PC), auto-fetch pre-configured credentials
+    // 3. Smart Background Auto-Polling (3 Seconds) as fail-safe fallback for multi-device sync
+    const autoPollInterval = setInterval(async () => {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const [arsipRes, siswaRes, guruRes, userRes] = await Promise.all([
+          client.from('arsip').select('id, updated_at', { count: 'exact' }).order('created_at', { ascending: false }).limit(1),
+          client.from('master_siswa').select('id', { count: 'exact', head: true }),
+          client.from('master_guru').select('id', { count: 'exact', head: true }),
+          client.from('users').select('id', { count: 'exact', head: true })
+        ]);
+
+        const currentArsipCount = arsipRes.count ?? 0;
+        const latestArsipId = arsipRes.data?.[0]?.id || '';
+        const latestArsipUpdated = arsipRes.data?.[0]?.updated_at || '';
+        const currentSiswaCount = siswaRes.count ?? 0;
+        const currentGuruCount = guruRes.count ?? 0;
+        const currentUserCount = userRes.count ?? 0;
+
+        const last = lastKnownStateRef.current;
+
+        // On first run, record state
+        if (last.arsipCount === -1) {
+          lastKnownStateRef.current = {
+            arsipCount: currentArsipCount,
+            latestArsipId,
+            latestArsipUpdated,
+            siswaCount: currentSiswaCount,
+            guruCount: currentGuruCount,
+            userCount: currentUserCount
+          };
+          return;
+        }
+
+        let hasChange = false;
+        if (
+          last.arsipCount !== currentArsipCount ||
+          last.latestArsipId !== latestArsipId ||
+          last.latestArsipUpdated !== latestArsipUpdated ||
+          last.siswaCount !== currentSiswaCount ||
+          last.guruCount !== currentGuruCount ||
+          last.userCount !== currentUserCount
+        ) {
+          hasChange = true;
+        }
+
+        if (hasChange) {
+          lastKnownStateRef.current = {
+            arsipCount: currentArsipCount,
+            latestArsipId,
+            latestArsipUpdated,
+            siswaCount: currentSiswaCount,
+            guruCount: currentGuruCount,
+            userCount: currentUserCount
+          };
+
+          const [freshArsip, freshMaster, freshUsers] = await Promise.all([
+            fetchArsipFromSupabase(),
+            fetchSanitizedMasterDataFromSupabase(),
+            fetchUsersFromSupabase()
+          ]);
+
+          if (freshArsip) {
+            const deletedIds = getPermanentDeletedIds();
+            const valid = freshArsip.filter(a => !deletedIds.has(a.id));
+            localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(valid.map(v => { const c = { ...v }; delete c.fileDataUrl; return c; })));
+          }
+          if (freshMaster) {
+            localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(freshMaster.siswa));
+            localStorage.setItem(DB_KEYS.MASTER_GURU, JSON.stringify(freshMaster.guru));
+          }
+          if (freshUsers) {
+            localStorage.setItem('EARSIP_USER_LIST', JSON.stringify(freshUsers));
+          }
+
+          triggerDebouncedSync();
+        }
+      } catch {}
+    }, 3000);
+
+    // Cross-Device Server Configuration Auto-Sync
     const currentLocalCfg = getStoredSupabaseConfig();
     if (!currentLocalCfg.anonKey) {
       fetchConfigFromServer().then(remoteCfg => {
@@ -718,16 +837,20 @@ export default function App() {
         }
       });
     } else {
-      // If this device already has active verified credentials, broadcast & save to server
       syncConfigToServer(currentLocalCfg);
     }
 
     return () => {
       if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+      clearInterval(autoPollInterval);
+      if (localBc) localBc.close();
       unsubArsip();
       unsubSiswa();
       unsubGuru();
-      unsubSupabase();
+      unsubSupabaseArsip();
+      unsubSupabaseSiswa();
+      unsubSupabaseGuru();
+      unsubGlobalBroadcast();
       unsubAuditLogs();
       window.removeEventListener('focus', handleWindowFocus);
     };
