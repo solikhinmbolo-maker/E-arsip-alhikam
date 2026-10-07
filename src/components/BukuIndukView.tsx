@@ -140,18 +140,23 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
   const [batchSiswaRows, setBatchSiswaRows] = useState<BatchSiswaRow[]>([]);
   const [batchGuruRows, setBatchGuruRows] = useState<BatchGuruRow[]>([]);
 
+  // Modal specific state for searching & filtering inside batch edit
+  const [batchModalSearch, setBatchModalSearch] = useState('');
+  const [batchModalOnlyMissing, setBatchModalOnlyMissing] = useState(false);
+  const [activeBatchAngkatan, setActiveBatchAngkatan] = useState<string>('SEMUA');
+
   // Pastebox state for copying directly from Excel / Sheets
   const [showPasteBox, setShowPasteBox] = useState(false);
   const [pasteRawText, setPasteRawText] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
 
   // Helper to create empty rows
-  const createEmptySiswaRows = (count = 5): BatchSiswaRow[] => {
-    const defaultYear = new Date().getFullYear().toString();
+  const createEmptySiswaRows = (count = 5, defaultYear = ''): BatchSiswaRow[] => {
+    const yr = defaultYear || (filterTahun !== 'SEMUA' ? filterTahun : new Date().getFullYear().toString());
     return Array.from({ length: count }, () => ({
       nama: '',
       nisn: '',
-      tahun: defaultYear,
+      tahun: yr,
       jenisKelamin: 'L'
     }));
   };
@@ -168,6 +173,27 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
   const distinctTahun = useMemo(() => {
     const set = new Set(siswaList.map(s => s.tahun));
     return Array.from(set).sort().reverse();
+  }, [siswaList]);
+
+  // Statistics per Angkatan for Collective Edit Quick Bar
+  const angkatanStats = useMemo(() => {
+    const map = new Map<string, { total: number; missingNisnOrGender: number }>();
+    siswaList.forEach(s => {
+      const yr = s.tahun || '2025';
+      if (!map.has(yr)) {
+        map.set(yr, { total: 0, missingNisnOrGender: 0 });
+      }
+      const item = map.get(yr)!;
+      item.total += 1;
+      const isMissingNisn = !s.nisn || s.nisn === '-';
+      const isMissingGender = !s.jenisKelamin || s.jenisKelamin === '-' || !['L', 'P', 'Laki-laki', 'Perempuan'].includes(s.jenisKelamin);
+      if (isMissingNisn || isMissingGender) {
+        item.missingNisnOrGender += 1;
+      }
+    });
+    return Array.from(map.entries())
+      .map(([tahun, stat]) => ({ tahun, ...stat }))
+      .sort((a, b) => b.tahun.localeCompare(a.tahun));
   }, [siswaList]);
 
   // Fast O(1) archive coverage calculation
@@ -198,35 +224,84 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
     });
   }, [guruList, searchTerm]);
 
-  // Open Modal logic
+  // Open Modal logic for single row add/edit
   const handleOpenAddModal = (existingToEdit?: any) => {
     setShowPasteBox(false);
     setPasteRawText('');
+    setBatchModalSearch('');
+    setBatchModalOnlyMissing(false);
     setEditingItem(existingToEdit || null);
 
     if (activeTab === 'siswa') {
       if (existingToEdit) {
+        setActiveBatchAngkatan(existingToEdit.tahun || 'SEMUA');
         setBatchSiswaRows([{
           id: existingToEdit.id,
           nama: existingToEdit.nama,
-          nisn: existingToEdit.nisn,
+          nisn: existingToEdit.nisn === '-' ? '' : existingToEdit.nisn,
           tahun: existingToEdit.tahun,
-          jenisKelamin: existingToEdit.jenisKelamin
+          jenisKelamin: existingToEdit.jenisKelamin || 'L'
         }]);
       } else {
-        setBatchSiswaRows(createEmptySiswaRows(5));
+        setActiveBatchAngkatan(filterTahun !== 'SEMUA' ? filterTahun : 'SEMUA');
+        setBatchSiswaRows(createEmptySiswaRows(5, filterTahun !== 'SEMUA' ? filterTahun : ''));
       }
     } else {
       if (existingToEdit) {
         setBatchGuruRows([{
           id: existingToEdit.id,
           nama: existingToEdit.nama,
-          nuptk: existingToEdit.nuptk,
+          nuptk: existingToEdit.nuptk === '-' ? '' : existingToEdit.nuptk,
           jabatan: existingToEdit.jabatan
         }]);
       } else {
         setBatchGuruRows(createEmptyGuruRows(5));
       }
+    }
+
+    setShowAddModal(true);
+  };
+
+  // Open Batch Edit Modal for all students in a targeted Angkatan or current filtered list
+  const handleOpenBatchEditModal = (targetAngkatan?: string) => {
+    setShowPasteBox(false);
+    setPasteRawText('');
+    setEditingItem(null);
+    setBatchModalSearch('');
+    setBatchModalOnlyMissing(false);
+
+    const yearToUse = targetAngkatan || filterTahun;
+    setActiveBatchAngkatan(yearToUse);
+
+    if (activeTab === 'siswa') {
+      let targetList = yearToUse !== 'SEMUA' 
+        ? siswaList.filter(s => s.tahun === yearToUse)
+        : (filteredSiswa.length > 0 ? filteredSiswa : siswaList);
+      
+      // Sort alphabetically by name for easy searching
+      targetList = [...targetList].sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
+
+      const rowsToEdit = targetList.map(s => ({
+        id: s.id,
+        nama: s.nama,
+        nisn: s.nisn === '-' ? '' : s.nisn,
+        tahun: s.tahun,
+        jenisKelamin: s.jenisKelamin || 'L'
+      }));
+
+      setBatchSiswaRows(rowsToEdit.length > 0 ? rowsToEdit : createEmptySiswaRows(5, yearToUse !== 'SEMUA' ? yearToUse : ''));
+    } else {
+      let targetList = filteredGuru.length > 0 ? filteredGuru : guruList;
+      targetList = [...targetList].sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
+
+      const rowsToEdit = targetList.map(g => ({
+        id: g.id,
+        nama: g.nama,
+        nuptk: g.nuptk === '-' ? '' : g.nuptk,
+        jabatan: g.jabatan || 'Guru Pengajar'
+      }));
+
+      setBatchGuruRows(rowsToEdit.length > 0 ? rowsToEdit : createEmptyGuruRows(5));
     }
 
     setShowAddModal(true);
@@ -246,29 +321,46 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
     if (!pasteRawText.trim()) return;
 
     const lines = pasteRawText.trim().split(/\r?\n/);
-    const yearDefault = new Date().getFullYear().toString();
+    const yearDefault = filterTahun !== 'SEMUA' ? filterTahun : new Date().getFullYear().toString();
 
     if (activeTab === 'siswa') {
       const parsedRows: BatchSiswaRow[] = [];
       lines.forEach(line => {
         if (!line.trim()) return;
-        // Split by tab (Excel/Sheets) or comma or semicolon
         const cols = line.includes('\t') ? line.split('\t') : line.split(/[,;]/);
         const nama = (cols[0] || '').trim();
         const nisn = (cols[1] || '').trim();
-        const tahun = (cols[2] || '').trim() || yearDefault;
+        const tahunVal = (cols[2] || '').trim() || yearDefault;
         const jenisKelamin = (cols[3] || '').trim() || 'L';
 
         if (nama) {
-          parsedRows.push({ nama, nisn, tahun, jenisKelamin });
+          parsedRows.push({ nama, nisn, tahun: tahunVal, jenisKelamin });
         }
       });
 
       if (parsedRows.length > 0) {
-        // Replace or prepend valid rows
         setBatchSiswaRows(prev => {
-          const validExisting = prev.filter(r => r.nama.trim() || r.nisn.trim());
-          return [...parsedRows, ...validExisting];
+          const rowMap = new Map<string, BatchSiswaRow>();
+          prev.forEach(r => {
+            if (r.nama.trim()) {
+              rowMap.set(r.nama.trim().toLowerCase(), { ...r });
+            }
+          });
+          parsedRows.forEach(p => {
+            const key = p.nama.trim().toLowerCase();
+            if (rowMap.has(key)) {
+              const existing = rowMap.get(key)!;
+              rowMap.set(key, {
+                ...existing,
+                nisn: p.nisn || existing.nisn,
+                tahun: p.tahun || existing.tahun,
+                jenisKelamin: p.jenisKelamin || existing.jenisKelamin
+              });
+            } else {
+              rowMap.set(key, p);
+            }
+          });
+          return Array.from(rowMap.values());
         });
         setShowPasteBox(false);
         setPasteRawText('');
@@ -289,8 +381,26 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
       if (parsedRows.length > 0) {
         setBatchGuruRows(prev => {
-          const validExisting = prev.filter(r => r.nama.trim() || r.nuptk.trim());
-          return [...parsedRows, ...validExisting];
+          const rowMap = new Map<string, BatchGuruRow>();
+          prev.forEach(r => {
+            if (r.nama.trim()) {
+              rowMap.set(r.nama.trim().toLowerCase(), { ...r });
+            }
+          });
+          parsedRows.forEach(p => {
+            const key = p.nama.trim().toLowerCase();
+            if (rowMap.has(key)) {
+              const existing = rowMap.get(key)!;
+              rowMap.set(key, {
+                ...existing,
+                nuptk: p.nuptk || existing.nuptk,
+                jabatan: p.jabatan || existing.jabatan
+              });
+            } else {
+              rowMap.set(key, p);
+            }
+          });
+          return Array.from(rowMap.values());
         });
         setShowPasteBox(false);
         setPasteRawText('');
@@ -327,23 +437,23 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
     e.preventDefault();
 
     if (activeTab === 'siswa') {
-      const validRows = batchSiswaRows.filter(r => r.nama.trim() && r.nisn.trim());
+      const validRows = batchSiswaRows.filter(r => r.nama.trim());
       if (validRows.length === 0) {
-        alert('Mohon isi minimal 1 baris siswa dengan Nama Lengkap dan NISN!');
+        alert('Mohon isi minimal 1 baris siswa dengan Nama Lengkap!');
         return;
       }
 
       setIsSaving(true);
-      setSaveSuccessMsg('Menghubungkan ke Supabase Cloud & menyimpan data...');
-      await new Promise(r => setTimeout(r, 2200));
+      setSaveSuccessMsg('Menyimpan seluruh data siswa ke database & Supabase Cloud...');
+      await new Promise(r => setTimeout(r, 350));
 
       let updatedList = getStoredMasterSiswa();
       validRows.forEach((row, idx) => {
         const newItem: MasterSiswaItem = {
           id: row.id || `S${(Date.now() + idx).toString().slice(-5)}`,
           nama: row.nama.trim(),
-          nisn: row.nisn.trim(),
-          tahun: row.tahun.trim() || new Date().getFullYear().toString(),
+          nisn: row.nisn.trim() || '-',
+          tahun: row.tahun.trim() || (filterTahun !== 'SEMUA' ? filterTahun : new Date().getFullYear().toString()),
           jenisKelamin: row.jenisKelamin.trim() || 'L'
         };
         updatedList = saveMasterSiswa(newItem);
@@ -351,24 +461,26 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
       setSiswaList(updatedList);
       setIsSaving(false);
+      setShowAddModal(false);
       setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data siswa ke Master Data!`);
+      setTimeout(() => setSaveSuccessMsg(''), 4500);
     } else {
-      const validRows = batchGuruRows.filter(r => r.nama.trim() && r.nuptk.trim());
+      const validRows = batchGuruRows.filter(r => r.nama.trim());
       if (validRows.length === 0) {
-        alert('Mohon isi minimal 1 baris guru dengan Nama Lengkap dan NUPTK/NIP!');
+        alert('Mohon isi minimal 1 baris guru dengan Nama Lengkap!');
         return;
       }
 
       setIsSaving(true);
-      setSaveSuccessMsg('Menghubungkan ke Supabase Cloud & menyimpan data...');
-      await new Promise(r => setTimeout(r, 2200));
+      setSaveSuccessMsg('Menyimpan seluruh data guru ke database & Supabase Cloud...');
+      await new Promise(r => setTimeout(r, 350));
 
       let updatedList = getStoredMasterGuru();
       validRows.forEach((row, idx) => {
         const newItem: MasterGuruItem = {
           id: row.id || `G${(Date.now() + idx).toString().slice(-5)}`,
           nama: row.nama.trim(),
-          nuptk: row.nuptk.trim(),
+          nuptk: row.nuptk.trim() || '-',
           jabatan: row.jabatan.trim() || 'Guru Pengajar'
         };
         updatedList = saveMasterGuru(newItem);
@@ -376,19 +488,14 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
       setGuruList(updatedList);
       setIsSaving(false);
+      setShowAddModal(false);
       setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data guru/tendik ke Master Data!`);
+      setTimeout(() => setSaveSuccessMsg(''), 4500);
     }
 
-    // Trigger global cloud sync event for instant Master Data updates
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
     }
-
-    setTimeout(() => {
-      setShowAddModal(false);
-      setEditingItem(null);
-      setSaveSuccessMsg('');
-    }, 1200);
   };
 
   const handleDelete = async (id: string, nama: string) => {
@@ -515,6 +622,15 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
             </button>
 
             <button
+              onClick={() => handleOpenBatchEditModal()}
+              className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] sm:text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-500/20 active:scale-95 transition-all cursor-pointer"
+              title="Edit masal semua baris data siswa/guru dalam bentuk tabel Excel"
+            >
+              <TableIcon className="w-4 h-4" />
+              <span>Edit Kolektif</span>
+            </button>
+
+            <button
               onClick={() => handleOpenAddModal()}
               className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[11px] sm:text-xs font-bold flex items-center gap-1 shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
             >
@@ -524,6 +640,66 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
           </div>
         </div>
       </div>
+
+      {/* Angkatan Quick Collective Edit Bar */}
+      {activeTab === 'siswa' && angkatanStats.length > 0 && (
+        <div className="mb-5 bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-slate-50 border border-blue-100/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs">
+          <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+                <TableIcon className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold text-slate-800">
+                Edit Kolektif Data Siswa per Angkatan
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-500 font-medium">
+              💡 Klik tombol Edit Kolektif pada angkatan di bawah untuk mengisi NISN & Jenis Kelamin sekaligus
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+            {angkatanStats.map((stat) => (
+              <div 
+                key={stat.tahun} 
+                className={`bg-white border rounded-2xl p-3 flex items-center justify-between gap-2 shadow-2xs transition-all ${
+                  filterTahun === stat.tahun ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20' : 'border-slate-200/90 hover:border-blue-300'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-slate-900 truncate">Angkatan {stat.tahun}</span>
+                    <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] font-bold text-slate-600">
+                      {stat.total} Siswa
+                    </span>
+                  </div>
+                  {stat.missingNisnOrGender > 0 ? (
+                    <span className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">
+                      <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span>{stat.missingNisnOrGender} belum lengkap (NISN/Gender)</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                      <span>Semua data lengkap</span>
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenBatchEditModal(stat.tahun)}
+                  className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
+                  title={`Edit Kolektif Seluruh Siswa Angkatan ${stat.tahun}`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Kolektif</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter & Search Bar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
@@ -547,18 +723,30 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
         </div>
 
         {activeTab === 'siswa' && (
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-slate-400 flex-shrink-0" />
-            <select
-              value={filterTahun}
-              onChange={(e) => setFilterTahun(e.target.value)}
-              className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer"
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-1">
+              <Filter className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+              <select
+                value={filterTahun}
+                onChange={(e) => setFilterTahun(e.target.value)}
+                className="bg-transparent py-1.5 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
+              >
+                <option value="SEMUA">Semua Tahun Angkatan</option>
+                {distinctTahun.map(th => (
+                  <option key={th} value={th}>Angkatan {th}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleOpenBatchEditModal()}
+              className="px-3.5 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/90 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-95"
+              title={`Edit masal data siswa ${filterTahun !== 'SEMUA' ? `Angkatan ${filterTahun}` : 'Semua Angkatan'} sekaligus`}
             >
-              <option value="SEMUA">Semua Tahun Angkatan</option>
-              {distinctTahun.map(th => (
-                <option key={th} value={th}>Angkatan {th}</option>
-              ))}
-            </select>
+              <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+              <span>Edit Massal {filterTahun !== 'SEMUA' ? `Angkatan ${filterTahun}` : 'Tabel'} ({filteredSiswa.length} Siswa)</span>
+            </button>
           </div>
         )}
       </div>
@@ -765,11 +953,13 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-tight">
                     {editingItem 
-                      ? `Edit Data ${activeTab === 'siswa' ? 'Siswa' : 'Guru'}`
-                      : `Tambah / Input Massal Data ${activeTab === 'siswa' ? 'Siswa' : 'Guru / Tendik'}`}
+                      ? `Edit Data ${activeTab === 'siswa' ? 'Siswa' : 'Guru'}: ${editingItem.nama}`
+                      : (batchSiswaRows.length > 5 || batchGuruRows.length > 5)
+                        ? `Edit Kolektif ${activeTab === 'siswa' ? (activeBatchAngkatan !== 'SEMUA' ? `Angkatan ${activeBatchAngkatan}` : 'Siswa') : 'Guru'} (${activeTab === 'siswa' ? batchSiswaRows.length : batchGuruRows.length} Data)`
+                        : `Tambah / Input Massal Data ${activeTab === 'siswa' ? 'Siswa' : 'Guru / Tendik'}`}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Tabel interaktif bergaya Excel. Ketik langsung atau tempel baris dari Microsoft Excel / Google Sheets!
+                    Tabel interaktif kolektif bergaya Excel. Isi NISN & Jenis Kelamin secara cepat atau tempel baris dari Excel / Google Sheets!
                   </p>
                 </div>
               </div>
@@ -784,6 +974,22 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
             {/* Modal Body Scrollable */}
             <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
               
+              {/* Tip Banner for Single Item Edit */}
+              {editingItem && activeTab === 'siswa' && (
+                <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-center justify-between gap-2 text-xs text-blue-900">
+                  <span className="font-semibold">
+                    💡 Anda sedang mengedit 1 siswa. Ingin mengisi/edit NISN & Jenis Kelamin seluruh siswa <strong>Angkatan {editingItem.tahun}</strong> sekaligus?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenBatchEditModal(editingItem.tahun)}
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shrink-0 shadow-xs cursor-pointer"
+                  >
+                    Switch ke Edit Kolektif Angkatan {editingItem.tahun}
+                  </button>
+                </div>
+              )}
+
               {/* Notification Banner */}
               {saveSuccessMsg ? (
                 <div className="p-3.5 rounded-2xl bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 animate-fadeIn shadow-md">
@@ -794,11 +1000,67 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
               {/* Toolbar Controls Above Grid */}
               <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center gap-2 flex-wrap flex-1">
+                  {/* Search inside Modal */}
+                  <div className="relative min-w-[180px] max-w-[240px] flex-1">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari siswa di modal..."
+                      value={batchModalSearch}
+                      onChange={(e) => setBatchModalSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200/90 rounded-xl text-xs font-medium focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Filter Only Missing NISN/Gender */}
+                  {activeTab === 'siswa' && (
+                    <button
+                      type="button"
+                      onClick={() => setBatchModalOnlyMissing(!batchModalOnlyMissing)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        batchModalOnlyMissing 
+                          ? 'bg-amber-500 text-white shadow-xs' 
+                          : 'bg-white border border-slate-200/90 text-slate-700 hover:bg-slate-100'
+                      }`}
+                      title="Filter hanya baris yang belum diisi NISN atau Jenis Kelamin"
+                    >
+                      <AlertCircle className={`w-3.5 h-3.5 ${batchModalOnlyMissing ? 'text-white' : 'text-amber-500'}`} />
+                      <span>
+                        {batchModalOnlyMissing ? 'Tampilkan Semua' : `Hanya Kosong (${batchSiswaRows.filter(r => !r.nisn || r.nisn === '-' || !r.jenisKelamin || !['L', 'P'].includes(r.jenisKelamin)).length})`}
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Quick Fill Gender */}
+                  {activeTab === 'siswa' && (
+                    <div className="flex items-center gap-1 bg-white border border-slate-200/90 rounded-xl p-1">
+                      <span className="text-[10px] font-bold text-slate-400 px-1">Gender Kosong:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBatchSiswaRows(prev => prev.map(r => (!r.jenisKelamin || r.jenisKelamin === '-') ? { ...r, jenisKelamin: 'L' } : r));
+                        }}
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                        title="Isi gender kosong dengan L"
+                      >
+                        → L
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBatchSiswaRows(prev => prev.map(r => (!r.jenisKelamin || r.jenisKelamin === '-') ? { ...r, jenisKelamin: 'P' } : r));
+                        }}
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                        title="Isi gender kosong dengan P"
+                      >
+                        → P
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <ClipboardList className="w-4 h-4 text-blue-600" />
-                    Input Kolektif:
-                  </span>
                   <button
                     type="button"
                     onClick={() => handleAddMoreRows(1)}
@@ -815,20 +1077,19 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                     <Plus className="w-3.5 h-3.5 text-blue-600" />
                     <span>+5 Baris</span>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPasteBox(!showPasteBox)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      showPasteBox 
+                        ? 'bg-amber-500 text-white shadow-sm' 
+                        : 'bg-slate-800 text-white hover:bg-slate-700 shadow-sm'
+                    }`}
+                  >
+                    <ClipboardList className="w-3.5 h-3.5" />
+                    <span>{showPasteBox ? 'Tutup' : '📋 Tempel Excel'}</span>
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPasteBox(!showPasteBox)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    showPasteBox 
-                      ? 'bg-amber-500 text-white shadow-sm' 
-                      : 'bg-slate-800 text-white hover:bg-slate-700 shadow-sm'
-                  }`}
-                >
-                  <ClipboardList className="w-3.5 h-3.5" />
-                  <span>{showPasteBox ? 'Tutup Tempel Excel' : '📋 Tempel (Paste) dari Excel / Sheets'}</span>
-                </button>
               </div>
 
               {/* Paste Box Drawer */}
@@ -838,7 +1099,7 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                     <label className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
                       <span>Tempelkan Baris Data dari Excel / Google Sheets</span>
                     </label>
-                    <span className="text-[10px] text-amber-700 font-mono">Format: [Nama], [NISN/NUPTK], [Tahun/Jabatan], [Kelas]</span>
+                    <span className="text-[10px] text-amber-700 font-mono">Format: [Nama], [NISN/NUPTK], [Tahun/Jabatan], [Jenis Kelamin]</span>
                   </div>
                   <textarea
                     rows={4}
@@ -846,7 +1107,7 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                     onChange={(e) => setPasteRawText(e.target.value)}
                     placeholder={
                       activeTab === 'siswa'
-                        ? "Salin dari Excel lalu tempel di sini:\nMuhammad Ilham\t0081829301\t2025\t9A\nSiti Rahma\t0081829302\t2025\t9B"
+                        ? "Salin dari Excel lalu tempel di sini:\nMuhammad Ilham\t0081829301\t2025\tL\nSiti Rahma\t0081829302\t2025\tP"
                         : "Salin dari Excel lalu tempel di sini:\nDrs. H. Solikhin, M.Pd\t197405121999031001\tKepala Sekolah\nSiti Aminah, S.Pd\t198208152006042015\tGuru Matematika"
                     }
                     className="w-full p-3 bg-white border border-amber-300 rounded-xl text-xs font-mono focus:outline-none focus:border-amber-500"
@@ -879,101 +1140,129 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                         <tr className="bg-slate-900 text-slate-200 font-bold uppercase tracking-wider text-[10px]">
                           <th className="py-2.5 px-3 w-12 text-center">No</th>
                           <th className="py-2.5 px-3 min-w-[200px]">Nama Lengkap Siswa *</th>
-                          <th className="py-2.5 px-3 min-w-[140px]">NIS / NISN *</th>
-                          <th className="py-2.5 px-3 w-32">Th Angkatan</th>
+                          <th className="py-2.5 px-3 min-w-[150px]">NIS / NISN *</th>
+                          <th className="py-2.5 px-3 w-28">Th Angkatan</th>
                           <th className="py-2.5 px-3 w-32">Jenis Kelamin</th>
                           <th className="py-2.5 px-3 w-12 text-center">Hapus</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 bg-white">
-                        {batchSiswaRows.map((row, idx) => (
-                          <tr key={idx} className="hover:bg-blue-50/20 transition-colors">
-                            <td className="py-2 px-3 text-center font-bold text-slate-400 font-mono bg-slate-50/50">
-                              {idx + 1}
-                            </td>
-                            <td className="p-1">
-                              <input
-                                type="text"
-                                value={row.nama}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setBatchSiswaRows(prev => {
-                                    const copy = [...prev];
-                                    copy[idx].nama = val;
-                                    return copy;
-                                  });
-                                }}
-                                placeholder="Contoh: Muhammad Ilham"
-                                className="w-full px-3 py-2 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none transition-all"
-                              />
-                            </td>
-                            <td className="p-1">
-                              <input
-                                type="text"
-                                value={row.nisn}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setBatchSiswaRows(prev => {
-                                    const copy = [...prev];
-                                    copy[idx].nisn = val;
-                                    return copy;
-                                  });
-                                }}
-                                placeholder="Contoh: 0081829301"
-                                className="w-full px-3 py-2 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs font-mono font-medium text-slate-800 focus:outline-none transition-all"
-                              />
-                            </td>
-                            <td className="p-1">
-                              <input
-                                type="text"
-                                value={row.tahun}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setBatchSiswaRows(prev => {
-                                    const copy = [...prev];
-                                    copy[idx].tahun = val;
-                                    return copy;
-                                  });
-                                }}
-                                placeholder="2025"
-                                className="w-full px-3 py-2 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none transition-all"
-                              />
-                            </td>
-                            <td className="p-1">
-                              <select
-                                value={row.jenisKelamin || 'L'}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  setBatchSiswaRows(prev => {
-                                    const copy = [...prev];
-                                    copy[idx].jenisKelamin = val;
-                                    return copy;
-                                  });
-                                }}
-                                className="w-full px-3 py-2 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none transition-all cursor-pointer"
-                              >
-                                <option value="L">L (Laki-laki)</option>
-                                <option value="P">P (Perempuan)</option>
-                              </select>
-                            </td>
-                            <td className="p-1 text-center">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (batchSiswaRows.length <= 1) {
-                                    setBatchSiswaRows(createEmptySiswaRows(1));
-                                  } else {
-                                    setBatchSiswaRows(prev => prev.filter((_, i) => i !== idx));
-                                  }
-                                }}
-                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                                title="Hapus baris ini"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {batchSiswaRows.map((row, idx) => {
+                          const q = batchModalSearch.toLowerCase().trim();
+                          const matchesSearch = !q || row.nama.toLowerCase().includes(q) || row.nisn.toLowerCase().includes(q);
+                          const isMissingNisn = !row.nisn || row.nisn === '-';
+                          const isMissingGender = !row.jenisKelamin || row.jenisKelamin === '-' || !['L', 'P'].includes(row.jenisKelamin);
+                          const isMissing = isMissingNisn || isMissingGender;
+
+                          if (!matchesSearch) return null;
+                          if (batchModalOnlyMissing && !isMissing) return null;
+
+                          return (
+                            <tr key={idx} className={`transition-colors ${isMissing ? 'bg-amber-50/30 hover:bg-amber-50/60' : 'hover:bg-blue-50/20'}`}>
+                              <td className="py-2 px-3 text-center font-bold text-slate-400 font-mono bg-slate-50/50">
+                                {idx + 1}
+                              </td>
+                              <td className="p-1">
+                                <input
+                                  type="text"
+                                  id={`nama-input-${idx}`}
+                                  value={row.nama}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setBatchSiswaRows(prev => {
+                                      const copy = [...prev];
+                                      copy[idx].nama = val;
+                                      return copy;
+                                    });
+                                  }}
+                                  placeholder="Contoh: Muhammad Ilham"
+                                  className="w-full px-3 py-2 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none transition-all"
+                                />
+                              </td>
+                              <td className="p-1">
+                                <input
+                                  type="text"
+                                  id={`nisn-input-${idx}`}
+                                  value={row.nisn}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setBatchSiswaRows(prev => {
+                                      const copy = [...prev];
+                                      copy[idx].nisn = val;
+                                      return copy;
+                                    });
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      const next = document.getElementById(`nisn-input-${idx + 1}`);
+                                      if (next) (next as HTMLInputElement).focus();
+                                    }
+                                  }}
+                                  placeholder="Isi NISN..."
+                                  className={`w-full px-3 py-2 focus:bg-white border rounded-xl text-xs font-mono font-semibold focus:outline-none transition-all ${
+                                    isMissingNisn
+                                      ? 'border-amber-300 bg-amber-50/50 text-amber-900 focus:border-amber-500 placeholder-amber-400'
+                                      : 'border-slate-200 bg-slate-50/50 text-slate-800 focus:border-blue-500'
+                                  }`}
+                                />
+                              </td>
+                              <td className="p-1">
+                                <input
+                                  type="text"
+                                  value={row.tahun}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setBatchSiswaRows(prev => {
+                                      const copy = [...prev];
+                                      copy[idx].tahun = val;
+                                      return copy;
+                                    });
+                                  }}
+                                  placeholder="2025"
+                                  className="w-full px-3 py-2 bg-slate-50/50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none transition-all"
+                                />
+                              </td>
+                              <td className="p-1">
+                                <select
+                                  value={row.jenisKelamin || 'L'}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setBatchSiswaRows(prev => {
+                                      const copy = [...prev];
+                                      copy[idx].jenisKelamin = val;
+                                      return copy;
+                                    });
+                                  }}
+                                  className={`w-full px-3 py-2 focus:bg-white border rounded-xl text-xs font-semibold focus:outline-none transition-all cursor-pointer ${
+                                    isMissingGender
+                                      ? 'border-amber-300 bg-amber-50/50 text-amber-900 focus:border-amber-500'
+                                      : 'border-slate-200 bg-slate-50/50 text-slate-800 focus:border-blue-500'
+                                  }`}
+                                >
+                                  <option value="L">L (Laki-laki)</option>
+                                  <option value="P">P (Perempuan)</option>
+                                </select>
+                              </td>
+                              <td className="p-1 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (batchSiswaRows.length <= 1) {
+                                      setBatchSiswaRows(createEmptySiswaRows(1));
+                                    } else {
+                                      setBatchSiswaRows(prev => prev.filter((_, i) => i !== idx));
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                                  title="Hapus baris ini"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   ) : (
