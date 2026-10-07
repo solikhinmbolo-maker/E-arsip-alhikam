@@ -49,7 +49,10 @@ import {
   getStoredMasterGuru,
   restoreSampleArsipData,
   renameKategoriCascade,
-  addAuditLog
+  addAuditLog,
+  getStoredLegalisirConfig,
+  saveStoredLegalisirConfig,
+  LegalisirConfig
 } from '../data/mockDatabase';
 import { 
   getStoredSupabaseConfig, 
@@ -344,23 +347,11 @@ export default function SettingsView({
   };
 
   // 3. Legalisir & Watermark Settings
-  const [legalisirConfig, setLegalisirConfig] = useState(() => {
-    try {
-      const saved = localStorage.getItem('EARSIP_LEGALISIR_CONFIG');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return {
-      nomorFormat: 'ALH/LEG/{YYYY}/{NO}',
-      watermarkText: 'E-ARSIP RESMI SMP AL-HIKAM - DOKUMEN TERVERIFIKASI SAH',
-      masaBerlakuBulan: '12',
-      pejabatPenandatangan: 'Ahmad Zaenuri, S.Pd., M.Pd. (Kepala Sekolah)',
-      nipPejabat: '19780512 200501 1 008'
-    };
-  });
+  const [legalisirConfig, setLegalisirConfig] = useState<LegalisirConfig>(() => getStoredLegalisirConfig());
 
   const handleSaveLegalisirConfig = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('EARSIP_LEGALISIR_CONFIG', JSON.stringify(legalisirConfig));
+    saveStoredLegalisirConfig(legalisirConfig);
     showNotification('✓ Pengaturan legalisir berhasil disimpan');
   };
 

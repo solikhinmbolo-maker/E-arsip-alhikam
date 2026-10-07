@@ -224,26 +224,62 @@ export function renameKategoriCascade(
   return { updatedCount, updatedCategories };
 }
 
+export interface KopSuratConfig {
+  mode: 'text' | 'image';
+  kopImageUrl?: string;
+  logoUrl?: string;
+  namaYayasan: string;
+  namaSekolah: string;
+  alamat: string;
+  kontak: string;
+  nssNpsn: string;
+  stempelImageUrl?: string;
+}
+
 export interface LegalisirConfig {
   nomorFormat: string;
   watermarkText: string;
   masaBerlakuBulan: string;
   pejabatPenandatangan: string;
   nipPejabat: string;
+  kopSurat: KopSuratConfig;
 }
+
+export const DEFAULT_KOP_SURAT_CONFIG: KopSuratConfig = {
+  mode: 'text',
+  kopImageUrl: '',
+  logoUrl: 'https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png',
+  namaYayasan: 'YAYASAN PONDOK PESANTREN AL-HIKAM',
+  namaSekolah: 'SMP AL-HIKAM JOMBANG',
+  alamat: 'Jl. Pesantren No. 12 Diwek, Kab. Jombang, Jawa Timur',
+  kontak: 'Telp: (0321) 861234 • Email: info@alhikam.sch.id',
+  nssNpsn: 'NSS: 202050401015 • NPSN: 20503412',
+  stempelImageUrl: ''
+};
 
 export const DEFAULT_LEGALISIR_CONFIG: LegalisirConfig = {
   nomorFormat: 'ALH/LEG/{YYYY}/{NO}',
   watermarkText: 'E-ARSIP RESMI SMP AL-HIKAM - DOKUMEN TERVERIFIKASI SAH',
   masaBerlakuBulan: '12',
   pejabatPenandatangan: 'Ahmad Zaenuri, S.Pd., M.Pd. (Kepala Sekolah)',
-  nipPejabat: '19780512 200501 1 008'
+  nipPejabat: '19780512 200501 1 008',
+  kopSurat: DEFAULT_KOP_SURAT_CONFIG
 };
 
 export function getStoredLegalisirConfig(): LegalisirConfig {
   try {
     const saved = localStorage.getItem('EARSIP_LEGALISIR_CONFIG');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...DEFAULT_LEGALISIR_CONFIG,
+        ...parsed,
+        kopSurat: {
+          ...DEFAULT_KOP_SURAT_CONFIG,
+          ...(parsed.kopSurat || {})
+        }
+      };
+    }
   } catch {}
   return DEFAULT_LEGALISIR_CONFIG;
 }

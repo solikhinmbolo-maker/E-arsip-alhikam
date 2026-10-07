@@ -651,62 +651,78 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
         </div>
       </div>
 
-      {/* Angkatan Quick Collective Edit Bar */}
+      {/* Ringkas: Angkatan Quick Collective Edit Bar (Side-by-Side Horizontal Scroll, Tidak Memenuhi Layar) */}
       {activeTab === 'siswa' && angkatanStats.length > 0 && (
-        <div className="mb-5 bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-slate-50 border border-blue-100/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs">
-          <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-                <TableIcon className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs sm:text-sm font-extrabold text-slate-800">
-                Edit Kolektif Data Siswa per Angkatan
+        <div className="mb-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl p-2.5 sm:p-3 shadow-2xs">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <div className="flex items-center gap-1.5">
+              <TableIcon className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="text-xs font-bold text-slate-800">
+                Edit Kolektif per Angkatan
               </span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">• Klik angkatan untuk edit NISN & Jenis Kelamin</span>
             </div>
-            <span className="text-[11px] text-slate-500 font-medium">
-              💡 Klik tombol Edit Kolektif pada angkatan di bawah untuk mengisi NISN & Jenis Kelamin sekaligus
+            <span className="text-[10px] text-indigo-600 font-semibold sm:hidden flex items-center gap-1">
+              <span>Geser ke samping</span>
+              <span>➔</span>
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
-            {angkatanStats.map((stat) => (
-              <div 
-                key={stat.tahun} 
-                className={`bg-white border rounded-2xl p-3 flex items-center justify-between gap-2 shadow-2xs transition-all ${
-                  filterTahun === stat.tahun ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20' : 'border-slate-200/90 hover:border-blue-300'
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-bold text-slate-900 truncate">Angkatan {stat.tahun}</span>
-                    <span className="px-1.5 py-0.2 rounded-md bg-slate-100 text-[10px] font-bold text-slate-600">
-                      {stat.total} Siswa
-                    </span>
-                  </div>
-                  {stat.missingNisnOrGender > 0 ? (
-                    <span className="text-[10px] text-amber-600 font-semibold flex items-center gap-1 mt-0.5">
-                      <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
-                      <span>{stat.missingNisnOrGender} belum lengkap (NISN/Gender)</span>
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-                      <span>Semua data lengkap</span>
-                    </span>
-                  )}
-                </div>
+          {/* Side-by-Side Horizontal Scrollable Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {/* Shortcut: Edit Semua Siswa */}
+            <button
+              type="button"
+              onClick={() => handleOpenBatchEditModal()}
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-2xs active:scale-95 transition-all cursor-pointer"
+              title="Edit Kolektif Seluruh Siswa"
+            >
+              <TableIcon className="w-3.5 h-3.5" />
+              <span>Semua ({siswaList.length})</span>
+            </button>
 
+            {/* Per Angkatan Mini Chips */}
+            {angkatanStats.map((stat) => {
+              const isMissing = stat.missingNisnOrGender > 0;
+              const isSelected = filterTahun === stat.tahun;
+
+              return (
                 <button
+                  key={stat.tahun}
                   type="button"
                   onClick={() => handleOpenBatchEditModal(stat.tahun)}
-                  className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1 shadow-xs active:scale-95 transition-all shrink-0 cursor-pointer"
-                  title={`Edit Kolektif Seluruh Siswa Angkatan ${stat.tahun}`}
+                  className={`flex-shrink-0 flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-all shadow-2xs cursor-pointer active:scale-95 ${
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-900 ring-2 ring-indigo-500/20'
+                      : isMissing
+                      ? 'bg-amber-50/80 border-amber-200/90 hover:bg-amber-100/80 text-slate-800'
+                      : 'bg-white border-slate-200/90 hover:border-blue-300 hover:bg-blue-50/40 text-slate-800'
+                  }`}
+                  title={`Klik untuk Edit Kolektif Angkatan ${stat.tahun} (${stat.total} Siswa)`}
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Edit Kolektif</span>
+                  <div className="flex items-center gap-1.5 text-left">
+                    <span className="font-bold text-xs">Angkatan {stat.tahun}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold">({stat.total})</span>
+                    
+                    {isMissing ? (
+                      <span className="px-1.5 py-0.5 rounded-md bg-amber-200/90 text-amber-900 text-[9px] font-bold flex items-center gap-0.5">
+                        <AlertCircle className="w-2.5 h-2.5 text-amber-700" />
+                        <span>{stat.missingNisnOrGender} kosong</span>
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[9px] font-bold flex items-center gap-0.5">
+                        <Check className="w-2.5 h-2.5 text-emerald-600" />
+                        <span>Lengkap</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="w-5 h-5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shrink-0 ml-0.5 shadow-2xs">
+                    <Edit3 className="w-2.5 h-2.5" />
+                  </div>
                 </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
