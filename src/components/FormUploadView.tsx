@@ -56,7 +56,7 @@ import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi, saveArsipToSup
 interface FormUploadViewProps {
   initialJenis?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
   onSelectJenis?: (jenis: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya') => void;
-  onUploadSuccess: () => void;
+  onUploadSuccess: (count: number, name: string) => void;
   onCancel: () => void;
 }
 
@@ -109,8 +109,6 @@ export default function FormUploadView({
   const [isUploading, setIsUploading] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [progressStatus, setProgressStatus] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successInfo, setSuccessInfo] = useState<{ count: number; name: string }>({ count: 1, name: '' });
   const [errorMessage, setErrorMessage] = useState('');
   const [namaSearchFilter, setNamaSearchFilter] = useState('');
 
@@ -494,23 +492,24 @@ export default function FormUploadView({
     setStoredArsipList(getStoredArsip());
     setIsUploading(false);
     playSuccessSound();
-    setSuccessInfo({ 
-      count: 1, 
-      name: replaceExistingId ? `${namaSubjek} (${kategori} Diperbarui)` : namaSubjek 
-    });
-    setShowSuccessModal(true);
     setShowDuplicateModal(false);
+    
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('earsip:notify', { 
         detail: { message: `✓ Berhasil mengunggah berkas ${namaSubjek} (${kategori})` } 
       }));
     }
 
-    // Reset
+    const finalName = replaceExistingId ? `${namaSubjek} (${kategori} Diperbarui)` : namaSubjek;
+
+    // Reset Form Fields
     setSelectedFile(null);
     setFileBase64('');
     setNamaDokumen('');
     setDuplicateCheck({ isDuplicate: false });
+
+    // Trigger parent success modal (perfect fullscreen overlay center)
+    onUploadSuccess(1, finalName);
   };
 
   const startKolektifUpload = async (replaceDuplicates: boolean = false) => {
@@ -619,18 +618,20 @@ export default function FormUploadView({
     setStoredArsipList(getStoredArsip());
     setIsUploading(false);
     playSuccessSound();
-    setSuccessInfo({ count, name: namaSubjek });
-    setShowSuccessModal(true);
     setShowKolektifDuplicateModal(false);
+    
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('earsip:notify', { 
         detail: { message: `✓ Berhasil mengunggah ${count} berkas kolektif ${namaSubjek}` } 
       }));
     }
 
-    // Reset
+    // Reset Form Fields
     setKolektifFiles({});
     setNamaDokumen('');
+
+    // Trigger parent success modal (perfect fullscreen overlay center)
+    onUploadSuccess(count, namaSubjek);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1299,7 +1300,7 @@ export default function FormUploadView({
 
       {/* Auto-Detect Duplicate Confirmation Modal (Individual Mode) */}
       {showDuplicateModal && duplicateCheck.existingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn font-['Poppins']">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-scaleUp border border-amber-200">
             <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-md shadow-amber-500/20">
               <AlertTriangle className="w-7 h-7" />
@@ -1371,7 +1372,7 @@ export default function FormUploadView({
 
       {/* Auto-Detect Duplicate Confirmation Modal (Kolektif Mode) */}
       {showKolektifDuplicateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn font-['Poppins']">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-scaleUp border border-amber-200">
             <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3.5 shadow-md shadow-amber-500/20">
               <AlertTriangle className="w-7 h-7" />
@@ -1425,66 +1426,11 @@ export default function FormUploadView({
         </div>
       )}
 
-      {/* Success Modal with Animated Green Checkmark & Selesai Button */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl animate-scaleUp border border-emerald-100">
-            {/* Animated Glowing Green Checkmark Icon */}
-            <div className="relative flex items-center justify-center mx-auto mb-5 w-20 h-20 animate-circle-pop">
-              <div className="absolute inset-0 rounded-full bg-emerald-400/25 animate-ping" />
-              <div className="relative w-18 h-18 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-[0_0_35px_rgba(16,185,129,0.5)]">
-                <svg className="w-10 h-10 text-white overflow-visible" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5">
-                  <path className="animate-checkmark" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold mb-2 border border-emerald-200/80">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Google Drive Private Storage Terhubung</span>
-            </div>
-
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1.5">Pengarsipan Berhasil!</h3>
-            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-              Sebanyak <strong>{successInfo.count} berkas dokumen</strong> milik <strong>{successInfo.name}</strong> telah berhasil disimpan secara aman di <strong>Google Drive Private</strong> & Metadata tersinkron ke Supabase.
-            </p>
-
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  setSelectedFile(null);
-                  setFileBase64('');
-                  setKolektifFiles({});
-                  setNamaDokumen('');
-                  setErrorMessage('');
-                  // Keep user on the upload page ready for next upload
-                }}
-                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-600/30 transition-all transform active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Check className="w-4 h-4" />
-                <span>Selesai (Upload Dokumen Baru)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  onUploadSuccess();
-                }}
-                className="w-full py-2.5 text-slate-500 hover:text-slate-800 text-xs font-semibold hover:underline transition-all cursor-pointer"
-              >
-                Buka Menu Unduh Dokumen →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal Quick Input Siswa / Guru Baru */}
       {showQuickAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fadeIn font-['Poppins']">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn font-['Poppins']">
           <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl animate-scaleUp border border-slate-200">
             <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">

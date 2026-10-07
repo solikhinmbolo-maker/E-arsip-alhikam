@@ -161,6 +161,9 @@ export default function App() {
   // Session expired notice message
   const [sessionExpiredNotice, setSessionExpiredNotice] = useState<string>('');
 
+  // Modal state for full-screen upload success with blur background
+  const [uploadSuccessModal, setUploadSuccessModal] = useState<{ count: number; name: string } | null>(null);
+
   // Global action notification message (Login, Edit, Tambah Siswa, Upload, Sync, dll)
   const [globalNotice, setGlobalNotice] = useState<string>('');
   const noticeTimerRef = useRef<any>(null);
@@ -1489,14 +1492,28 @@ function doGet(e) {
       ]);
 
       if (Array.isArray(supaItems)) {
-        const deletedIds = getPermanentDeletedIds();
-        const valid = supaItems.filter(it => !deletedIds.has(it.id));
-        const clean = valid.map(it => {
-          const copy = { ...it };
-          delete copy.fileDataUrl;
-          return copy;
-        });
-        localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
+        // Guard: Never wipe local data if cloud query returns empty while local has items
+        const existingLocalRaw = localStorage.getItem(DB_KEYS.ARSIP_ITEMS);
+        let shouldUpdate = true;
+        if (supaItems.length === 0 && existingLocalRaw) {
+          try {
+            const parsedLocal = JSON.parse(existingLocalRaw);
+            if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+              shouldUpdate = false;
+            }
+          } catch {}
+        }
+
+        if (shouldUpdate) {
+          const deletedIds = getPermanentDeletedIds();
+          const valid = supaItems.filter(it => !deletedIds.has(it.id));
+          const clean = valid.map(it => {
+            const copy = { ...it };
+            delete copy.fileDataUrl;
+            return copy;
+          });
+          localStorage.setItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(clean));
+        }
       }
       if (Array.isArray(supaSiswa) && supaSiswa.length > 0) {
         localStorage.setItem(DB_KEYS.MASTER_SISWA, JSON.stringify(supaSiswa));
@@ -2043,7 +2060,9 @@ function doGet(e) {
           {activePage === 'upload' && (
             <FormUploadView
               initialJenis={activeSubKategori}
-              onUploadSuccess={() => setActivePage('unduh')}
+              onUploadSuccess={(count, name) => {
+                setUploadSuccessModal({ count, name });
+              }}
               onCancel={() => setActivePage('dashboard')}
             />
           )}
@@ -2476,6 +2495,66 @@ function doGet(e) {
                 className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. FULL-SCREEN UPLOAD SUCCESS MODAL (RICH BLUR & CENTERED LAYOUT) */}
+      {uploadSuccessModal && (
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-2xl animate-fadeIn">
+          <div className="bg-[#0F172A] border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl animate-scaleUp text-white">
+            <div className="relative flex justify-center mb-5">
+              <svg className="w-16 h-16 sm:w-20 sm:h-20 animate-circle-pop" viewBox="0 0 52 52">
+                <circle className="stroke-emerald-500 fill-none" cx="26" cy="26" r="25" strokeWidth="2.5" />
+                <path className="stroke-emerald-500 fill-none animate-checkmark" d="M14 27l7 7 16-16" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            
+            <h3 className="text-base sm:text-lg font-extrabold text-white tracking-tight mb-2">
+              Berhasil Mengunggah Berkas!
+            </h3>
+            
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 mb-6 text-left space-y-2">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Subjek / Nama Berkas:</span>
+                <strong className="text-xs sm:text-sm text-cyan-300 block break-words mt-0.5 line-clamp-2">
+                  {uploadSuccessModal.name}
+                </strong>
+              </div>
+              <div className="pt-2 border-t border-slate-800/80">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1">Status Penyimpanan:</span>
+                <div className="space-y-1">
+                  <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Google Drive Storage (Terunggah)</span>
+                  </p>
+                  <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Supabase PostgreSQL (Sinkron)</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => setUploadSuccessModal(null)}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                Upload Lagi
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadSuccessModal(null);
+                  setActivePage('unduh');
+                }}
+                className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer shadow-blue-500/20 active:scale-95"
+              >
+                Lihat Berkas
               </button>
             </div>
           </div>
