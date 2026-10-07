@@ -269,7 +269,6 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
       const { data, error } = await client
         .from('arsip')
         .select('*')
-        .order('created_at', { ascending: false })
         .range(from, from + limit - 1);
 
       if (error || !data || data.length === 0) {
@@ -285,6 +284,16 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
     }
 
     if (allData.length === 0) return [];
+
+    // Sort safely in memory
+    allData.sort((a, b) => {
+      const timeA = a.created_at || a.updated_at || a.tanggal || '';
+      const timeB = b.created_at || b.updated_at || b.tanggal || '';
+      if (timeA && timeB) {
+        return String(timeB).localeCompare(String(timeA));
+      }
+      return String(b.id || '').localeCompare(String(a.id || ''));
+    });
 
     return allData
       .filter((row: any) => !row.id.startsWith('SYS_') && row.kategori_utama !== 'SystemRegistry')

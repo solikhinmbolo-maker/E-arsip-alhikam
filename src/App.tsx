@@ -831,21 +831,32 @@ export default function App() {
 
         const last = lastKnownStateRef.current;
 
-        // On first run, record current counts
+        const localArsipCount = getAllRawArsip().length;
+        const localSiswaCount = getStoredMasterSiswa().length;
+        const localGuruCount = getStoredMasterGuru().length;
+
+        // On first run, record current counts and pull if local doesn't match cloud
         if (last.arsipCount === -1) {
           lastKnownStateRef.current = {
             arsipCount: currentArsipCount,
             siswaCount: currentSiswaCount,
             guruCount: currentGuruCount
           };
-          return;
+          if (localArsipCount !== currentArsipCount || localSiswaCount !== currentSiswaCount || localGuruCount !== currentGuruCount) {
+            // Trigger auto fetch
+          } else {
+            return;
+          }
         }
 
-        // Only proceed if row count actually changed
+        // Proceed if cloud count changed OR if local cache differs from cloud
         if (
           last.arsipCount !== currentArsipCount ||
+          localArsipCount !== currentArsipCount ||
           last.siswaCount !== currentSiswaCount ||
-          last.guruCount !== currentGuruCount
+          localSiswaCount !== currentSiswaCount ||
+          last.guruCount !== currentGuruCount ||
+          localGuruCount !== currentGuruCount
         ) {
           lastKnownStateRef.current = {
             arsipCount: currentArsipCount,
