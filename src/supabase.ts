@@ -992,28 +992,6 @@ export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
 
     const { cleanSiswa, cleanGuru } = sanitizeAndReconcileMasterData(rawSiswaList, rawGuruList);
 
-    // Auto-purge misplaced records from Supabase tables asynchronously
-    const guruNames = new Set(cleanGuru.map(g => g.nama.trim().toLowerCase()));
-    const siswaNames = new Set(cleanSiswa.map(s => s.nama.trim().toLowerCase()));
-
-    // Delete teachers from master_siswa table
-    const misplacedTeacherIdsInSiswaTable = (Array.isArray(rawSiswaData) ? rawSiswaData : [])
-      .filter((row: any) => row.id && row.nama && guruNames.has(row.nama.trim().toLowerCase()))
-      .map((row: any) => row.id);
-
-    if (misplacedTeacherIdsInSiswaTable.length > 0) {
-      client.from('master_siswa').delete().in('id', misplacedTeacherIdsInSiswaTable).then(() => {});
-    }
-
-    // Delete students from master_guru table
-    const misplacedStudentIdsInGuruTable = (Array.isArray(rawGuruData) ? rawGuruData : [])
-      .filter((row: any) => row.id && row.nama && !guruNames.has(row.nama.trim().toLowerCase()) && siswaNames.has(row.nama.trim().toLowerCase()))
-      .map((row: any) => row.id);
-
-    if (misplacedStudentIdsInGuruTable.length > 0) {
-      client.from('master_guru').delete().in('id', misplacedStudentIdsInGuruTable).then(() => {});
-    }
-
     // Merge remote data with existing localStorage data so no local student/teacher records are lost
     let mergedSiswa = cleanSiswa;
     let mergedGuru = cleanGuru;
@@ -1507,11 +1485,6 @@ export function subscribeToSupabaseArsip(onUpdate: (items: ArsipItem[]) => void)
   const client = getSupabaseClient();
   if (!client) return () => {};
 
-  // Initial fetch
-  fetchArsipFromSupabase().then(items => {
-    if (items) onUpdate(items);
-  });
-
   const channel = client
     .channel('arsip_changes')
     .on(
@@ -1544,10 +1517,6 @@ export function subscribeToSupabaseArsip(onUpdate: (items: ArsipItem[]) => void)
 export function subscribeToSupabaseMasterSiswa(onUpdate: (siswa: MasterSiswaItem[]) => void) {
   const client = getSupabaseClient();
   if (!client) return () => {};
-
-  fetchMasterSiswaFromSupabase().then(siswa => {
-    if (siswa && siswa.length > 0) onUpdate(siswa);
-  });
 
   const channel = client
     .channel('master_siswa_realtime_channel')
@@ -1582,10 +1551,6 @@ export function subscribeToSupabaseMasterGuru(onUpdate: (guru: MasterGuruItem[])
   const client = getSupabaseClient();
   if (!client) return () => {};
 
-  fetchMasterGuruFromSupabase().then(guru => {
-    if (guru && guru.length > 0) onUpdate(guru);
-  });
-
   const channel = client
     .channel('master_guru_realtime_channel')
     .on(
@@ -1618,10 +1583,6 @@ export function subscribeToSupabaseMasterGuru(onUpdate: (guru: MasterGuruItem[])
 export function subscribeToSupabaseUsers(onUpdate: (users: any[]) => void) {
   const client = getSupabaseClient();
   if (!client) return () => {};
-
-  fetchUsersFromSupabase().then(users => {
-    if (users && users.length > 0) onUpdate(users);
-  });
 
   const channel = client
     .channel('users_realtime_channel')
@@ -1847,21 +1808,8 @@ export function subscribeToSupabaseAuditLogs(onUpdate: (logs: any[]) => void) {
   const client = getSupabaseClient();
   if (!client) return () => {};
 
-  fetchAuditLogsFromSupabase().then(logs => {
-    if (logs && logs.length > 0) onUpdate(logs);
-  });
-
   const channel = client
     .channel('audit_logs_realtime_broadcast')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'arsip', filter: 'id=eq.SYS_AUDIT_LOG_SNAPSHOT' },
-      () => {
-        fetchAuditLogsFromSupabase().then(logs => {
-          if (logs && logs.length > 0) onUpdate(logs);
-        });
-      }
-    )
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'audit_logs' },

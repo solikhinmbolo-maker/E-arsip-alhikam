@@ -1253,6 +1253,8 @@ export function clearStoredAuditLogs(): AuditLogItem[] {
   return freshList;
 }
 
+let _hasAttemptedCloudAuditSeed = false;
+
 /**
  * Fetch and merge cloud audit logs from Supabase across all devices & browsers
  */
@@ -1287,14 +1289,19 @@ export async function syncAuditLogsFromCloud(): Promise<AuditLogItem[]> {
       });
 
       const merged = Array.from(map.values()).slice(0, 250);
-      safeSetItem(DB_AUDIT_KEY, JSON.stringify(merged));
+      const newJson = JSON.stringify(merged);
+      const oldJson = localStorage.getItem(DB_AUDIT_KEY);
 
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('earsip:audit-updated'));
+      if (newJson !== oldJson) {
+        safeSetItem(DB_AUDIT_KEY, newJson);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('earsip:audit-updated'));
+        }
       }
       return merged;
-    } else {
-      // If cloud is empty, seed cloud with local logs
+    } else if (!_hasAttemptedCloudAuditSeed) {
+      // Seed once at most if cloud is totally empty
+      _hasAttemptedCloudAuditSeed = true;
       const local = getStoredAuditLogs();
       if (local.length > 0) {
         syncAllAuditLogsToSupabase(local).catch(() => {});

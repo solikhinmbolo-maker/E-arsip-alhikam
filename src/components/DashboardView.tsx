@@ -50,13 +50,6 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   const [dataVersion, setDataVersion] = useState(0);
 
   useEffect(() => {
-    // Always sync fresh master data from Supabase Cloud on mount
-    fetchSanitizedMasterDataFromSupabase().then((data) => {
-      if (data) {
-        setDataVersion(v => v + 1);
-      }
-    }).catch(() => {});
-
     const handleUpdate = () => setDataVersion(v => v + 1);
     window.addEventListener('earsip:cloud-synced', handleUpdate);
     return () => window.removeEventListener('earsip:cloud-synced', handleUpdate);
@@ -214,26 +207,46 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   // Donut chart colors
   const donutColors = ['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#64748B'];
 
-  // Helper function to build Donut Chart with Super Slow-Motion & Smooth Easing
-  const buildDonutChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
-    const labels = sortedCategories.slice(0, 6).map(e => e[0]);
-    const data = sortedCategories.slice(0, 6).map(e => e[1]);
+  const prevDonutSignature = useRef<string>('');
+  const prevBarSignature = useRef<string>('');
+
+  const donutLabels = useMemo(() => sortedCategories.slice(0, 6).map(e => e[0]), [sortedCategories]);
+  const donutData = useMemo(() => sortedCategories.slice(0, 6).map(e => e[1]), [sortedCategories]);
+  const currentDonutSignature = useMemo(() => JSON.stringify({ labels: donutLabels, data: donutData }), [donutLabels, donutData]);
+
+  const barLabels = useMemo(() => angkatanLabels.map(th => {
+    if (th === 'Lainnya') return 'Tdk Diumumkan';
+    if (th.startsWith('Th')) return th;
+    return `Th ${th}`;
+  }), [angkatanLabels]);
+  const currentBarSignature = useMemo(() => JSON.stringify({ labels: barLabels, data: angkatanData }), [barLabels, angkatanData]);
+
+  // Update or build Donut Chart smoothly without canvas destroy/flicker
+  const updateOrBuildDonutChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
+    const labels = donutLabels.length > 0 ? donutLabels : ['Belum Ada'];
+    const data = donutData.length > 0 ? donutData : [1];
 
     if (instanceRef.current) {
-      instanceRef.current.destroy();
-      instanceRef.current = null;
+      const chart = instanceRef.current;
+      chart.data.labels = labels;
+      if (chart.data.datasets[0]) {
+        chart.data.datasets[0].data = data;
+        chart.data.datasets[0].backgroundColor = donutColors.slice(0, labels.length || 1);
+      }
+      chart.update();
+      return;
     }
 
     instanceRef.current = new Chart(canvas, {
       type: 'doughnut',
       data: {
-        labels: labels.length > 0 ? labels : ['Belum Ada'],
+        labels,
         datasets: [{
-          data: data.length > 0 ? data : [1],
+          data,
           backgroundColor: donutColors.slice(0, labels.length || 1),
           borderWidth: 3,
           borderColor: '#ffffff',
-          hoverOffset: 10,
+          hoverOffset: 8,
           borderRadius: 4
         }]
       },
@@ -243,7 +256,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         animation: {
           animateRotate: true,
           animateScale: true,
-          duration: 2500, // Cinematic 2.5s slow-motion rotation & scale-in
+          duration: 1000,
           easing: 'easeOutQuart'
         },
         cutout: '72%',
@@ -261,30 +274,32 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     });
   };
 
-  // Helper function to build Bar Chart with Staggered Cascading Slow-Motion
-  const buildBarChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
+  // Update or build Bar Chart smoothly without canvas destroy/flicker
+  const updateOrBuildBarChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
     const ctx = canvas.getContext('2d');
     let gradient: any = '#2563EB';
     if (ctx) {
       gradient = ctx.createLinearGradient(0, 0, 0, 220);
-      gradient.addColorStop(0, 'rgba(37, 99, 235, 1)'); // Deep Blue
-      gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.85)'); // Vibrant Blue
-      gradient.addColorStop(1, 'rgba(147, 197, 253, 0.25)'); // Soft Light Blue
+      gradient.addColorStop(0, 'rgba(37, 99, 235, 1)');
+      gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.85)');
+      gradient.addColorStop(1, 'rgba(147, 197, 253, 0.25)');
     }
 
     if (instanceRef.current) {
-      instanceRef.current.destroy();
-      instanceRef.current = null;
+      const chart = instanceRef.current;
+      chart.data.labels = barLabels;
+      if (chart.data.datasets[0]) {
+        chart.data.datasets[0].data = angkatanData;
+        chart.data.datasets[0].backgroundColor = gradient;
+      }
+      chart.update();
+      return;
     }
 
     instanceRef.current = new Chart(canvas, {
       type: 'bar',
       data: {
-        labels: angkatanLabels.map(th => {
-          if (th === 'Lainnya') return 'Tdk Diumumkan';
-          if (th.startsWith('Th')) return th;
-          return `Th ${th}`;
-        }),
+        labels: barLabels,
         datasets: [{
           label: 'Jumlah Siswa',
           data: angkatanData,
@@ -297,12 +312,8 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         responsive: true,
         maintainAspectRatio: false,
         animation: {
-          duration: 2600, // Cinematic 2.6s slow-motion rise
-          easing: 'easeOutExpo',
-          delay: (ctx: any) => {
-            if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-            return ctx.dataIndex * 380; // Cascading delay: each bar rises one by one!
-          }
+          duration: 1000,
+          easing: 'easeOutExpo'
         },
         plugins: {
           legend: { display: false },
@@ -330,45 +341,49 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   };
 
   useEffect(() => {
-    // Re-render both charts with the cinematic slowmo animation on every refresh / auto-detect
-    const timer = setTimeout(() => {
-      // 1. Mobile Charts initialization
-      if (mobileDonutRef.current) {
-        buildDonutChart(mobileDonutRef.current, mobileDonutChart);
-      }
-      if (mobileBarRef.current) {
-        buildBarChart(mobileBarRef.current, mobileBarChart);
-      }
+    const donutChanged = prevDonutSignature.current !== currentDonutSignature;
+    const barChanged = prevBarSignature.current !== currentBarSignature;
 
-      // 2. Desktop Charts initialization
-      if (desktopDonutRef.current) {
-        buildDonutChart(desktopDonutRef.current, desktopDonutChart);
+    // Mobile Charts
+    if (mobileChartTab === 'kategori' && mobileDonutRef.current) {
+      if (!mobileDonutChart.current || donutChanged) {
+        updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
       }
-      if (desktopBarRef.current) {
-        buildBarChart(desktopBarRef.current, desktopBarChart);
+    } else if (mobileChartTab === 'siswa' && mobileBarRef.current) {
+      if (!mobileBarChart.current || barChanged) {
+        updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
       }
-    }, 50);
+    }
 
+    // Desktop Charts
+    if (desktopDonutRef.current) {
+      if (!desktopDonutChart.current || donutChanged) {
+        updateOrBuildDonutChart(desktopDonutRef.current, desktopDonutChart);
+      }
+    }
+    if (desktopBarRef.current) {
+      if (!desktopBarChart.current || barChanged) {
+        updateOrBuildBarChart(desktopBarRef.current, desktopBarChart);
+      }
+    }
+
+    prevDonutSignature.current = currentDonutSignature;
+    prevBarSignature.current = currentBarSignature;
+  }, [mobileChartTab, currentDonutSignature, currentBarSignature]);
+
+  // Clean destruction only when component truly unmounts
+  useEffect(() => {
     return () => {
-      clearTimeout(timer);
-      if (mobileDonutChart.current) {
-        mobileDonutChart.current.destroy();
-        mobileDonutChart.current = null;
-      }
-      if (mobileBarChart.current) {
-        mobileBarChart.current.destroy();
-        mobileBarChart.current = null;
-      }
-      if (desktopDonutChart.current) {
-        desktopDonutChart.current.destroy();
-        desktopDonutChart.current = null;
-      }
-      if (desktopBarChart.current) {
-        desktopBarChart.current.destroy();
-        desktopBarChart.current = null;
-      }
+      mobileDonutChart.current?.destroy();
+      mobileDonutChart.current = null;
+      mobileBarChart.current?.destroy();
+      mobileBarChart.current = null;
+      desktopDonutChart.current?.destroy();
+      desktopDonutChart.current = null;
+      desktopBarChart.current?.destroy();
+      desktopBarChart.current = null;
     };
-  }, [mobileChartTab, effectiveVersion, allSiswa, allArsip]);
+  }, []);
 
   return (
     <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full overflow-x-hidden">
