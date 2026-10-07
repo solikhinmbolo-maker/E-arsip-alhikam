@@ -157,6 +157,7 @@ export default function SettingsView({
   const showNotification = (msg: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToastMessage(msg);
     setToastType(type);
+    window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
     if (type === 'success' && soundEnabled) {
       playSystemSound('chime');
     }

@@ -1586,12 +1586,12 @@ function doGet(e) {
             </div>
           </div>
 
-          {/* Centered Notification on Desktop */}
+          {/* Centered Notification on Desktop: Pure blue text, no background, no text truncation */}
           <div className="flex-1 flex justify-center px-4">
             {globalNotice && (
-              <div className="flex items-center gap-2 px-4 py-1 text-cyan-300 text-xs font-semibold animate-fadeIn max-w-md truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
-                <span>{globalNotice}</span>
+              <div className="flex items-center gap-2 px-3 py-1 text-blue-400 text-xs font-semibold animate-fadeIn max-w-xl text-center leading-tight">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
+                <span className="break-words">{globalNotice}</span>
               </div>
             )}
           </div>
@@ -1636,32 +1636,32 @@ function doGet(e) {
         </header>
 
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (EXPANDED UPWARD TO COVER STATUS BAR / SAFE AREA) */}
+        {/* REFINED MOBILE HEADER (STABLE FIXED HEIGHT, NEVER EXPANDS DOWNWARDS) */}
         {/* ============================================================== */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-4 sm:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)] overflow-hidden">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-[max(0.6rem,env(safe-area-inset-top))] pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
           
           {/* Subtle Ambient Gradient Light Reflections */}
           <div className="absolute -top-10 left-1/4 w-48 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 right-12 w-40 h-20 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
 
-          {/* TOPMOST NOTIFICATION (MOBILE): No background, pure blue text, top-most position above apk name, small font */}
+          {/* TOPMOST NOTIFICATION (MOBILE): Absolutely positioned at top, no background, pure blue text, no expanding header, no text clipping */}
           {globalNotice && (
-            <div className="w-full pb-1 -mt-0.5 text-center animate-fadeIn pointer-events-none flex items-center justify-center">
-              <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-blue-400 tracking-wide truncate max-w-full px-2 flex items-center justify-center gap-1.5">
+            <div className="absolute top-0.5 inset-x-0 z-50 pointer-events-none px-3 flex items-center justify-center animate-fadeIn">
+              <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-blue-400 tracking-normal text-center leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] flex items-center justify-center gap-1.5 max-w-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
-                <span>{globalNotice}</span>
+                <span className="break-words">{globalNotice}</span>
               </p>
             </div>
           )}
 
-          <div className="relative z-10 flex items-center justify-between">
+          <div className="relative z-10 flex items-center justify-between pt-1">
             {activePage === 'dashboard' ? (
               /* Brand & Logo with Hamburger Garis 3 Menu Trigger */
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="-ml-1.5 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
+                  className="-ml-1 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
                   title="Buka Menu Lengkap E-Arsip"
                   aria-label="Buka Menu Navigasi"
                 >
@@ -1702,7 +1702,7 @@ function doGet(e) {
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="-ml-1.5 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
+                  className="-ml-1 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
                   title="Buka Menu Lengkap E-Arsip"
                   aria-label="Buka Menu Navigasi"
                 >
@@ -1717,7 +1717,7 @@ function doGet(e) {
                   </div>
                   <div className="text-left">
                     <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest block leading-none">Kembali</span>
-                    <span className="text-sm font-bold text-white block mt-0.5 max-w-[170px] truncate">
+                    <span className="text-sm font-bold text-white block mt-0.5 max-w-[195px] sm:max-w-xs truncate">
                       {pageTitles[activePage].split('(')[0]}
                     </span>
                   </div>
@@ -1751,7 +1751,7 @@ function doGet(e) {
         </header>
 
         {/* View Contents with top padding for fixed header in mobile */}
-        <div className="p-3.5 sm:p-8 pt-[calc(env(safe-area-inset-top,0px)+88px)] lg:pt-8 flex-1 w-full max-w-full overflow-x-hidden">
+        <div className="p-3.5 sm:p-8 pt-[calc(env(safe-area-inset-top,0px)+74px)] lg:pt-8 flex-1 w-full max-w-full overflow-x-hidden">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}

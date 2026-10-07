@@ -50,6 +50,7 @@ export default function TongSampahView() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
+    window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
     setTimeout(() => setToastMessage(''), 4000);
   };
 

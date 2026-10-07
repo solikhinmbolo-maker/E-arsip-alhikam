@@ -66,7 +66,9 @@ export default function FormUnduhView({
       // Smooth visual feedback for moving to trash
       await new Promise(r => setTimeout(r, 650));
       await moveToTrashArsipItem(item.id);
-      setTrashToast(`✓ Berkas "${item.subjek}" (${item.kategori}) berhasil dipindahkan ke folder Sampah.`);
+      const msg = `✓ Berkas "${item.subjek}" (${item.kategori}) berhasil dipindahkan ke folder Sampah.`;
+      setTrashToast(msg);
+      window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
       setTimeout(() => setTrashToast(''), 4500);
     } catch (err) {
       console.error('Error moving to trash:', err);
