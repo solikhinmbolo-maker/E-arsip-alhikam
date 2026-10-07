@@ -388,6 +388,7 @@ export default function UserManagementModal({
         };
         localStorage.setItem('EARSIP_ADMIN_ACCOUNT', JSON.stringify(newAdminAcc));
         localStorage.setItem(DB_KEYS.AUTH_USER, JSON.stringify(updatedSelf));
+        sessionStorage.setItem('EARSIP_SESSION_USER', JSON.stringify(updatedSelf));
       }
 
       addAuditLog({

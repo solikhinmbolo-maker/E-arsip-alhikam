@@ -576,7 +576,7 @@ export default function SettingsView({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState(() => {
-    return localStorage.getItem('EARSIP_SESSION_TIMEOUT') || '30';
+    return localStorage.getItem('EARSIP_SESSION_TIMEOUT') || '15';
   });
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -610,6 +610,7 @@ export default function SettingsView({
   const handleSaveSessionTimeout = (val: string) => {
     setSessionTimeout(val);
     localStorage.setItem('EARSIP_SESSION_TIMEOUT', val);
+    window.dispatchEvent(new CustomEvent('earsip:timeout-changed', { detail: { timeout: val } }));
     showNotification(`✓ Auto-logout diatur ke ${val === '0' ? 'Selalu Aktif' : `${val} Menit`}`);
   };
 
@@ -1600,12 +1601,12 @@ export default function SettingsView({
                     onChange={(e) => handleSaveSessionTimeout(e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
                   >
-                    <option value="15">15 Menit (Keamanan Tinggi)</option>
+                    <option value="15">15 Menit (Default - Keamanan Tinggi)</option>
                     <option value="30">30 Menit (Standar)</option>
                     <option value="60">1 Jam</option>
                     <option value="240">4 Jam</option>
                     <option value="480">8 Jam</option>
-                    <option value="0">Selalu Aktif</option>
+                    <option value="0">Selalu Aktif (Tidak Disarankan)</option>
                   </select>
 
                   <div className="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs">

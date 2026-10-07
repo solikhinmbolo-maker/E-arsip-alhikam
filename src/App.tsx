@@ -138,8 +138,20 @@ function LiveClock() {
   return <span>{timeStr || 'Memuat waktu...'}</span>;
 }
 
-// 30 Minutes Inactivity Timeout in milliseconds (30 * 60 * 1000)
-const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+// Default Inactivity Timeout: 15 Menit (15 * 60 * 1000)
+export const DEFAULT_INACTIVITY_TIMEOUT_MINUTES = 15;
+
+export function getActiveInactivityTimeoutMs(): number {
+  try {
+    const saved = localStorage.getItem('EARSIP_SESSION_TIMEOUT');
+    if (saved !== null) {
+      const minutes = parseInt(saved, 10);
+      if (minutes === 0) return Infinity; // Selalu aktif
+      if (!isNaN(minutes) && minutes > 0) return minutes * 60 * 1000;
+    }
+  } catch {}
+  return DEFAULT_INACTIVITY_TIMEOUT_MINUTES * 60 * 1000;
+}
 
 export default function App() {
   // Session expired notice message
@@ -172,34 +184,70 @@ export default function App() {
   // Logout loading transition state
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
-  // Auth state: Default MUST LOGIN FIRST (null) unless there is a fresh session verified within 30 min
+  // Auth state: Keamanan Maksimal.
+  // Sesi akun hanya hidup selama browser/APK sedang aktif (sessionStorage).
+  // Saat browser ditutup atau riwayat aplikasi di HP dibersihkan/di-swipe,
+  // sessionStorage otomatis terhapus oleh sistem sehingga aplikasi WAJIB login ulang.
   const [currentUser, setCurrentUser] = useState<{ email: string; name: string; role: string; avatarUrl?: string } | null>(() => {
     try {
-      const saved = localStorage.getItem(DB_KEYS.AUTH_USER);
-      const lastActive = localStorage.getItem('EARSIP_LAST_ACTIVE_TIME');
-      if (saved && lastActive) {
-        const timeDiff = Date.now() - parseInt(lastActive, 10);
-        if (timeDiff < INACTIVITY_TIMEOUT_MS) {
-          const parsed = JSON.parse(saved);
+      const isSessionActive = sessionStorage.getItem('EARSIP_SESSION_ACTIVE');
+      const sessionUser = sessionStorage.getItem('EARSIP_SESSION_USER');
+      const sessionLastActive = sessionStorage.getItem('EARSIP_LAST_ACTIVE_TIME');
+      
+      if (isSessionActive === 'true' && sessionUser && sessionLastActive) {
+        const timeoutMs = getActiveInactivityTimeoutMs();
+        const timeDiff = Date.now() - parseInt(sessionLastActive, 10);
+        if (timeDiff < timeoutMs) {
+          const parsed = JSON.parse(sessionUser);
           parsed.avatarUrl = getAvatarForUser(parsed.email, parsed.name);
           return parsed;
         }
       }
     } catch {}
-    // Security by default: Always require login when opened fresh
+    
+    // Jika tidak ada sesi aktif di sessionStorage (misal baru buka setelah aplikasi/browser ditutup),
+    // bersihkan token login agar aplikasi langsung meminta login kembali demi keamanan.
+    try {
+      sessionStorage.removeItem('EARSIP_SESSION_ACTIVE');
+      sessionStorage.removeItem('EARSIP_SESSION_USER');
+      sessionStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
+      localStorage.removeItem(DB_KEYS.AUTH_USER);
+      localStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
+    } catch {}
     return null;
   });
 
   const [lastActiveTime, setLastActiveTime] = useState<number>(Date.now());
 
-  // Real-time Inactivity Auto-Logout Tracker (30 Menit)
+  // Real-time Inactivity Auto-Logout Tracker (Default 15 Menit) & Background Resume Tracker
   useEffect(() => {
     if (!currentUser) return;
 
     const recordActivity = () => {
       const now = Date.now();
       setLastActiveTime(now);
+      sessionStorage.setItem('EARSIP_LAST_ACTIVE_TIME', now.toString());
       localStorage.setItem('EARSIP_LAST_ACTIVE_TIME', now.toString());
+    };
+
+    const checkInactivity = () => {
+      const savedLast = sessionStorage.getItem('EARSIP_LAST_ACTIVE_TIME') || localStorage.getItem('EARSIP_LAST_ACTIVE_TIME');
+      const lastTime = savedLast ? parseInt(savedLast, 10) : lastActiveTime;
+      const elapsed = Date.now() - lastTime;
+      const timeoutMs = getActiveInactivityTimeoutMs();
+
+      if (timeoutMs !== Infinity && elapsed >= timeoutMs) {
+        // Otomatis logout setelah waktu tidak ada aktivitas (default 15 menit)
+        sessionStorage.removeItem('EARSIP_SESSION_ACTIVE');
+        sessionStorage.removeItem('EARSIP_SESSION_USER');
+        sessionStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
+        localStorage.removeItem(DB_KEYS.AUTH_USER);
+        localStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
+        setCurrentUser(null);
+        
+        const minutes = Math.round(timeoutMs / 60000);
+        setSessionExpiredNotice(`⚠️ Sesi Anda telah kedaluwarsa otomatis karena tidak ada aktivitas selama ${minutes} menit demi keamanan sistem. Silakan login kembali.`);
+      }
     };
 
     // User activity events: mouse movement, keystroke, touch, click, scroll
@@ -208,8 +256,8 @@ export default function App() {
 
     const handleUserActivity = () => {
       const now = Date.now();
-      // Throttle event updating every 4 seconds to prevent CPU overhead
-      if (now - lastThrottledTime > 4000) {
+      // Throttle event updating every 3 detik agar tidak membebani performa
+      if (now - lastThrottledTime > 3000) {
         lastThrottledTime = now;
         recordActivity();
       }
@@ -217,24 +265,29 @@ export default function App() {
 
     events.forEach(evt => window.addEventListener(evt, handleUserActivity, { passive: true }));
 
-    // Periodic check every 10 seconds whether 30 minutes of inactivity has passed
-    const timerInterval = setInterval(() => {
-      const savedLast = localStorage.getItem('EARSIP_LAST_ACTIVE_TIME');
-      const lastTime = savedLast ? parseInt(savedLast, 10) : lastActiveTime;
-      const elapsed = Date.now() - lastTime;
+    // Periodic check every 5 seconds whether inactivity timeout has passed
+    const timerInterval = setInterval(checkInactivity, 5000);
 
-      if (elapsed >= INACTIVITY_TIMEOUT_MS) {
-        // Automatically logout user after 30 minutes idle
-        localStorage.removeItem(DB_KEYS.AUTH_USER);
-        localStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
-        setCurrentUser(null);
-        setSessionExpiredNotice('⚠️ Sesi Anda telah kedaluwarsa otomatis karena tidak ada aktivitas selama 30 menit demi keamanan sistem. Silakan login kembali.');
+    // Saat pengguna kembali membuka tab atau aplikasi dari background (termasuk di HP)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkInactivity();
       }
-    }, 10000);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', checkInactivity);
+
+    const handleTimeoutConfigChange = () => {
+      checkInactivity();
+    };
+    window.addEventListener('earsip:timeout-changed', handleTimeoutConfigChange);
 
     return () => {
       events.forEach(evt => window.removeEventListener(evt, handleUserActivity));
       clearInterval(timerInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', checkInactivity);
+      window.removeEventListener('earsip:timeout-changed', handleTimeoutConfigChange);
     };
   }, [currentUser, lastActiveTime]);
 
@@ -290,9 +343,24 @@ export default function App() {
 
     // 3. Cross-Tab Local Storage Listener
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === DB_KEYS.AUTH_USER || e.key === 'EARSIP_USER_LIST' || e.key === 'EARSIP_ADMIN_ACCOUNT' || e.key === 'EARSIP_AVATARS_MAP') {
+      if (e.key === DB_KEYS.AUTH_USER) {
         const savedAuth = localStorage.getItem(DB_KEYS.AUTH_USER);
-        if (savedAuth) {
+        if (savedAuth && sessionStorage.getItem('EARSIP_SESSION_ACTIVE') === 'true') {
+          try {
+            const parsed = JSON.parse(savedAuth);
+            parsed.avatarUrl = getAvatarForUser(parsed.email, parsed.name);
+            setCurrentUser(parsed);
+          } catch {}
+        } else if (!savedAuth) {
+          // Sesi logout dari tab atau jendela lain
+          sessionStorage.removeItem('EARSIP_SESSION_ACTIVE');
+          sessionStorage.removeItem('EARSIP_SESSION_USER');
+          sessionStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
+          setCurrentUser(null);
+        }
+      } else if (e.key === 'EARSIP_USER_LIST' || e.key === 'EARSIP_ADMIN_ACCOUNT' || e.key === 'EARSIP_AVATARS_MAP') {
+        const savedAuth = sessionStorage.getItem('EARSIP_SESSION_USER') || localStorage.getItem(DB_KEYS.AUTH_USER);
+        if (savedAuth && sessionStorage.getItem('EARSIP_SESSION_ACTIVE') === 'true') {
           try {
             const parsed = JSON.parse(savedAuth);
             parsed.avatarUrl = getAvatarForUser(parsed.email, parsed.name);
@@ -1148,8 +1216,12 @@ function doGet(e) {
   const handleLoginSuccess = async (user: { email: string; name: string; role: string; avatarUrl?: string }) => {
     setCurrentUser(user);
     const now = Date.now();
+    sessionStorage.setItem('EARSIP_SESSION_ACTIVE', 'true');
+    sessionStorage.setItem('EARSIP_SESSION_USER', JSON.stringify(user));
+    sessionStorage.setItem('EARSIP_LAST_ACTIVE_TIME', now.toString());
     localStorage.setItem(DB_KEYS.AUTH_USER, JSON.stringify(user));
     localStorage.setItem('EARSIP_LAST_ACTIVE_TIME', now.toString());
+    setLastActiveTime(now);
     setSessionExpiredNotice('');
     setActivePage('dashboard');
 
@@ -1196,6 +1268,9 @@ function doGet(e) {
     // Smooth loading transition
     await new Promise(resolve => setTimeout(resolve, 1300));
 
+    sessionStorage.removeItem('EARSIP_SESSION_ACTIVE');
+    sessionStorage.removeItem('EARSIP_SESSION_USER');
+    sessionStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
     localStorage.removeItem(DB_KEYS.AUTH_USER);
     localStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
     setCurrentUser(null);

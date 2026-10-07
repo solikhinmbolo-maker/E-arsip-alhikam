@@ -1048,7 +1048,7 @@ export async function deleteMasterGuru(id: string): Promise<MasterGuruItem[]> {
 
 export function getCurrentOperatorEmail(): string {
   try {
-    const rawAuth = localStorage.getItem('EARSIP_AUTH_USER');
+    const rawAuth = sessionStorage.getItem('EARSIP_SESSION_USER') || localStorage.getItem('EARSIP_AUTH_USER');
     if (rawAuth) {
       const parsed = JSON.parse(rawAuth);
       if (parsed?.email) return parsed.email;
