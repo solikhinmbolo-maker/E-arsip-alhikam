@@ -46,7 +46,6 @@ export default function FormUnduhView({
   const [syncStatus, setSyncStatus] = useState('');
   const [trashConfirmItem, setTrashConfirmItem] = useState<ArsipItem | null>(null);
   const [isMovingToTrash, setIsMovingToTrash] = useState(false);
-  const [trashToast, setTrashToast] = useState('');
   const [dataVersion, setDataVersion] = useState(0);
 
   useEffect(() => {
@@ -67,9 +66,7 @@ export default function FormUnduhView({
       await new Promise(r => setTimeout(r, 650));
       await moveToTrashArsipItem(item.id);
       const msg = `✓ Berkas "${item.subjek}" (${item.kategori}) berhasil dipindahkan ke folder Sampah.`;
-      setTrashToast(msg);
       window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
-      setTimeout(() => setTrashToast(''), 4500);
     } catch (err) {
       console.error('Error moving to trash:', err);
     } finally {
@@ -351,19 +348,6 @@ function extractDriveIdForDownload(link?: string): string | null {
   return (
     <div className="bg-white rounded-3xl p-3 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/80 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
       
-      {/* Toast Notification for Trash Action */}
-      {trashToast && (
-        <div className="mb-4 p-3.5 bg-slate-900 text-white rounded-2xl text-xs font-semibold flex items-center justify-between shadow-lg animate-fadeIn">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-            <span>{trashToast}</span>
-          </div>
-          <button onClick={() => setTrashToast('')} className="text-slate-400 hover:text-white cursor-pointer ml-2">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
       {/* HEADER EMERALD */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b-2 border-slate-100">
         <div className="flex items-center gap-3">

@@ -25,7 +25,6 @@ export default function TongSampahView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
   const [deleteTargetItem, setDeleteTargetItem] = useState<ArsipItem | null>(null);
-  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     const handleUpdate = () => setDataVersion(v => v + 1);
@@ -48,10 +47,8 @@ export default function TongSampahView() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMsg, setProcessingMsg] = useState('');
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
+  const showNotify = (msg: string) => {
     window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
-    setTimeout(() => setToastMessage(''), 4000);
   };
 
   const handleRestore = async (item: ArsipItem) => {
@@ -60,7 +57,7 @@ export default function TongSampahView() {
     await new Promise(r => setTimeout(r, 1800));
     await restoreFromTrashArsipItem(item.id);
     setIsProcessing(false);
-    showToast(`✓ Berkas "${item.subjek}" berhasil dipulihkan ke arsip aktif.`);
+    showNotify(`✓ Berkas "${item.subjek}" berhasil dipulihkan ke arsip aktif.`);
   };
 
   const handleConfirmDeletePermanent = async () => {
@@ -70,7 +67,7 @@ export default function TongSampahView() {
     await new Promise(r => setTimeout(r, 1800));
     await deletePermanentlyArsipItem(deleteTargetItem.id);
     setIsProcessing(false);
-    showToast(`🗑️ Berkas "${deleteTargetItem.subjek}" telah dihapus secara permanen dari Database & Cloud.`);
+    showNotify(`🗑️ Berkas "${deleteTargetItem.subjek}" telah dihapus secara permanen dari Database & Cloud.`);
     setDeleteTargetItem(null);
   };
 
@@ -80,7 +77,7 @@ export default function TongSampahView() {
     await new Promise(r => setTimeout(r, 2000));
     await emptyTrashArsip();
     setIsProcessing(false);
-    showToast('🗑️ Seluruh berkas di folder Sampah telah dibersihkan secara permanen.');
+    showNotify('🗑️ Seluruh berkas di folder Sampah telah dibersihkan secara permanen.');
     setShowEmptyConfirm(false);
   };
 
@@ -92,16 +89,6 @@ export default function TongSampahView() {
         <div className="mb-4 p-3.5 bg-blue-600 text-white rounded-2xl text-xs font-semibold flex items-center gap-2.5 shadow-md animate-fadeIn">
           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0" />
           <span>{processingMsg}</span>
-        </div>
-      )}
-
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="mb-4 p-3.5 bg-slate-900 text-white rounded-2xl text-xs font-semibold flex items-center justify-between shadow-lg animate-fadeIn">
-          <span>{toastMessage}</span>
-          <button onClick={() => setToastMessage('')} className="text-slate-400 hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
         </div>
       )}
 

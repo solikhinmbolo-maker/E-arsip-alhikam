@@ -154,17 +154,11 @@ export default function SettingsView({
     }, 1200);
   };
 
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
-
   const showNotification = (msg: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setToastMessage(msg);
-    setToastType(type);
     window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
     if (type === 'success' && soundEnabled) {
       playSystemSound('chime');
     }
-    setTimeout(() => setToastMessage(''), 4000);
   };
 
   // 1. Preferensi Sistem & Suara
@@ -680,24 +674,6 @@ export default function SettingsView({
         accept=".json,application/json"
         className="hidden"
       />
-
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl shadow-2xl border flex items-center gap-2.5 text-xs font-semibold animate-scaleUp max-w-[90vw] ${
-          toastType === 'error' 
-            ? 'bg-red-950 text-red-200 border-red-500/50' 
-            : toastType === 'info'
-            ? 'bg-blue-950 text-blue-200 border-blue-500/50'
-            : 'bg-slate-900 text-white border-emerald-500/50'
-        }`}>
-          {toastType === 'error' ? (
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
-          ) : (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-          )}
-          <span className="truncate">{toastMessage}</span>
-        </div>
-      )}
 
       {/* Modern Responsive Header Banner */}
       <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs relative overflow-hidden">
