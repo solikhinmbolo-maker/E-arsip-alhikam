@@ -20,7 +20,7 @@ export default function LaporanView({ onPreview }: LaporanViewProps) {
   const [kategori, setKategori] = useState<string>('semua');
   const [namaFilter, setNamaFilter] = useState<string>('semua');
 
-  const allArsip = getStoredArsip();
+  const allArsip = useMemo(() => getStoredArsip(), []);
 
   // Distinct subjek names
   const namaList = useMemo(() => {

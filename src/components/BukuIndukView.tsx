@@ -99,13 +99,38 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
   };
 
   useEffect(() => {
-    reloadMasterData();
+    // Non-blocking deferred cloud reload for instant 60fps menu navigation
+    const timer = setTimeout(() => {
+      reloadMasterData();
+    }, 40);
+
     const handleCloudUpdate = () => reloadMasterData();
     window.addEventListener('earsip:cloud-synced', handleCloudUpdate);
-    return () => window.removeEventListener('earsip:cloud-synced', handleCloudUpdate);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('earsip:cloud-synced', handleCloudUpdate);
+    };
   }, []);
 
   const arsipList = useMemo(() => getStoredArsip(), [siswaList, guruList]);
+
+  // Precomputed archive count lookup map for instantaneous O(1) performance
+  const coverageMap = useMemo(() => {
+    const targetKategoriSiswa = getActiveKategoriSiswa();
+    const targetKategoriGuru = getActiveKategoriGuru();
+    const totalSiswa = targetKategoriSiswa.length || 1;
+    const totalGuru = targetKategoriGuru.length || 1;
+
+    const countMap = new Map<string, number>();
+    arsipList.forEach(a => {
+      if (a.kategoriUtama === 'Arsip Siswa' || a.kategoriUtama === 'Arsip Guru') {
+        const key = `${a.kategoriUtama}_${a.subjek.trim().toLowerCase()}`;
+        countMap.set(key, (countMap.get(key) || 0) + 1);
+      }
+    });
+
+    return { countMap, totalSiswa, totalGuru };
+  }, [arsipList]);
 
   // Modal State for adding/editing (Interactive Excel Table Grid)
   const [showAddModal, setShowAddModal] = useState(false);
@@ -145,15 +170,12 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
     return Array.from(set).sort().reverse();
   }, [siswaList]);
 
-  // Archive coverage helper
+  // Fast O(1) archive coverage calculation
   const getArchiveCoverage = (nama: string, isSiswa: boolean) => {
-    const targetKategori = isSiswa ? getActiveKategoriSiswa() : getActiveKategoriGuru();
-    const existing = arsipList.filter(a => 
-      a.kategoriUtama === (isSiswa ? 'Arsip Siswa' : 'Arsip Guru') &&
-      a.subjek.trim().toLowerCase() === nama.trim().toLowerCase()
-    );
-    const count = existing.length;
-    const total = targetKategori.length || 1;
+    const mainCat = isSiswa ? 'Arsip Siswa' : 'Arsip Guru';
+    const key = `${mainCat}_${nama.trim().toLowerCase()}`;
+    const count = coverageMap.countMap.get(key) || 0;
+    const total = isSiswa ? coverageMap.totalSiswa : coverageMap.totalGuru;
     const pct = Math.min(100, Math.round((count / total) * 100));
     return { count, total, pct, isComplete: count >= 3 };
   };

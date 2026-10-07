@@ -1341,7 +1341,7 @@ function doGet(e) {
                       setActiveSubKategori(sub);
                       setMobileSidebarOpen(false);
                     }}
-                    className={`w-full text-left py-1.5 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                    className={`w-full text-left py-1.5 px-3 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                       activePage === 'upload' && activeSubKategori === sub
                         ? 'text-blue-400 bg-blue-500/15 font-semibold'
                         : 'text-slate-400 hover:text-slate-200'
@@ -1381,7 +1381,7 @@ function doGet(e) {
                       setActiveSubKategori(sub);
                       setMobileSidebarOpen(false);
                     }}
-                    className={`w-full text-left py-1.5 px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                    className={`w-full text-left py-1.5 px-3 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                       activePage === 'unduh' && activeSubKategori === sub
                         ? 'text-blue-400 bg-blue-500/15 font-semibold'
                         : 'text-slate-400 hover:text-slate-200'

@@ -61,7 +61,13 @@ export default function AuditLogView() {
 
   // Real-time Event Listener: Updates view immediately on any app event
   useEffect(() => {
-    reloadLogs();
+    // Instant local view render
+    setLogs(getStoredAuditLogs());
+
+    // Deferred non-blocking background sync
+    const timer = setTimeout(() => {
+      reloadLogs();
+    }, 50);
 
     const handleAuditUpdate = () => {
       setLogs(getStoredAuditLogs());
@@ -82,6 +88,7 @@ export default function AuditLogView() {
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('earsip:audit-updated', handleAuditUpdate);
       window.removeEventListener('earsip:cloud-synced', handleCloudSync);
       window.removeEventListener('storage', handleStorageChange);

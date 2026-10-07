@@ -90,27 +90,52 @@ export const KATEGORI_LAINNYA = [
   'Berkas Umum'
 ];
 
+let _katSiswaCache: string[] | null = null;
+let _katGuruCache: string[] | null = null;
+let _katLainnyaCache: string[] | null = null;
+
+export function invalidateKatCache() {
+  _katSiswaCache = null;
+  _katGuruCache = null;
+  _katLainnyaCache = null;
+}
+
 export function getActiveKategoriSiswa(): string[] {
+  if (_katSiswaCache) return _katSiswaCache;
   try {
     const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_SISWA');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      _katSiswaCache = JSON.parse(saved);
+      return _katSiswaCache!;
+    }
   } catch {}
+  _katSiswaCache = KATEGORI_SISWA;
   return KATEGORI_SISWA;
 }
 
 export function getActiveKategoriGuru(): string[] {
+  if (_katGuruCache) return _katGuruCache;
   try {
     const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_GURU');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      _katGuruCache = JSON.parse(saved);
+      return _katGuruCache!;
+    }
   } catch {}
+  _katGuruCache = KATEGORI_GURU;
   return KATEGORI_GURU;
 }
 
 export function getActiveKategoriLainnya(): string[] {
+  if (_katLainnyaCache) return _katLainnyaCache;
   try {
     const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_LAINNYA');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      _katLainnyaCache = JSON.parse(saved);
+      return _katLainnyaCache!;
+    }
   } catch {}
+  _katLainnyaCache = KATEGORI_LAINNYA;
   return KATEGORI_LAINNYA;
 }
 
@@ -145,6 +170,7 @@ export function renameKategoriCascade(
     kat.trim().toLowerCase() === oldTrim.toLowerCase() ? newTrim : kat
   );
   localStorage.setItem(storageKey, JSON.stringify(updatedCategories));
+  invalidateKatCache();
 
   // 2. Cascade Rename across all stored archive items in DB_KEYS.ARSIP_ITEMS
   let updatedCount = 0;
@@ -440,7 +466,24 @@ export function sanitizeAndReconcileMasterData(
   return { cleanSiswa, cleanGuru };
 }
 
+let _masterDataCache: { siswa: MasterSiswaItem[]; guru: MasterGuruItem[] } | null = null;
+let _rawArsipCache: ArsipItem[] | null = null;
+let _auditLogsCache: AuditLogItem[] | null = null;
+
+export function invalidateMasterCache() {
+  _masterDataCache = null;
+}
+
+export function invalidateArsipCache() {
+  _rawArsipCache = null;
+}
+
+export function invalidateAuditCache() {
+  _auditLogsCache = null;
+}
+
 export function getSanitizedMasterData(): { siswa: MasterSiswaItem[]; guru: MasterGuruItem[] } {
+  if (_masterDataCache) return _masterDataCache;
   let rawSiswa: MasterSiswaItem[] = [];
   let rawGuru: MasterGuruItem[] = [];
 
@@ -467,7 +510,8 @@ export function getSanitizedMasterData(): { siswa: MasterSiswaItem[]; guru: Mast
     safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(cleanGuru));
   }
 
-  return { siswa: cleanSiswa, guru: cleanGuru };
+  _masterDataCache = { siswa: cleanSiswa, guru: cleanGuru };
+  return _masterDataCache;
 }
 
 export function getStoredMasterSiswa(): MasterSiswaItem[] {
@@ -480,6 +524,9 @@ export function getStoredMasterGuru(): MasterGuruItem[] {
 
 // Safe LocalStorage setter with Quota Protection & automatic trimming
 function safeSetItem(key: string, value: string) {
+  if (key === DB_KEYS.ARSIP_ITEMS) invalidateArsipCache();
+  if (key === DB_KEYS.MASTER_SISWA || key === DB_KEYS.MASTER_GURU) invalidateMasterCache();
+  if (key === DB_AUDIT_KEY) invalidateAuditCache();
   try {
     localStorage.setItem(key, value);
   } catch (err) {
@@ -531,24 +578,28 @@ export function recordMultiplePermanentDeletedIds(ids: string[]) {
 }
 
 export function getAllRawArsip(): ArsipItem[] {
+  if (_rawArsipCache) return _rawArsipCache;
   try {
     const raw = localStorage.getItem(DB_KEYS.ARSIP_ITEMS);
     if (!raw) {
-      return [];
+      _rawArsipCache = [];
+      return _rawArsipCache;
     }
     const items: ArsipItem[] = JSON.parse(raw);
     const deletedIds = getPermanentDeletedIds();
     const validItems = items.filter(it => !deletedIds.has(it.id) && !it.id.startsWith('SYS_') && it.kategoriUtama !== ('SystemRegistry' as any));
 
     // Enrich with fileDataUrl from memory cache if available
-    return validItems.map(item => {
+    _rawArsipCache = validItems.map(item => {
       if (fileBlobCache.has(item.id)) {
         return { ...item, fileDataUrl: fileBlobCache.get(item.id) };
       }
       return item;
     });
+    return _rawArsipCache;
   } catch {
-    return [];
+    _rawArsipCache = [];
+    return _rawArsipCache;
   }
 }
 
