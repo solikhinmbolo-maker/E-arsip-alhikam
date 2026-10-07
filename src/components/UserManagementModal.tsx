@@ -442,9 +442,13 @@ export default function UserManagementModal({
     window.dispatchEvent(new Event('storage'));
 
     if (supaRes.success) {
-      setMessage({ type: 'success', text: `✓ Akun ${cleanName} berhasil disimpan dan langsung masuk ke tabel Supabase!` });
+      const msg = `✓ Akun ${cleanName} berhasil disimpan dan masuk ke database!`;
+      setMessage({ type: 'success', text: msg });
+      window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
     } else {
+      const msg = `✓ Akun ${cleanName} berhasil disimpan`;
       setMessage({ type: 'error', text: `Pemberitahuan: Akun tersimpan di aplikasi (Notice Supabase: ${supaRes.error || 'cek koneksi'})` });
+      window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: msg } }));
     }
 
     setTimeout(() => {
@@ -479,7 +483,9 @@ export default function UserManagementModal({
       status: 'WARNING'
     });
 
-    setMessage({ type: 'success', text: `Akun ${user.name} berhasil dihapus dari sistem.` });
+    const delMsg = `✓ Akun ${user.name} berhasil dihapus dari sistem.`;
+    setMessage({ type: 'success', text: delMsg });
+    window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: delMsg } }));
     setTimeout(() => setMessage(null), 3000);
   };
 

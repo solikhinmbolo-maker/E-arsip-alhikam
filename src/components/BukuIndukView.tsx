@@ -462,7 +462,12 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
       setSiswaList(updatedList);
       setIsSaving(false);
       setShowAddModal(false);
-      setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data siswa ke Master Data!`);
+      const successText = `✓ Berhasil menyimpan ${validRows.length} data siswa ke Master Data!`;
+      setSaveSuccessMsg(successText);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: successText } }));
+        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+      }
       setTimeout(() => setSaveSuccessMsg(''), 4500);
     } else {
       const validRows = batchGuruRows.filter(r => r.nama.trim());
@@ -489,12 +494,13 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
       setGuruList(updatedList);
       setIsSaving(false);
       setShowAddModal(false);
-      setSaveSuccessMsg(`✓ Berhasil menyimpan ${validRows.length} data guru/tendik ke Master Data!`);
+      const successText = `✓ Berhasil menyimpan ${validRows.length} data guru/tendik ke Master Data!`;
+      setSaveSuccessMsg(successText);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: successText } }));
+        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+      }
       setTimeout(() => setSaveSuccessMsg(''), 4500);
-    }
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
     }
   };
 
@@ -506,6 +512,10 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
       } else {
         const updated = await deleteMasterGuru(id);
         setGuruList(updated);
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('earsip:notify', { detail: { message: `✓ Berhasil menghapus ${nama} dari Master Data` } }));
+        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
       }
     }
   };

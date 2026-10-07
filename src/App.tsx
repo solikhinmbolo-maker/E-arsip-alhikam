@@ -145,8 +145,32 @@ export default function App() {
   // Session expired notice message
   const [sessionExpiredNotice, setSessionExpiredNotice] = useState<string>('');
 
-  // Successful login notice message
-  const [loginNotice, setLoginNotice] = useState<string>('');
+  // Global action notification message (Login, Edit, Tambah Siswa, Upload, Sync, dll)
+  const [globalNotice, setGlobalNotice] = useState<string>('');
+  const noticeTimerRef = useRef<any>(null);
+
+  const showNotification = (msg: string, duration = 4500) => {
+    if (!msg) return;
+    setGlobalNotice(msg);
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => {
+      setGlobalNotice('');
+    }, duration);
+  };
+
+  // Listen for global notification events from any component
+  useEffect(() => {
+    const handleGlobalNotify = (e: any) => {
+      if (e.detail?.message) {
+        showNotification(e.detail.message, e.detail.duration || 4500);
+      }
+    };
+    window.addEventListener('earsip:notify', handleGlobalNotify);
+    return () => window.removeEventListener('earsip:notify', handleGlobalNotify);
+  }, []);
+
+  // Logout loading transition state
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
   // Auth state: Default MUST LOGIN FIRST (null) unless there is a fresh session verified within 30 min
   const [currentUser, setCurrentUser] = useState<{ email: string; name: string; role: string; avatarUrl?: string } | null>(() => {
@@ -1130,10 +1154,7 @@ function doGet(e) {
     setActivePage('dashboard');
 
     // Show smooth login notice for 4.5 seconds
-    setLoginNotice(`Selamat saudara ${user.name}, Anda berhasil login sebagai ${user.role}`);
-    setTimeout(() => {
-      setLoginNotice('');
-    }, 4500);
+    showNotification(`Selamat saudara ${user.name}, Anda berhasil login sebagai ${user.role}`);
 
     // KETIKA LOGIN: LANGSUNG TARIK SELURUH DATA TERBARU DARI SERVER SUPABASE CLOUD
     try {
@@ -1167,13 +1188,20 @@ function doGet(e) {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setShowLogoutModal(false);
+    setMobileProfileSheetOpen(false);
+
+    // Smooth loading transition
+    await new Promise(resolve => setTimeout(resolve, 1300));
+
     localStorage.removeItem(DB_KEYS.AUTH_USER);
     localStorage.removeItem('EARSIP_LAST_ACTIVE_TIME');
     setCurrentUser(null);
-    setShowLogoutModal(false);
-    setMobileProfileSheetOpen(false);
+    setIsLoggingOut(false);
     setSessionExpiredNotice('');
+    setGlobalNotice('');
   };
 
   // Silky-Smooth Manual Global Refresh (Anti-Stutter, In-Place Reactive Transition)
@@ -1558,12 +1586,12 @@ function doGet(e) {
             </div>
           </div>
 
-          {/* Centered Login Notification on Desktop */}
+          {/* Centered Notification on Desktop */}
           <div className="flex-1 flex justify-center px-4">
-            {loginNotice && (
-              <div className="flex items-center gap-2.5 px-5 py-2 rounded-full bg-blue-500/15 border border-cyan-400/40 text-cyan-300 text-xs font-bold animate-fadeIn shadow-lg shadow-cyan-500/5 max-w-md truncate backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
-                <span>{loginNotice}</span>
+            {globalNotice && (
+              <div className="flex items-center gap-2 px-4 py-1 text-cyan-300 text-xs font-semibold animate-fadeIn max-w-md truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
+                <span>{globalNotice}</span>
               </div>
             )}
           </div>
@@ -1610,17 +1638,19 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (EXPANDED UPWARD TO COVER STATUS BAR / SAFE AREA) */}
         {/* ============================================================== */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-4 sm:px-6 pt-[max(1.25rem,env(safe-area-inset-top))] pb-3.5 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)] overflow-hidden">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-4 sm:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)] overflow-hidden">
           
-          {/* Subtle Ambient Gradient Light Reflections (No stiff solid color) */}
+          {/* Subtle Ambient Gradient Light Reflections */}
           <div className="absolute -top-10 left-1/4 w-48 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-8 right-12 w-40 h-20 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
 
-          {/* Centered Login Notification on Mobile */}
-          {loginNotice && (
-            <div className="absolute top-[max(1.25rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 z-50 bg-[#080E21]/95 border border-cyan-400/60 text-cyan-300 text-[10px] sm:text-xs font-bold px-3.5 py-1.5 rounded-full shadow-2xl flex items-center gap-1.5 animate-fadeIn max-w-[90vw] text-center backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping flex-shrink-0" />
-              <span className="truncate">{loginNotice}</span>
+          {/* TOPMOST NOTIFICATION (MOBILE): No background, pure blue text, top-most position above apk name, small font */}
+          {globalNotice && (
+            <div className="w-full pb-1 -mt-0.5 text-center animate-fadeIn pointer-events-none flex items-center justify-center">
+              <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-blue-400 tracking-wide truncate max-w-full px-2 flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
+                <span>{globalNotice}</span>
+              </p>
             </div>
           )}
 
@@ -2038,6 +2068,29 @@ function doGet(e) {
                 Ya, Keluar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FULL-SCREEN LOGOUT LOADING OVERLAY (DESKTOP & MOBILE) */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100000] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md text-white animate-fadeIn">
+          <div className="relative mb-5 flex items-center justify-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-slate-700 border-t-cyan-400 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Power className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400 animate-pulse" />
+            </div>
+          </div>
+          <h3 className="text-base sm:text-lg font-bold text-white tracking-wide">
+            Sedang Keluar dari Sistem...
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Menutup sesi akun dengan aman
+          </p>
+          <div className="mt-4 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce [animation-delay:-0.3s]" />
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce [animation-delay:-0.15s]" />
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" />
           </div>
         </div>
       )}

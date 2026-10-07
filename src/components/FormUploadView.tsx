@@ -473,6 +473,11 @@ export default function FormUploadView({
     });
     setShowSuccessModal(true);
     setShowDuplicateModal(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('earsip:notify', { 
+        detail: { message: `✓ Berhasil mengunggah berkas ${namaSubjek} (${kategori})` } 
+      }));
+    }
 
     // Reset
     setSelectedFile(null);
@@ -590,6 +595,11 @@ export default function FormUploadView({
     setSuccessInfo({ count, name: namaSubjek });
     setShowSuccessModal(true);
     setShowKolektifDuplicateModal(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('earsip:notify', { 
+        detail: { message: `✓ Berhasil mengunggah ${count} berkas kolektif ${namaSubjek}` } 
+      }));
+    }
 
     // Reset
     setKolektifFiles({});
