@@ -8,7 +8,8 @@ import {
   sanitizeUserStorageKey, 
   getPublicStorageAvatarUrl,
   sanitizeAndReconcileMasterData,
-  getStoredSyncConfig
+  getStoredSyncConfig,
+  invalidateMasterCache
 } from './data/mockDatabase';
 
 export interface SupabaseConfig {
@@ -945,6 +946,14 @@ export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
 
     if (misplacedStudentIdsInGuruTable.length > 0) {
       client.from('master_guru').delete().in('id', misplacedStudentIdsInGuruTable).then(() => {});
+    }
+
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('EARSIP_MASTER_SISWA', JSON.stringify(cleanSiswa));
+        localStorage.setItem('EARSIP_MASTER_GURU', JSON.stringify(cleanGuru));
+        invalidateMasterCache();
+      } catch {}
     }
 
     return { siswa: cleanSiswa, guru: cleanGuru };

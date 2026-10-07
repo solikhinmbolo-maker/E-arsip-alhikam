@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Chart, registerables } from 'chart.js';
 import { getStoredArsip, getStoredMasterSiswa, getStoredMasterGuru } from '../data/mockDatabase';
-import { getSupabaseClient } from '../supabase';
+import { getSupabaseClient, fetchSanitizedMasterDataFromSupabase } from '../supabase';
 
 Chart.register(...registerables);
 
@@ -50,6 +50,13 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   const [dataVersion, setDataVersion] = useState(0);
 
   useEffect(() => {
+    // Always sync fresh master data from Supabase Cloud on mount
+    fetchSanitizedMasterDataFromSupabase().then((data) => {
+      if (data) {
+        setDataVersion(v => v + 1);
+      }
+    }).catch(() => {});
+
     const handleUpdate = () => setDataVersion(v => v + 1);
     window.addEventListener('earsip:cloud-synced', handleUpdate);
     return () => window.removeEventListener('earsip:cloud-synced', handleUpdate);
@@ -180,12 +187,28 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   const totalStorageDisplay = '20.0 GB';
   const storagePercentage = Math.max(0.1, Math.min(100, (activeUsedMB / TOTAL_STORAGE_MB) * 100));
 
-  // Siswa per angkatan
+  // Siswa per angkatan (Normalized year extraction)
+  const cleanYear = (raw: any): string => {
+    if (!raw) return 'Lainnya';
+    const str = String(raw).trim();
+    if (!str || str === '-') return 'Lainnya';
+    const match = str.match(/\d{4}/);
+    if (match) return match[0];
+    return str;
+  };
+
   const siswaPerTahun: { [th: string]: number } = {};
   allSiswa.forEach(s => {
-    siswaPerTahun[s.tahun] = (siswaPerTahun[s.tahun] || 0) + 1;
+    const yr = cleanYear(s.tahun);
+    siswaPerTahun[yr] = (siswaPerTahun[yr] || 0) + 1;
   });
-  const angkatanLabels = Object.keys(siswaPerTahun).sort();
+
+  const angkatanLabels = Object.keys(siswaPerTahun).sort((a, b) => {
+    if (a === 'Lainnya') return 1;
+    if (b === 'Lainnya') return -1;
+    return a.localeCompare(b, undefined, { numeric: true });
+  });
+
   const angkatanData = angkatanLabels.map(th => siswaPerTahun[th]);
 
   // Donut chart colors
@@ -257,7 +280,11 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     instanceRef.current = new Chart(canvas, {
       type: 'bar',
       data: {
-        labels: angkatanLabels.map(th => `Th ${th}`),
+        labels: angkatanLabels.map(th => {
+          if (th === 'Lainnya') return 'Tdk Diumumkan';
+          if (th.startsWith('Th')) return th;
+          return `Th ${th}`;
+        }),
         datasets: [{
           label: 'Jumlah Siswa',
           data: angkatanData,
@@ -341,7 +368,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         desktopBarChart.current = null;
       }
     };
-  }, [mobileChartTab, effectiveVersion]);
+  }, [mobileChartTab, effectiveVersion, allSiswa, allArsip]);
 
   return (
     <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full overflow-x-hidden">
