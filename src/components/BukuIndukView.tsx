@@ -42,7 +42,13 @@ import {
   getActiveKategoriSiswa,
   getActiveKategoriGuru
 } from '../data/mockDatabase';
-import { clearMasterSiswaInSupabase, clearMasterGuruInSupabase, fetchSanitizedMasterDataFromSupabase } from '../supabase';
+import { 
+  clearMasterSiswaInSupabase, 
+  clearMasterGuruInSupabase, 
+  fetchSanitizedMasterDataFromSupabase,
+  syncAllMasterSiswaToSupabase,
+  syncAllMasterGuruToSupabase
+} from '../supabase';
 
 interface BukuIndukViewProps {
   onNavigateToArsip: (sub: 'Arsip Siswa' | 'Arsip Guru', namaSubjek: string) => void;
@@ -459,6 +465,9 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
         updatedList = saveMasterSiswa(newItem);
       });
 
+      // Direct Bulk Sync to Supabase Cloud Server
+      await syncAllMasterSiswaToSupabase(updatedList).catch(() => {});
+
       setSiswaList(updatedList);
       setIsSaving(false);
       setShowAddModal(false);
@@ -490,6 +499,9 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
         };
         updatedList = saveMasterGuru(newItem);
       });
+
+      // Direct Bulk Sync to Supabase Cloud Server
+      await syncAllMasterGuruToSupabase(updatedList).catch(() => {});
 
       setGuruList(updatedList);
       setIsSaving(false);

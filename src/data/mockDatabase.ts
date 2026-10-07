@@ -11,6 +11,8 @@ import {
   deleteArsipFromSupabase,
   saveSiswaToSupabase,
   saveGuruToSupabase,
+  syncAllMasterSiswaToSupabase,
+  syncAllMasterGuruToSupabase,
   deleteMasterSiswaFromSupabase,
   deleteMasterGuruFromSupabase,
   saveAuditLogToSupabase,
@@ -557,8 +559,16 @@ export function getStoredMasterSiswa(): MasterSiswaItem[] {
   return getSanitizedMasterData().siswa;
 }
 
+export function saveStoredMasterSiswa(items: MasterSiswaItem[]) {
+  safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(items));
+}
+
 export function getStoredMasterGuru(): MasterGuruItem[] {
   return getSanitizedMasterData().guru;
+}
+
+export function saveStoredMasterGuru(items: MasterGuruItem[]) {
+  safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(items));
 }
 
 // Safe LocalStorage setter with Quota Protection & automatic trimming
@@ -644,6 +654,10 @@ export function getAllRawArsip(): ArsipItem[] {
 
 export function getStoredArsip(): ArsipItem[] {
   return getAllRawArsip().filter(item => !item.isTrash);
+}
+
+export function saveStoredArsip(items: ArsipItem[]) {
+  safeSetItem(DB_KEYS.ARSIP_ITEMS, JSON.stringify(items));
 }
 
 export function getTrashArsip(): ArsipItem[] {
@@ -961,7 +975,17 @@ export function saveMasterSiswa(item: MasterSiswaItem): MasterSiswaItem[] {
     updated = [item, ...current];
   }
   safeSetItem(DB_KEYS.MASTER_SISWA, JSON.stringify(updated));
-  saveSiswaToSupabase(item).catch(() => {});
+
+  // Sync item and entire list directly to Supabase Cloud Server
+  saveSiswaToSupabase(item).then(() => {
+    syncAllMasterSiswaToSupabase(updated).catch(() => {});
+  }).catch(() => {
+    syncAllMasterSiswaToSupabase(updated).catch(() => {});
+  });
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+  }
 
   addAuditLog({
     aksi: 'UPDATE',
@@ -1007,7 +1031,17 @@ export function saveMasterGuru(item: MasterGuruItem): MasterGuruItem[] {
     updated = [item, ...current];
   }
   safeSetItem(DB_KEYS.MASTER_GURU, JSON.stringify(updated));
-  saveGuruToSupabase(item).catch(() => {});
+
+  // Sync item and entire list directly to Supabase Cloud Server
+  saveGuruToSupabase(item).then(() => {
+    syncAllMasterGuruToSupabase(updated).catch(() => {});
+  }).catch(() => {
+    syncAllMasterGuruToSupabase(updated).catch(() => {});
+  });
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+  }
 
   addAuditLog({
     aksi: 'UPDATE',

@@ -44,9 +44,12 @@ import {
   testGoogleWebhook, 
   getAllRawArsip, 
   getStoredArsip, 
+  saveStoredArsip,
   getTrashArsip, 
   getStoredMasterSiswa, 
+  saveStoredMasterSiswa,
   getStoredMasterGuru,
+  saveStoredMasterGuru,
   restoreSampleArsipData,
   renameKategoriCascade,
   addAuditLog,
@@ -62,8 +65,13 @@ import {
   SUPABASE_SQL_SCHEMA, 
   sanitizeSupabaseUrl, 
   syncAllArsipToSupabase, 
+  syncAllMasterSiswaToSupabase,
+  syncAllMasterGuruToSupabase,
+  syncAllUsersToSupabase,
   syncConfigToServer,
   fetchArsipFromSupabase,
+  fetchSanitizedMasterDataFromSupabase,
+  fetchUsersFromSupabase,
   SupabaseConfig
 } from '../supabase';
 import { getStoredUserList, saveStoredUserList } from './UserManagementModal';
@@ -392,25 +400,98 @@ export default function SettingsView({
     setIsTestingStorage(false);
   };
 
-  const handleSyncLocalToSupabase = async () => {
+  const handleSyncLocalToSupabase = async (mode: 'all' | 'master' | 'arsip' = 'all') => {
     setIsSyncingToSupabase(true);
-    setSupabaseTestStatus('Mengunggah berkas ke Supabase Cloud...');
-    const localItems = getAllRawArsip();
-    const resArsip = await syncAllArsipToSupabase(localItems);
-    setSupabaseTestStatus(resArsip.success ? `✓ Berhasil menyinkronkan ${resArsip.count} arsip ke Supabase!` : `Gagal sinkronisasi: ${resArsip.error || 'Terjadi kesalahan'}`);
-    setIsSyncingToSupabase(false);
+    try {
+      if (mode === 'master') {
+        setSupabaseTestStatus('Mengunggah Database Master (Siswa & Guru) ke Supabase Cloud...');
+        const siswa = getStoredMasterSiswa();
+        const guru = getStoredMasterGuru();
+        const resSiswa = await syncAllMasterSiswaToSupabase(siswa);
+        const resGuru = await syncAllMasterGuruToSupabase(guru);
+        const msg = `✓ Berhasil menyinkronkan ${resSiswa.count} data siswa & ${resGuru.count} data guru ke Supabase Cloud!`;
+        setSupabaseTestStatus(msg);
+        showNotification(`✓ Berhasil mengunggah ${resSiswa.count} siswa & ${resGuru.count} guru`);
+        setIsSyncingToSupabase(false);
+        return;
+      }
+
+      if (mode === 'arsip') {
+        setSupabaseTestStatus('Mengunggah Database Arsip Dokumen ke Supabase Cloud...');
+        const localItems = getAllRawArsip();
+        const resArsip = await syncAllArsipToSupabase(localItems);
+        const msg = resArsip.success 
+          ? `✓ Berhasil menyinkronkan ${resArsip.count} data arsip ke Supabase Cloud!`
+          : `Gagal sinkronisasi arsip: ${resArsip.error || 'Terjadi kesalahan'}`;
+        setSupabaseTestStatus(msg);
+        showNotification(msg);
+        setIsSyncingToSupabase(false);
+        return;
+      }
+
+      // Mode 'all': Sync everything (Siswa, Guru, Arsip, Users)
+      setSupabaseTestStatus('Mengunggah SELURUH Database (Siswa, Guru, Arsip & Pengguna) ke Supabase Cloud...');
+      const localSiswa = getStoredMasterSiswa();
+      const localGuru = getStoredMasterGuru();
+      const localArsip = getAllRawArsip();
+      const localUsers = getStoredUserList();
+
+      const resSiswa = await syncAllMasterSiswaToSupabase(localSiswa);
+      const resGuru = await syncAllMasterGuruToSupabase(localGuru);
+      const resArsip = await syncAllArsipToSupabase(localArsip);
+      const resUsers = await syncAllUsersToSupabase(localUsers);
+
+      const statusMsg = `✓ Berhasil menyinkronkan Seluruh Data ke Supabase Cloud: ${resSiswa.count} Siswa, ${resGuru.count} Guru, ${resArsip.count} Arsip & ${resUsers.count} Akun Pengguna!`;
+      setSupabaseTestStatus(statusMsg);
+      showNotification(`✓ Sinkronisasi Cloud Berhasil! (${resSiswa.count} siswa, ${resGuru.count} guru, ${resArsip.count} arsip)`);
+    } catch (err: any) {
+      setSupabaseTestStatus(`Gagal sinkronisasi: ${err?.message || 'Terjadi kesalahan'}`);
+    } finally {
+      setIsSyncingToSupabase(false);
+    }
   };
 
   const handlePullFromSupabase = async () => {
     setIsPullingFromSupabase(true);
-    setSupabaseTestStatus('Menarik pembaruan data dari Supabase Cloud...');
+    setSupabaseTestStatus('Menarik seluruh pembaruan data dari Supabase Cloud...');
     try {
+      let siswaCount = 0;
+      let guruCount = 0;
+      let arsipCount = 0;
+      let userCount = 0;
+
+      // 1. Pull Master Data (Siswa & Guru)
+      const masterCloud = await fetchSanitizedMasterDataFromSupabase();
+      if (masterCloud && (masterCloud.siswa.length > 0 || masterCloud.guru.length > 0)) {
+        if (masterCloud.siswa.length > 0) {
+          saveStoredMasterSiswa(masterCloud.siswa);
+          siswaCount = masterCloud.siswa.length;
+        }
+        if (masterCloud.guru.length > 0) {
+          saveStoredMasterGuru(masterCloud.guru);
+          guruCount = masterCloud.guru.length;
+        }
+      }
+
+      // 2. Pull Arsip
       const cloudArsip = await fetchArsipFromSupabase();
       if (cloudArsip && cloudArsip.length > 0) {
-        setSupabaseTestStatus(`✓ Berhasil memuat ${cloudArsip.length} data arsip dari Cloud!`);
-        showNotification(`✓ Berhasil menarik ${cloudArsip.length} arsip dari Cloud`);
-      } else {
-        setSupabaseTestStatus('ℹ️ Belum ada data baru di cloud.');
+        saveStoredArsip(cloudArsip);
+        arsipCount = cloudArsip.length;
+      }
+
+      // 3. Pull Users
+      const cloudUsers = await fetchUsersFromSupabase();
+      if (cloudUsers && cloudUsers.length > 0) {
+        saveStoredUserList(cloudUsers);
+        userCount = cloudUsers.length;
+      }
+
+      const totalMsg = `✓ Berhasil memuat dari Cloud: ${siswaCount} Siswa, ${guruCount} Guru, ${arsipCount} Arsip, ${userCount} Akun!`;
+      setSupabaseTestStatus(totalMsg);
+      showNotification(totalMsg);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
       }
     } catch (err: any) {
       setSupabaseTestStatus(`Gagal menarik data: ${err?.message || 'Koneksi terputus'}`);
@@ -653,7 +734,7 @@ export default function SettingsView({
     { id: 'preferensi', label: 'Tampilan & Sistem', shortLabel: 'Tampilan', icon: Palette },
     { id: 'kategori', label: 'Kategori & Dokumen', shortLabel: 'Kategori', icon: FileText },
     { id: 'legalisir', label: 'Legalisir & Stempel', shortLabel: 'Legalisir', icon: Stamp },
-    { id: 'cloud', label: 'Server & Cloud', shortLabel: 'Server Cloud', icon: Cloud, badge: 'Pro' },
+    { id: 'cloud', label: 'Server & Cloud (Supabase)', shortLabel: 'Supabase Cloud', icon: Cloud, badge: 'Pro' },
     { id: 'backup', label: 'Cadangan & Pemulihan', shortLabel: 'Backup', icon: Database },
     { id: 'keamanan', label: 'Keamanan & Sesi', shortLabel: 'Keamanan', icon: Shield },
     { id: 'diagnostik', label: 'Diagnostik Memori', shortLabel: 'Diagnostik', icon: Activity },
@@ -1252,7 +1333,7 @@ export default function SettingsView({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-sm sm:text-base font-bold text-white leading-tight">
-                    Supabase PostgreSQL Cloud
+                    Integrasi Supabase Cloud (PostgreSQL)
                   </h3>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] sm:text-[10px] font-mono font-bold flex items-center gap-1 flex-shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1318,12 +1399,24 @@ export default function SettingsView({
 
                   <button
                     type="button"
-                    onClick={handleSyncLocalToSupabase}
+                    onClick={() => handleSyncLocalToSupabase('master')}
                     disabled={isSyncingToSupabase}
                     className="w-full sm:w-auto px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    title="Unggah Master Data Siswa & Guru ke Supabase"
                   >
                     <Upload className={`w-3.5 h-3.5 ${isSyncingToSupabase ? 'animate-spin' : ''}`} />
-                    <span>{isSyncingToSupabase ? 'Sinkron...' : '📤 Upload Cloud'}</span>
+                    <span>{isSyncingToSupabase ? 'Proses...' : '👥 Upload Master (Siswa/Guru)'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSyncLocalToSupabase('all')}
+                    disabled={isSyncingToSupabase}
+                    className="w-full sm:w-auto px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    title="Unggah Seluruh Data (Siswa, Guru, Arsip, Akun) ke Supabase"
+                  >
+                    <Upload className={`w-3.5 h-3.5 ${isSyncingToSupabase ? 'animate-spin' : ''}`} />
+                    <span>{isSyncingToSupabase ? 'Proses...' : '⚡ Upload Semua Database'}</span>
                   </button>
 
                   <button
@@ -1333,7 +1426,7 @@ export default function SettingsView({
                     className="w-full sm:w-auto px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Download className={`w-3.5 h-3.5 ${isPullingFromSupabase ? 'animate-spin' : ''}`} />
-                    <span>{isPullingFromSupabase ? 'Menarik...' : '📥 Tarik Data'}</span>
+                    <span>{isPullingFromSupabase ? 'Menarik...' : '📥 Tarik Semua Data'}</span>
                   </button>
                 </div>
 

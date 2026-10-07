@@ -260,19 +260,33 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
   if (!client) return null;
 
   try {
-    const { data, error } = await client
-      .from('arsip')
-      .select('*')
-      .order('created_at', { ascending: false });
+    let allData: any[] = [];
+    let from = 0;
+    const limit = 1000;
+    let hasMore = true;
 
-    if (error) {
-      console.warn('Supabase fetch error:', error);
-      return null;
+    while (hasMore) {
+      const { data, error } = await client
+        .from('arsip')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(from, from + limit - 1);
+
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+      } else {
+        allData.push(...data);
+        if (data.length < limit) {
+          hasMore = false;
+        } else {
+          from += limit;
+        }
+      }
     }
 
-    if (!Array.isArray(data)) return [];
+    if (allData.length === 0) return [];
 
-    return data
+    return allData
       .filter((row: any) => !row.id.startsWith('SYS_') && row.kategori_utama !== 'SystemRegistry')
       .map((row: any) => ({
         id: row.id,
@@ -365,16 +379,23 @@ export async function syncAllArsipToSupabase(items: ArsipItem[]): Promise<{ succ
       updated_at: new Date().toISOString()
     }));
 
-    const { error } = await client
-      .from('arsip')
-      .upsert(rows, { onConflict: 'id' });
+    const CHUNK_SIZE = 100;
+    let syncedCount = 0;
 
-    if (error) {
-      console.error('Supabase bulk sync error:', error);
-      return { success: false, count: 0, error: error.message };
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const { error } = await client
+        .from('arsip')
+        .upsert(chunk, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Supabase bulk sync error:', error);
+        return { success: false, count: syncedCount, error: error.message };
+      }
+      syncedCount += chunk.length;
     }
 
-    return { success: true, count: rows.length };
+    return { success: true, count: syncedCount };
   } catch (err: any) {
     console.error('Supabase bulk sync exception:', err);
     return { success: false, count: 0, error: err?.message };
@@ -844,15 +865,22 @@ export async function syncAllMasterSiswaToSupabase(items: MasterSiswaItem[]): Pr
       angkatan: s.tahun || ''
     }));
 
-    const { error } = await client
-      .from('master_siswa')
-      .upsert(rows, { onConflict: 'id' });
+    const CHUNK_SIZE = 100;
+    let syncedCount = 0;
 
-    if (error) {
-      console.error('Supabase bulk sync siswa error:', error);
-      return { success: false, count: 0, error: error.message };
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const { error } = await client
+        .from('master_siswa')
+        .upsert(chunk, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Supabase bulk sync siswa error:', error);
+        return { success: false, count: syncedCount, error: error.message };
+      }
+      syncedCount += chunk.length;
     }
-    return { success: true, count: rows.length };
+    return { success: true, count: syncedCount };
   } catch (err: any) {
     console.error('Supabase bulk sync siswa exception:', err);
     return { success: false, count: 0, error: err?.message };
@@ -878,15 +906,22 @@ export async function syncAllMasterGuruToSupabase(items: MasterGuruItem[]): Prom
       jabatan: g.jabatan || ''
     }));
 
-    const { error } = await client
-      .from('master_guru')
-      .upsert(rows, { onConflict: 'id' });
+    const CHUNK_SIZE = 100;
+    let syncedCount = 0;
 
-    if (error) {
-      console.error('Supabase bulk sync guru error:', error);
-      return { success: false, count: 0, error: error.message };
+    for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + CHUNK_SIZE);
+      const { error } = await client
+        .from('master_guru')
+        .upsert(chunk, { onConflict: 'id' });
+
+      if (error) {
+        console.error('Supabase bulk sync guru error:', error);
+        return { success: false, count: syncedCount, error: error.message };
+      }
+      syncedCount += chunk.length;
     }
-    return { success: true, count: rows.length };
+    return { success: true, count: syncedCount };
   } catch (err: any) {
     console.error('Supabase bulk sync guru exception:', err);
     return { success: false, count: 0, error: err?.message };
@@ -900,9 +935,31 @@ export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
   if (!client) return null;
 
   try {
-    const [{ data: rawSiswaData }, { data: rawGuruData }] = await Promise.all([
-      client.from('master_siswa').select('*'),
-      client.from('master_guru').select('*')
+    // Pagination helper to fetch all rows beyond default REST API limits
+    const fetchAllRows = async (tableName: string) => {
+      let allRows: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await client.from(tableName).select('*').range(from, from + limit - 1);
+        if (error || !data || data.length === 0) {
+          hasMore = false;
+        } else {
+          allRows.push(...data);
+          if (data.length < limit) {
+            hasMore = false;
+          } else {
+            from += limit;
+          }
+        }
+      }
+      return allRows;
+    };
+
+    const [rawSiswaData, rawGuruData] = await Promise.all([
+      fetchAllRows('master_siswa'),
+      fetchAllRows('master_guru')
     ]);
 
     const rawSiswaList: MasterSiswaItem[] = Array.isArray(rawSiswaData)
@@ -948,15 +1005,56 @@ export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
       client.from('master_guru').delete().in('id', misplacedStudentIdsInGuruTable).then(() => {});
     }
 
+    // Merge remote data with existing localStorage data so no local student/teacher records are lost
+    let mergedSiswa = cleanSiswa;
+    let mergedGuru = cleanGuru;
+
     if (typeof localStorage !== 'undefined') {
       try {
-        localStorage.setItem('EARSIP_MASTER_SISWA', JSON.stringify(cleanSiswa));
-        localStorage.setItem('EARSIP_MASTER_GURU', JSON.stringify(cleanGuru));
+        const localSiswaRaw = localStorage.getItem('EARSIP_MASTER_SISWA');
+        const localGuruRaw = localStorage.getItem('EARSIP_MASTER_GURU');
+        const localSiswaList: MasterSiswaItem[] = localSiswaRaw && Array.isArray(JSON.parse(localSiswaRaw)) ? JSON.parse(localSiswaRaw) : [];
+        const localGuruList: MasterGuruItem[] = localGuruRaw && Array.isArray(JSON.parse(localGuruRaw)) ? JSON.parse(localGuruRaw) : [];
+
+        const siswaMap = new Map<string, MasterSiswaItem>();
+        cleanSiswa.forEach(s => { if (s?.id || s?.nama) siswaMap.set(s.id || s.nama.trim().toLowerCase(), s); });
+        localSiswaList.forEach(s => {
+          if (!s?.id && !s?.nama) return;
+          const key = s.id || s.nama.trim().toLowerCase();
+          if (!siswaMap.has(key)) {
+            siswaMap.set(key, s);
+          }
+        });
+        mergedSiswa = Array.from(siswaMap.values());
+
+        const guruMap = new Map<string, MasterGuruItem>();
+        cleanGuru.forEach(g => { if (g?.id || g?.nama) guruMap.set(g.id || g.nama.trim().toLowerCase(), g); });
+        localGuruList.forEach(g => {
+          if (!g?.id && !g?.nama) return;
+          const key = g.id || g.nama.trim().toLowerCase();
+          if (!guruMap.has(key)) {
+            guruMap.set(key, g);
+          }
+        });
+        mergedGuru = Array.from(guruMap.values());
+
+        localStorage.setItem('EARSIP_MASTER_SISWA', JSON.stringify(mergedSiswa));
+        localStorage.setItem('EARSIP_MASTER_GURU', JSON.stringify(mergedGuru));
         invalidateMasterCache();
-      } catch {}
+
+        // Auto-push any local records missing in Supabase Cloud
+        if (mergedSiswa.length > cleanSiswa.length) {
+          syncAllMasterSiswaToSupabase(mergedSiswa).catch(() => {});
+        }
+        if (mergedGuru.length > cleanGuru.length) {
+          syncAllMasterGuruToSupabase(mergedGuru).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('Error merging local & Supabase master data:', err);
+      }
     }
 
-    return { siswa: cleanSiswa, guru: cleanGuru };
+    return { siswa: mergedSiswa, guru: mergedGuru };
   } catch (err) {
     console.warn('Supabase fetch sanitized master exception:', err);
     return null;
