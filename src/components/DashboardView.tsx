@@ -260,10 +260,10 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           responsive: true,
           maintainAspectRatio: false,
           animation: {
-            animateRotate: true,
+            animateRotate: false, // Smooth vertical scale-in without side rotation
             animateScale: true,
-            duration: 3600, // Ultra-gentle slow-motion 3.6s rotation & scale-in
-            easing: 'easeOutCubic'
+            duration: 3200, // Silky slow-motion 3.2s scale-in from center/bottom
+            easing: 'easeOutQuart'
           },
           cutout: '72%',
           plugins: {
@@ -326,12 +326,23 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: {
-            duration: 3800, // Ultra-gentle slow-motion 3.8s rise
-            easing: 'easeOutQuint',
-            delay: (ctx: any) => {
-              if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-              return ctx.dataIndex * 220; // Silky slow-mo cascading bar rise
+          animations: {
+            y: {
+              duration: 2600,
+              easing: 'easeOutQuart',
+              from: (ctx: any) => {
+                if (ctx.type === 'data') {
+                  const scale = ctx.chart.scales.y;
+                  return scale ? scale.getPixelForValue(0) : undefined;
+                }
+              },
+              delay: (ctx: any) => {
+                if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+                return ctx.dataIndex * 160; // Smooth cascading vertical rise from bottom
+              }
+            },
+            x: {
+              duration: 0 // Absolutely no horizontal movement or side slide
             }
           },
           plugins: {
@@ -701,7 +712,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         </div>
 
         {/* Mobile Donut Chart Container */}
-        <div className={mobileChartTab === 'kategori' ? 'block' : 'hidden'}>
+        <div key="mobile-kategori" className={`animate-slide-up ${mobileChartTab === 'kategori' ? 'block' : 'hidden'}`}>
           <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Distribusi Kategori</h4>
@@ -731,7 +742,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         </div>
 
         {/* Mobile Bar Chart Container */}
-        <div className={mobileChartTab === 'siswa' ? 'block' : 'hidden'}>
+        <div key="mobile-siswa" className={`animate-slide-up ${mobileChartTab === 'siswa' ? 'block' : 'hidden'}`}>
           <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Grafik Siswa per Angkatan</h4>
@@ -745,7 +756,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       </div>
 
       {/* Desktop-Only 2 Columns Charts (Sejajar Sesuai Desain Awal) */}
-      <section className="hidden sm:grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section className="hidden sm:grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up">
         
         {/* Kotak Kiri: Upload per Kategori */}
         <div className="bg-gradient-to-br from-slate-50/90 via-blue-50/30 to-indigo-50/20 rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-200/90 hover:border-slate-300 transition-all flex flex-col justify-between">
