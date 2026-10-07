@@ -173,10 +173,7 @@ export default function FormUploadView({
 
       const distinctTahun = Array.from(new Set(sList.map(s => s.tahun))).sort().reverse();
       setTahunList(distinctTahun);
-
-      if (distinctTahun.length > 0) {
-        setTahun(prev => (prev ? prev : distinctTahun[0]));
-      }
+      // Keep year as selected by user, do not auto-select top year
     };
 
     refreshData();
@@ -367,14 +364,44 @@ export default function FormUploadView({
     });
   };
 
-  // Sound effect
+  // Sound effect with Web Audio API synthesized chime fallback
   const playSuccessSound = () => {
     try {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(() => {});
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+        const now = ctx.currentTime;
+        const notes = [
+          { freq: 523.25, time: now, duration: 0.15 },        // C5
+          { freq: 659.25, time: now + 0.1, duration: 0.2 },   // E5
+          { freq: 783.99, time: now + 0.22, duration: 0.45 }  // G5
+        ];
+
+        notes.forEach(({ freq, time, duration }) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, time);
+
+          gain.gain.setValueAtTime(0.35, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(time);
+          osc.stop(time + duration);
+        });
+      }
     } catch {
-      // safe fallback
+      try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } catch {}
     }
   };
 
@@ -787,11 +814,12 @@ export default function FormUploadView({
                   onChange={(e) => {
                     setTahun(e.target.value);
                     setNamaSubjek('');
+                    setIdentitas('');
                   }}
                   required
                   className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
                 >
-                  <option value="" disabled>-- Pilih Tahun Angkatan --</option>
+                  <option value="">-- Pilih Tahun Terlebih Dahulu --</option>
                   {tahunList.map(t => (
                     <option key={t} value={t}>Angkatan {t}</option>
                   ))}
@@ -919,11 +947,13 @@ export default function FormUploadView({
                   className="w-full px-3.5 py-2.5 sm:py-3 bg-slate-50 hover:bg-white border border-slate-300 rounded-2xl text-xs sm:text-sm text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"
                 >
                   <option value="" disabled>
-                    {filteredSiswaList.length === 0 
-                      ? (namaSearchFilter 
-                          ? `-- Tidak ditemukan siswa bernama "${namaSearchFilter}" di Angkatan ${tahun} --` 
-                          : `-- Belum ada data siswa di angkatan ini (Klik "+ Input Siswa Baru") --`)
-                      : `-- Pilih Nama Siswa --`}
+                    {!tahun 
+                      ? '-- Pilih Tahun Terlebih Dahulu --' 
+                      : (filteredSiswaList.length === 0 
+                          ? (namaSearchFilter 
+                              ? `-- Tidak ditemukan siswa bernama "${namaSearchFilter}" di Angkatan ${tahun} --` 
+                              : `-- Belum ada data siswa di angkatan ini (Klik "+ Input Siswa Baru") --`)
+                          : `-- Pilih Nama Siswa --`)}
                   </option>
                   {filteredSiswaList.map((s: MasterSiswaItem) => (
                     <option key={s.id} value={s.nama}>

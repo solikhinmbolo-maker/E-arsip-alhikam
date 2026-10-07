@@ -262,8 +262,8 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           animation: {
             animateRotate: true,
             animateScale: true,
-            duration: 2500, // Cinematic 2.5s slow-motion rotation & scale-in
-            easing: 'easeOutQuart'
+            duration: 3600, // Ultra-gentle slow-motion 3.6s rotation & scale-in
+            easing: 'easeOutCubic'
           },
           cutout: '72%',
           plugins: {
@@ -327,11 +327,11 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           responsive: true,
           maintainAspectRatio: false,
           animation: {
-            duration: 2600, // Cinematic 2.6s slow-motion rise
-            easing: 'easeOutExpo',
+            duration: 3800, // Ultra-gentle slow-motion 3.8s rise
+            easing: 'easeOutQuint',
             delay: (ctx: any) => {
               if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-              return ctx.dataIndex * 350; // Cascading delay: each bar rises one by one!
+              return ctx.dataIndex * 220; // Silky slow-mo cascading bar rise
             }
           },
           plugins: {
@@ -367,23 +367,28 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       const donutChanged = prevDonutSignature.current !== currentDonutSignature;
       const barChanged = prevBarSignature.current !== currentBarSignature;
 
-      // Mobile Charts
-      if (mobileChartTab === 'kategori' && mobileDonutRef.current) {
+      // Mobile Donut
+      if (mobileDonutRef.current) {
         if (!mobileDonutChart.current || donutChanged) {
           updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
         }
-      } else if (mobileChartTab === 'siswa' && mobileBarRef.current) {
+      }
+
+      // Mobile Bar
+      if (mobileBarRef.current) {
         if (!mobileBarChart.current || barChanged) {
           updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
         }
       }
 
-      // Desktop Charts
+      // Desktop Donut
       if (desktopDonutRef.current) {
         if (!desktopDonutChart.current || donutChanged) {
           updateOrBuildDonutChart(desktopDonutRef.current, desktopDonutChart);
         }
       }
+
+      // Desktop Bar
       if (desktopBarRef.current) {
         if (!desktopBarChart.current || barChanged) {
           updateOrBuildBarChart(desktopBarRef.current, desktopBarChart);
@@ -695,7 +700,8 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           </button>
         </div>
 
-        {mobileChartTab === 'kategori' ? (
+        {/* Mobile Donut Chart Container */}
+        <div className={mobileChartTab === 'kategori' ? 'block' : 'hidden'}>
           <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Distribusi Kategori</h4>
@@ -722,7 +728,10 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
               })}
             </div>
           </div>
-        ) : (
+        </div>
+
+        {/* Mobile Bar Chart Container */}
+        <div className={mobileChartTab === 'siswa' ? 'block' : 'hidden'}>
           <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Grafik Siswa per Angkatan</h4>
@@ -732,7 +741,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
               <canvas ref={mobileBarRef} />
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Desktop-Only 2 Columns Charts (Sejajar Sesuai Desain Awal) */}

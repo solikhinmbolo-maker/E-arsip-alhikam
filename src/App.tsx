@@ -639,6 +639,18 @@ export default function App() {
     const unsubSupabaseArsip = subscribeToSupabaseArsip((supabaseItems) => {
       try {
         if (!Array.isArray(supabaseItems)) return;
+        
+        // Guard: Never wipe local data if cloud query returns empty while local has items
+        const existingLocalRaw = localStorage.getItem(DB_KEYS.ARSIP_ITEMS);
+        if (supabaseItems.length === 0 && existingLocalRaw) {
+          try {
+            const parsedLocal = JSON.parse(existingLocalRaw);
+            if (Array.isArray(parsedLocal) && parsedLocal.length > 0) {
+              return;
+            }
+          } catch {}
+        }
+
         const deletedIds = getPermanentDeletedIds();
         const validSupabaseItems = supabaseItems.filter(it => !deletedIds.has(it.id));
 
@@ -688,7 +700,7 @@ export default function App() {
         fetchSanitizedMasterDataFromSupabase()
       ]).then(([freshArsip, freshMaster]) => {
         let hasAnyChange = false;
-        if (freshArsip) {
+        if (Array.isArray(freshArsip) && freshArsip.length > 0) {
           const deletedIds = getPermanentDeletedIds();
           const valid = freshArsip.filter(a => !deletedIds.has(a.id));
           const newStr = JSON.stringify(valid.map(v => { const c = { ...v }; delete c.fileDataUrl; return c; }));
@@ -698,15 +710,19 @@ export default function App() {
           }
         }
         if (freshMaster) {
-          const newS = JSON.stringify(freshMaster.siswa);
-          if (newS !== localStorage.getItem(DB_KEYS.MASTER_SISWA)) {
-            localStorage.setItem(DB_KEYS.MASTER_SISWA, newS);
-            hasAnyChange = true;
+          if (Array.isArray(freshMaster.siswa) && freshMaster.siswa.length > 0) {
+            const newS = JSON.stringify(freshMaster.siswa);
+            if (newS !== localStorage.getItem(DB_KEYS.MASTER_SISWA)) {
+              localStorage.setItem(DB_KEYS.MASTER_SISWA, newS);
+              hasAnyChange = true;
+            }
           }
-          const newG = JSON.stringify(freshMaster.guru);
-          if (newG !== localStorage.getItem(DB_KEYS.MASTER_GURU)) {
-            localStorage.setItem(DB_KEYS.MASTER_GURU, newG);
-            hasAnyChange = true;
+          if (Array.isArray(freshMaster.guru) && freshMaster.guru.length > 0) {
+            const newG = JSON.stringify(freshMaster.guru);
+            if (newG !== localStorage.getItem(DB_KEYS.MASTER_GURU)) {
+              localStorage.setItem(DB_KEYS.MASTER_GURU, newG);
+              hasAnyChange = true;
+            }
           }
         }
         if (hasAnyChange) {
@@ -752,15 +768,19 @@ export default function App() {
     fetchSanitizedMasterDataFromSupabase().then(supaMaster => {
       if (supaMaster) {
         let changed = false;
-        const newS = JSON.stringify(supaMaster.siswa);
-        if (newS !== localStorage.getItem(DB_KEYS.MASTER_SISWA)) {
-          localStorage.setItem(DB_KEYS.MASTER_SISWA, newS);
-          changed = true;
+        if (Array.isArray(supaMaster.siswa) && supaMaster.siswa.length > 0) {
+          const newS = JSON.stringify(supaMaster.siswa);
+          if (newS !== localStorage.getItem(DB_KEYS.MASTER_SISWA)) {
+            localStorage.setItem(DB_KEYS.MASTER_SISWA, newS);
+            changed = true;
+          }
         }
-        const newG = JSON.stringify(supaMaster.guru);
-        if (newG !== localStorage.getItem(DB_KEYS.MASTER_GURU)) {
-          localStorage.setItem(DB_KEYS.MASTER_GURU, newG);
-          changed = true;
+        if (Array.isArray(supaMaster.guru) && supaMaster.guru.length > 0) {
+          const newG = JSON.stringify(supaMaster.guru);
+          if (newG !== localStorage.getItem(DB_KEYS.MASTER_GURU)) {
+            localStorage.setItem(DB_KEYS.MASTER_GURU, newG);
+            changed = true;
+          }
         }
         if (changed) {
           triggerDebouncedSync();
