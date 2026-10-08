@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Printer, 
@@ -320,8 +321,8 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn font-['Poppins']">
+  return typeof document !== 'undefined' ? createPortal(
+    <div className="fixed inset-0 z-[200000] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-xl animate-fadeIn font-['Poppins']">
       <div className="relative w-full max-w-5xl h-[92vh] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scaleUp">
         
         {/* Streamlined Header */}
@@ -534,6 +535,7 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }

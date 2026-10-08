@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   BookOpen, 
   GraduationCap, 
@@ -978,9 +979,9 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
       {/* ===================================================================== */}
       {/* REVISED INTERACTIVE EXCEL TABLE GRID MODAL FOR BATCH ADD / EDIT        */}
       {/* ===================================================================== */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-4xl w-full shadow-2xl animate-scaleUp border border-slate-100 max-h-[92vh] flex flex-col">
+      {showAddModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-xl animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-4xl w-full shadow-2xl animate-scaleUp border border-slate-100 max-h-[90vh] flex flex-col relative z-10">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 flex-shrink-0">
@@ -1436,15 +1437,16 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ===================================================================== */}
       {/* MODAL LIHAT BERKAS REAL INDIVIDUAL (PENGGANTI FITUR REKAP SPESIFIK)   */}
       {/* ===================================================================== */}
-      {viewingPerson && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl animate-scaleUp border border-slate-100 max-h-[92vh] flex flex-col">
+      {viewingPerson && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-xl animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 sm:p-7 max-w-3xl w-full shadow-2xl animate-scaleUp border border-slate-100 max-h-[90vh] flex flex-col relative z-10">
             
             {/* Modal Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-100 flex-shrink-0">
@@ -1619,7 +1621,8 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
             </div>
 
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

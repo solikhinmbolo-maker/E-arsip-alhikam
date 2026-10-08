@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   FolderOpen, 
   ShieldCheck, 
@@ -639,9 +640,9 @@ function extractDriveIdForDownload(link?: string): string | null {
       </div>
 
       {/* MODAL KONFIRMASI PEMINDAHAN KE SAMPAH */}
-      {trashConfirmItem && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn font-['Poppins']">
-          <div className="bg-[#0F172A] border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl animate-scaleUp text-white">
+      {trashConfirmItem && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xl animate-fadeIn font-['Poppins']">
+          <div className="bg-[#0F172A] border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl animate-scaleUp text-white relative z-10">
             <div className="w-14 h-14 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
               <Trash2 className="w-7 h-7" />
             </div>
@@ -696,7 +697,8 @@ function extractDriveIdForDownload(link?: string): string | null {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

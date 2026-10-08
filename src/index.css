@@ -52,8 +52,21 @@ html, body {
   }
 }
 
-.animate-slide-up, .animate-fadeIn {
+@keyframes pureFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
   animation: slowSmoothSlideUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fadeIn {
+  animation: pureFadeIn 0.25s ease-out forwards;
 }
 
 /* Smooth Checkmark Success Animations */
