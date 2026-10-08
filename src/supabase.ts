@@ -271,7 +271,12 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
         .select('*')
         .range(from, from + limit - 1);
 
-      if (error || !data || data.length === 0) {
+      if (error) {
+        console.error('Supabase select arsip error:', error);
+        return null;
+      }
+
+      if (!data || data.length === 0) {
         hasMore = false;
       } else {
         allData.push(...data);
@@ -961,7 +966,11 @@ export async function fetchSanitizedMasterDataFromSupabase(): Promise<{
       let hasMore = true;
       while (hasMore) {
         const { data, error } = await client.from(tableName).select('*').range(from, from + limit - 1);
-        if (error || !data || data.length === 0) {
+        if (error) {
+          console.error(`Supabase select ${tableName} error:`, error);
+          throw error;
+        }
+        if (!data || data.length === 0) {
           hasMore = false;
         } else {
           allRows.push(...data);

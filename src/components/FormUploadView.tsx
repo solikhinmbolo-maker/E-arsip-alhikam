@@ -501,6 +501,7 @@ export default function FormUploadView({
     }
 
     const finalName = replaceExistingId ? `${namaSubjek} (${kategori} Diperbarui)` : namaSubjek;
+    const details = [`${kategori} — ${selectedFile?.name || 'Dokumen'} (${finalUkuran})`];
 
     // Reset Form Fields
     setSelectedFile(null);
@@ -509,7 +510,7 @@ export default function FormUploadView({
     setDuplicateCheck({ isDuplicate: false });
 
     // Trigger parent success modal (perfect fullscreen overlay center)
-    onUploadSuccess(1, finalName, [kategori]);
+    onUploadSuccess(1, finalName, details);
   };
 
   const startKolektifUpload = async (replaceDuplicates: boolean = false) => {
@@ -626,12 +627,18 @@ export default function FormUploadView({
       }));
     }
 
+    const uploadedDetails = Object.keys(kolektifFiles).map(katKey => {
+      const fileObj = kolektifFiles[katKey];
+      const itemUkuran = `${(fileObj.file.size / (1024 * 1024)).toFixed(2)} MB`;
+      return `${katKey} — ${fileObj.file.name} (${itemUkuran})`;
+    });
+
     // Reset Form Fields
     setKolektifFiles({});
     setNamaDokumen('');
 
     // Trigger parent success modal (perfect fullscreen overlay center)
-    onUploadSuccess(count, namaSubjek, categories);
+    onUploadSuccess(count, namaSubjek, uploadedDetails);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

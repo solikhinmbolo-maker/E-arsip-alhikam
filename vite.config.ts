@@ -37,7 +37,7 @@ function globalServerConfigPlugin() {
           if (fs.existsSync(filePath)) {
             return res.end(fs.readFileSync(filePath, 'utf8'));
           }
-          return res.end(JSON.stringify({ url: 'https://seklcpvakyaakgbsnlzt.supabase.co', anonKey: '' }));
+          return res.end(JSON.stringify({ url: 'https://seklcpvkayaakgbsnlzt.supabase.co', anonKey: '' }));
         }
         if (req.method === 'POST') {
           let body = '';

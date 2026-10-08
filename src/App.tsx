@@ -902,18 +902,13 @@ export default function App() {
       } catch {}
     }, 6000);
 
-    // Cross-Device Server Configuration Auto-Sync
-    const currentLocalCfg = getStoredSupabaseConfig();
-    if (!currentLocalCfg.anonKey) {
-      fetchConfigFromServer().then(remoteCfg => {
-        if (remoteCfg && remoteCfg.anonKey) {
-          setSupabaseConfig(remoteCfg);
-          triggerDebouncedSync();
-        }
-      });
-    } else {
-      syncConfigToServer(currentLocalCfg);
-    }
+    // Cross-Device Server Configuration Auto-Sync: always pull authoritative config from server on startup
+    fetchConfigFromServer().then(remoteCfg => {
+      if (remoteCfg && remoteCfg.anonKey) {
+        setSupabaseConfig(remoteCfg);
+        triggerDebouncedSync();
+      }
+    }).catch(() => {});
 
     return () => {
       if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
@@ -2530,17 +2525,25 @@ function doGet(e) {
                     Keterangan Berkas Terunggah ({uploadSuccessModal.count} dokumen):
                   </span>
                   <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                    {uploadSuccessModal.categories.map((cat, idx) => (
-                      <div 
-                        key={idx} 
-                        className="text-xs sm:text-sm text-slate-700 font-semibold flex items-center gap-2 bg-slate-50 p-2 border border-slate-100 rounded-xl"
-                      >
-                        <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-[10px] font-bold border border-emerald-200">
-                          ✓
-                        </span>
-                        <span className="truncate">{cat}</span>
-                      </div>
-                    ))}
+                    {uploadSuccessModal.categories.map((cat, idx) => {
+                      const parts = cat.split(' — ');
+                      const categoryName = parts[0];
+                      const fileInfo = parts[1] || '';
+                      return (
+                        <div 
+                          key={idx} 
+                          className="text-xs sm:text-sm text-slate-700 font-medium flex items-start gap-2.5 bg-slate-50/80 p-2.5 border border-slate-100 rounded-xl text-left"
+                        >
+                          <span className="w-4.5 h-4.5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-[10px] font-black border border-emerald-200 mt-0.5">
+                            ✓
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-extrabold text-slate-900 block leading-tight">{categoryName}</span>
+                            {fileInfo && <span className="text-slate-500 text-[11px] block mt-0.5 break-all leading-normal">{fileInfo}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
