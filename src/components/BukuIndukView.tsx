@@ -417,28 +417,6 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
   const [isSaving, setIsSaving] = useState(false);
 
-  // Direct download file attachment helper
-  const handleDownloadFile = async (item: ArsipItem) => {
-    try {
-      let dataUrl = item.fileDataUrl;
-      if (!dataUrl) {
-        dataUrl = await getFileAttachment(item.id) || '';
-      }
-      if (!dataUrl) {
-        alert('Berkas sedang disinkronkan dari Cloud. Mohon coba sesaat lagi.');
-        return;
-      }
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = item.namaFileAsli || `${item.kategori}_${item.subjek}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (e) {
-      console.error('Download error:', e);
-    }
-  };
-
   // Save All Batch Rows to LocalStorage & Supabase
   const handleSaveBatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -840,7 +818,20 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                           {siswa.jenisKelamin || '-'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td 
+                        className="py-3.5 px-4 cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Klik untuk lihat kelengkapan berkas"
+                        onClick={() => {
+                          setViewingPerson({
+                            id: siswa.id,
+                            nama: siswa.nama,
+                            isSiswa: true,
+                            nisnOrNuptk: siswa.nisn,
+                            tahunOrJabatan: `Angkatan ${siswa.tahun}`,
+                            jenisKelamin: siswa.jenisKelamin
+                          });
+                        }}
+                      >
                         <div className="flex items-center gap-2 max-w-[160px]">
                           <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
                             <div 
@@ -928,7 +919,19 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                       </td>
                       <td className="py-3.5 px-4 font-mono font-medium text-slate-700">{guru.nuptk || '-'}</td>
                       <td className="py-3.5 px-4 font-semibold text-slate-700">{guru.jabatan}</td>
-                      <td className="py-3.5 px-4">
+                      <td 
+                        className="py-3.5 px-4 cursor-pointer hover:opacity-80 transition-opacity"
+                        title="Klik untuk lihat kelengkapan berkas"
+                        onClick={() => {
+                          setViewingPerson({
+                            id: guru.id,
+                            nama: guru.nama,
+                            isSiswa: false,
+                            nisnOrNuptk: guru.nuptk,
+                            tahunOrJabatan: guru.jabatan
+                          });
+                        }}
+                      >
                         <div className="flex items-center gap-2 max-w-[160px]">
                           <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
                             <div 
@@ -1577,24 +1580,17 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
                                 <span className="text-[10px] text-slate-400">
                                   {fileItem.tanggal || 'Tersimpan'} {fileItem.ukuran ? `• ${fileItem.ukuran}` : ''}
                                 </span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                   {onPreview && (
                                     <button
                                       onClick={() => onPreview(fileItem)}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1 shadow-xs transition-all cursor-pointer"
-                                      title="Lihat Berkas"
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
+                                      title="Review / Lihat Berkas"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
-                                      <span>Lihat</span>
+                                      <span>Review Berkas</span>
                                     </button>
                                   )}
-                                  <button
-                                    onClick={() => handleDownloadFile(fileItem)}
-                                    className="p-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                                    title="Unduh Berkas"
-                                  >
-                                    <Download className="w-3.5 h-3.5" />
-                                  </button>
                                 </div>
                               </div>
                             )}
@@ -1609,8 +1605,8 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
 
             {/* Modal Footer */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-shrink-0">
-              <span className="text-[11px] text-slate-400">
-                Total {viewingPerson.isSiswa ? 8 : 14} dokumen wajib kearsipan sekolah
+              <span className="text-[11px] text-slate-500">
+                Total {viewingPerson.isSiswa ? 8 : 14} dokumen kearsipan • Untuk mengunduh berkas, silakan buka menu <strong>Unduh Dokumen</strong>
               </span>
               <button
                 onClick={() => setViewingPerson(null)}
