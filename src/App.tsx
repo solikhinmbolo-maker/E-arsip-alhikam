@@ -162,7 +162,7 @@ export default function App() {
   const [sessionExpiredNotice, setSessionExpiredNotice] = useState<string>('');
 
   // Modal state for full-screen upload success with blur background
-  const [uploadSuccessModal, setUploadSuccessModal] = useState<{ count: number; name: string } | null>(null);
+  const [uploadSuccessModal, setUploadSuccessModal] = useState<{ count: number; name: string; categories?: string[] } | null>(null);
 
   // Global action notification message (Login, Edit, Tambah Siswa, Upload, Sync, dll)
   const [globalNotice, setGlobalNotice] = useState<string>('');
@@ -2060,8 +2060,8 @@ function doGet(e) {
           {activePage === 'upload' && (
             <FormUploadView
               initialJenis={activeSubKategori}
-              onUploadSuccess={(count, name) => {
-                setUploadSuccessModal({ count, name });
+              onUploadSuccess={(count, name, categories) => {
+                setUploadSuccessModal({ count, name, categories });
               }}
               onCancel={() => setActivePage('dashboard')}
             />
@@ -2523,6 +2523,28 @@ function doGet(e) {
                   {uploadSuccessModal.name}
                 </strong>
               </div>
+
+              {uploadSuccessModal.categories && uploadSuccessModal.categories.length > 0 && (
+                <div className="pt-3 border-t border-slate-100">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
+                    Keterangan Berkas Terunggah ({uploadSuccessModal.count} dokumen):
+                  </span>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {uploadSuccessModal.categories.map((cat, idx) => (
+                      <div 
+                        key={idx} 
+                        className="text-xs sm:text-sm text-slate-700 font-semibold flex items-center gap-2 bg-slate-50 p-2 border border-slate-100 rounded-xl"
+                      >
+                        <span className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-[10px] font-bold border border-emerald-200">
+                          ✓
+                        </span>
+                        <span className="truncate">{cat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="pt-3 border-t border-slate-100">
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5">Status Penyimpanan:</span>
                 <div className="space-y-1.5">

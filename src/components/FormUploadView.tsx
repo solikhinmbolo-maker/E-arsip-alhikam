@@ -56,7 +56,7 @@ import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi, saveArsipToSup
 interface FormUploadViewProps {
   initialJenis?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
   onSelectJenis?: (jenis: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya') => void;
-  onUploadSuccess: (count: number, name: string) => void;
+  onUploadSuccess: (count: number, name: string, categories?: string[]) => void;
   onCancel: () => void;
 }
 
@@ -509,7 +509,7 @@ export default function FormUploadView({
     setDuplicateCheck({ isDuplicate: false });
 
     // Trigger parent success modal (perfect fullscreen overlay center)
-    onUploadSuccess(1, finalName);
+    onUploadSuccess(1, finalName, [kategori]);
   };
 
   const startKolektifUpload = async (replaceDuplicates: boolean = false) => {
@@ -631,7 +631,7 @@ export default function FormUploadView({
     setNamaDokumen('');
 
     // Trigger parent success modal (perfect fullscreen overlay center)
-    onUploadSuccess(count, namaSubjek);
+    onUploadSuccess(count, namaSubjek, categories);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
