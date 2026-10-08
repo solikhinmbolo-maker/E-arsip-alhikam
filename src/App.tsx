@@ -1928,7 +1928,7 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (STABLE FIXED HEIGHT, NEVER EXPANDS DOWNWARDS) */}
         {/* ============================================================== */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-[max(0.6rem,env(safe-area-inset-top))] pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-[64px] bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 flex items-center justify-between border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
           
           {/* Subtle Ambient Gradient Light Reflections */}
           <div className="absolute -top-10 left-1/4 w-48 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -1944,7 +1944,7 @@ function doGet(e) {
             </div>
           )}
 
-          <div className="relative z-10 flex items-center justify-between pt-1">
+          <div className="relative z-10 flex items-center justify-between w-full">
             {activePage === 'dashboard' ? (
               /* Brand & Logo with Hamburger Garis 3 Menu Trigger */
               <div className="flex items-center gap-2">
@@ -2040,8 +2040,8 @@ function doGet(e) {
           </div>
         </header>
 
-        {/* View Contents with top padding for fixed header in mobile */}
-        <div className="p-3.5 sm:p-8 pt-[calc(env(safe-area-inset-top,0px)+74px)] lg:pt-8 flex-1 w-full max-w-full overflow-x-hidden">
+        {/* View Contents with stable fixed top padding for fixed header in mobile (immune to status bar toggle) */}
+        <div className="p-3.5 sm:p-8 pt-[74px] lg:pt-8 flex-1 w-full max-w-full overflow-x-hidden">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
@@ -2238,9 +2238,9 @@ function doGet(e) {
         </div>
 
       {/* ============================================================== */}
-      {/* 5. REFINED FLOATING BOTTOM NAVIGATION (MINIMALIST & NATIVE FEEL)*/}
+      {/* 5. REFINED FLOATING BOTTOM NAVIGATION (MINIMALIST & NATIVE FEEL - STABLE HEIGHT) */}
       {/* ============================================================== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex lg:hidden items-center justify-around py-1.5 px-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-[62px] bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex lg:hidden items-center justify-around px-2">
         {/* Dashboard */}
         <button
           onClick={() => setActivePage('dashboard')}
