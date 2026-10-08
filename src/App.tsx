@@ -2504,57 +2504,47 @@ function doGet(e) {
       {/* 10. FULL-SCREEN UPLOAD SUCCESS MODAL (RICH BLUR & CENTERED LAYOUT) */}
       {uploadSuccessModal && (
         <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-2xl animate-fadeIn">
-          <div className="bg-[#0F172A] border border-slate-700/80 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl animate-scaleUp text-white">
-            <div className="relative flex justify-center mb-5">
-              <svg className="w-16 h-16 sm:w-20 sm:h-20 animate-circle-pop" viewBox="0 0 52 52">
+          <div className="bg-gradient-to-br from-white via-slate-50 to-blue-50 border border-slate-200/90 rounded-[32px] p-8 sm:p-10 max-w-md sm:max-w-lg w-full text-center shadow-2xl animate-scaleUp text-slate-800 relative overflow-hidden">
+            <div className="relative flex justify-center mb-6">
+              <svg className="w-18 h-18 sm:w-22 sm:h-22 animate-circle-pop" viewBox="0 0 52 52">
                 <circle className="stroke-emerald-500 fill-none" cx="26" cy="26" r="25" strokeWidth="2.5" />
                 <path className="stroke-emerald-500 fill-none animate-checkmark" d="M14 27l7 7 16-16" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             
-            <h3 className="text-base sm:text-lg font-extrabold text-white tracking-tight mb-2">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-2">
               Berhasil Mengunggah Berkas!
             </h3>
             
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 mb-6 text-left space-y-2">
+            <div className="bg-white/80 border border-slate-200/80 rounded-2xl p-5 mb-8 text-left space-y-3.5 shadow-sm">
               <div>
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Subjek / Nama Berkas:</span>
-                <strong className="text-xs sm:text-sm text-cyan-300 block break-words mt-0.5 line-clamp-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Subjek / Nama Berkas:</span>
+                <strong className="text-sm sm:text-base text-blue-600 font-extrabold block break-words mt-1 line-clamp-3 leading-snug">
                   {uploadSuccessModal.name}
                 </strong>
               </div>
-              <div className="pt-2 border-t border-slate-800/80">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-1">Status Penyimpanan:</span>
-                <div className="space-y-1">
-                  <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="pt-3 border-t border-slate-100">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5">Status Penyimpanan:</span>
+                <div className="space-y-1.5">
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                     <span>Google Drive Storage (Terunggah)</span>
                   </p>
-                  <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                     <span>Supabase PostgreSQL (Sinkron)</span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-2.5">
+            <div className="flex justify-center">
               <button
                 type="button"
                 onClick={() => setUploadSuccessModal(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                className="w-full py-3.5 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer hover:shadow-xl active:scale-98 text-center"
               >
-                Upload Lagi
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setUploadSuccessModal(null);
-                  setActivePage('unduh');
-                }}
-                className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer shadow-blue-500/20 active:scale-95"
-              >
-                Lihat Berkas
+                SELESAI
               </button>
             </div>
           </div>
