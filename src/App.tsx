@@ -1555,7 +1555,7 @@ function doGet(e) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-['Poppins'] text-slate-800 antialiased selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-['Poppins'] text-slate-800 antialiased selection:bg-blue-600 selection:text-white w-full max-w-full">
       
       {/* 1. MOBILE DRAWER OVERLAY (Ultra-smooth hardware accelerated, zero jank, smooth fade in & out) */}
       <div 
@@ -1577,8 +1577,8 @@ function doGet(e) {
         transform-gpu will-change-transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
         ${mobileSidebarOpen ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full lg:translate-x-0 lg:shadow-none'}
       `}>
-        {/* Sidebar Header with Logo (Generous clearance for phone camera cutout & top screen bezel) */}
-        <div className="p-5 pt-[max(2.25rem,env(safe-area-inset-top,36px))] border-b border-slate-800/80 flex items-center justify-between">
+        {/* Sidebar Header with Logo (Stable camera notch clearance, zero layout jump) */}
+        <div className="p-5 pt-9 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
               src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
@@ -1819,8 +1819,8 @@ function doGet(e) {
           </button>
         </div>
 
-        {/* Sidebar Footer System Info (Generous clearance for bottom phone navigation buttons) */}
-        <div className="p-4 pb-[max(1.5rem,env(safe-area-inset-bottom,22px))] border-t border-slate-800/80 bg-slate-950/70">
+        {/* Sidebar Footer System Info (Generous clearance for bottom phone navigation buttons - stable) */}
+        <div className="p-4 pb-6 border-t border-slate-800/80 bg-slate-950/70">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-sm flex-shrink-0">
@@ -1845,8 +1845,8 @@ function doGet(e) {
         </div>
       </aside>
 
-      {/* 3. MAIN CONTENT CONTAINER (Lag-free, no heavy filter blurs) */}
-      <main className="flex-1 lg:ml-64 flex flex-col min-h-screen pb-32 lg:pb-8 w-full max-w-full overflow-x-hidden">
+      {/* 3. MAIN CONTENT CONTAINER (Smooth scrolling, stable layout, generous bottom spacing) */}
+      <main className="flex-1 lg:ml-64 flex flex-col min-h-screen pb-28 lg:pb-8 w-full max-w-full">
         
         {/* ============================================================== */}
         {/* DESKTOP HEADER (TETAP SAMA PERSIS DENGAN YANG DISUKAI USER)     */}
@@ -1928,7 +1928,9 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-[max(2.25rem,env(safe-area-inset-top,36px))] pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+        {/* REFINED MOBILE HEADER (ROCK-SOLID FIXED 88px, CAMERA SAFE, IMMUNE TO STATUS BAR FLICKER) */}
+        {/* ============================================================== */}
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-9 pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
           
           {/* Subtle Ambient Gradient Light Reflections */}
           <div className="absolute -top-10 left-1/4 w-48 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -2040,8 +2042,8 @@ function doGet(e) {
           </div>
         </header>
 
-        {/* View Contents with spacious clearance below header and camera notch */}
-        <div className="p-3.5 sm:p-8 pt-[calc(max(2.25rem,env(safe-area-inset-top,36px))+66px)] lg:pt-8 flex-1 w-full max-w-full overflow-x-hidden">
+        {/* View Contents with stable fixed top padding for fixed header in mobile (immune to status bar toggle) */}
+        <div className="p-3.5 sm:p-8 pt-[96px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
@@ -2238,9 +2240,9 @@ function doGet(e) {
         </div>
 
       {/* ============================================================== */}
-      {/* 5. REFINED FLOATING BOTTOM NAVIGATION (SEAMLESS BG & CLEARANCE FOR ANDROID BUTTONS) */}
+      {/* 5. REFINED FLOATING BOTTOM NAVIGATION (ROCK-SOLID FIXED HEIGHT, IMMUNE TO ANDROID NAV BAR) */}
       {/* ============================================================== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex lg:hidden items-center justify-around pt-2.5 px-2 pb-[max(1.25rem,env(safe-area-inset-bottom,20px))]">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-[64px] bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex lg:hidden items-center justify-around px-2">
         {/* Dashboard */}
         <button
           onClick={() => setActivePage('dashboard')}

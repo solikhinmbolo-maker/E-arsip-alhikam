@@ -236,7 +236,7 @@ export default function LegalisirView() {
   }, [records, searchTerm]);
 
   return (
-    <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] max-w-full overflow-x-hidden">
+    <div className="bg-white rounded-3xl p-4 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] max-w-full">
       
       {/* Mobile-Minimalist Header */}
       <div className="block sm:hidden pb-3 mb-3 border-b border-slate-100">

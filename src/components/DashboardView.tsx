@@ -434,7 +434,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   }, []);
 
   return (
-    <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-6 font-['Poppins'] max-w-full">
       
       {/* ============================================================== */}
       {/* 1. MOBILE EXECUTIVE HERO (COMPACT & CROPPED UPWARDS)           */}
