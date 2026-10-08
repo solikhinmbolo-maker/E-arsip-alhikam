@@ -2042,8 +2042,8 @@ function doGet(e) {
           </div>
         </header>
 
-        {/* View Contents with stable fixed top padding for fixed header in mobile (immune to status bar toggle) */}
-        <div className="p-3.5 sm:p-8 pt-[96px] lg:pt-8 flex-1 w-full max-w-full">
+        {/* View Contents with spacious clearance below fixed mobile header (matching screenshot 3) */}
+        <div className="p-3.5 sm:p-8 pt-[118px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
