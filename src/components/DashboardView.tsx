@@ -262,7 +262,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           animation: {
             animateRotate: true,
             animateScale: true,
-            duration: 2500, // Original smooth rotation & scale-in
+            duration: 3400, // 2x lebih halus, smooth & mewah
             easing: 'easeOutQuart'
           },
           cutout: '72%',
@@ -328,7 +328,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           maintainAspectRatio: false,
           animations: {
             y: {
-              duration: 2600,
+              duration: 3400, // 2x lebih smooth, naik perlahan dari bawah
               easing: 'easeOutQuart',
               from: (ctx: any) => {
                 if (ctx.type === 'data') {
@@ -338,7 +338,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
               },
               delay: (ctx: any) => {
                 if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-                return ctx.dataIndex * 160; // Smooth cascading vertical rise from bottom
+                return ctx.dataIndex * 190; // Smooth cascading vertical rise from bottom
               }
             },
             x: {
@@ -382,6 +382,9 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       if (mobileDonutRef.current) {
         if (!mobileDonutChart.current || donutChanged) {
           updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
+        } else if (mobileChartTab === 'kategori') {
+          mobileDonutChart.current.reset();
+          mobileDonutChart.current.update();
         }
       }
 
@@ -389,6 +392,9 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       if (mobileBarRef.current) {
         if (!mobileBarChart.current || barChanged) {
           updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
+        } else if (mobileChartTab === 'siswa') {
+          mobileBarChart.current.reset();
+          mobileBarChart.current.update();
         }
       }
 

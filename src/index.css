@@ -40,7 +40,7 @@ html, body {
   scrollbar-width: none;
 }
 
-/* Smooth Vertical Slide-Up & Fade Animations */
+/* Smooth Vertical Slide-Up, Fade & Scale Animations (2x Smoother, Silky Soft for Desktop & Mobile) */
 @keyframes slowSmoothSlideUp {
   0% {
     opacity: 0;
@@ -61,12 +61,29 @@ html, body {
   }
 }
 
+@keyframes smoothScaleUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .animate-slide-up {
   animation: slowSmoothSlideUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-fadeIn {
-  animation: pureFadeIn 0.25s ease-out forwards;
+  animation: pureFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleUp {
+  animation: smoothScaleUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  transform-origin: center center;
 }
 
 /* Smooth Checkmark Success Animations */
