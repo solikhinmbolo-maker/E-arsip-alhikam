@@ -262,7 +262,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           animation: {
             animateRotate: true,
             animateScale: true,
-            duration: 3400, // 2x lebih halus, smooth & mewah
+            duration: 1050, // Silky smooth, natural and elegant pace
             easing: 'easeOutQuart'
           },
           cutout: '72%',
@@ -328,7 +328,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           maintainAspectRatio: false,
           animations: {
             y: {
-              duration: 3400, // 2x lebih smooth, naik perlahan dari bawah
+              duration: 920, // Natural fluid upward glide
               easing: 'easeOutQuart',
               from: (ctx: any) => {
                 if (ctx.type === 'data') {
@@ -338,7 +338,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
               },
               delay: (ctx: any) => {
                 if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-                return ctx.dataIndex * 190; // Smooth cascading vertical rise from bottom
+                return ctx.dataIndex * 65; // Soft cascading wave from left to right
               }
             },
             x: {
@@ -373,51 +373,67 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const donutChanged = prevDonutSignature.current !== currentDonutSignature;
-      const barChanged = prevBarSignature.current !== currentBarSignature;
+  // Seamless tab switch with zero-flash/zero-jolt and silky smooth animations
+  const handleSwitchMobileTab = (targetTab: 'kategori' | 'siswa') => {
+    if (targetTab === mobileChartTab) return;
 
-      // Mobile Donut
-      if (mobileDonutRef.current) {
-        if (!mobileDonutChart.current || donutChanged) {
-          updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
-        } else if (mobileChartTab === 'kategori') {
-          mobileDonutChart.current.reset();
+    // PRE-RESET the incoming target chart WHILE it is still hidden!
+    // This completely eliminates the "hentakan" / flash of completed chart on first paint
+    if (targetTab === 'kategori' && mobileDonutChart.current) {
+      mobileDonutChart.current.reset();
+    } else if (targetTab === 'siswa' && mobileBarChart.current) {
+      mobileBarChart.current.reset();
+    }
+
+    setMobileChartTab(targetTab);
+
+    // On the next frame after DOM is painted with zero-state, trigger fluid animation
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (targetTab === 'kategori' && mobileDonutChart.current) {
           mobileDonutChart.current.update();
-        }
-      }
-
-      // Mobile Bar
-      if (mobileBarRef.current) {
-        if (!mobileBarChart.current || barChanged) {
-          updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
-        } else if (mobileChartTab === 'siswa') {
-          mobileBarChart.current.reset();
+        } else if (targetTab === 'siswa' && mobileBarChart.current) {
           mobileBarChart.current.update();
         }
+      });
+    });
+  };
+
+  useEffect(() => {
+    const donutChanged = prevDonutSignature.current !== currentDonutSignature;
+    const barChanged = prevBarSignature.current !== currentBarSignature;
+
+    // Mobile Donut
+    if (mobileDonutRef.current) {
+      if (!mobileDonutChart.current || donutChanged) {
+        updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
       }
+    }
 
-      // Desktop Donut
-      if (desktopDonutRef.current) {
-        if (!desktopDonutChart.current || donutChanged) {
-          updateOrBuildDonutChart(desktopDonutRef.current, desktopDonutChart);
-        }
+    // Mobile Bar
+    if (mobileBarRef.current) {
+      if (!mobileBarChart.current || barChanged) {
+        updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
       }
+    }
 
-      // Desktop Bar
-      if (desktopBarRef.current) {
-        if (!desktopBarChart.current || barChanged) {
-          updateOrBuildBarChart(desktopBarRef.current, desktopBarChart);
-        }
+    // Desktop Donut
+    if (desktopDonutRef.current) {
+      if (!desktopDonutChart.current || donutChanged) {
+        updateOrBuildDonutChart(desktopDonutRef.current, desktopDonutChart);
       }
+    }
 
-      prevDonutSignature.current = currentDonutSignature;
-      prevBarSignature.current = currentBarSignature;
-    }, 60);
+    // Desktop Bar
+    if (desktopBarRef.current) {
+      if (!desktopBarChart.current || barChanged) {
+        updateOrBuildBarChart(desktopBarRef.current, desktopBarChart);
+      }
+    }
 
-    return () => clearTimeout(timer);
-  }, [mobileChartTab, currentDonutSignature, currentBarSignature]);
+    prevDonutSignature.current = currentDonutSignature;
+    prevBarSignature.current = currentBarSignature;
+  }, [currentDonutSignature, currentBarSignature]);
 
   // Clean destruction only when component truly unmounts
   useEffect(() => {
@@ -696,21 +712,21 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       <div className="block sm:hidden">
         <div className="flex bg-slate-200/80 p-1 rounded-2xl mb-2.5">
           <button
-            onClick={() => setMobileChartTab('kategori')}
-            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => handleSwitchMobileTab('kategori')}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${
               mobileChartTab === 'kategori'
                 ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Kategori Dokumen
           </button>
           <button
-            onClick={() => setMobileChartTab('siswa')}
-            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all ${
+            onClick={() => handleSwitchMobileTab('siswa')}
+            className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${
               mobileChartTab === 'siswa'
                 ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-slate-600'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Siswa per Angkatan
@@ -718,7 +734,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         </div>
 
         {/* Mobile Donut Chart Container */}
-        <div className={mobileChartTab === 'kategori' ? 'block' : 'hidden'}>
+        <div className={mobileChartTab === 'kategori' ? 'block animate-chart-tab' : 'hidden'}>
           <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Distribusi Kategori</h4>
@@ -748,7 +764,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         </div>
 
         {/* Mobile Bar Chart Container */}
-        <div className={mobileChartTab === 'siswa' ? 'block' : 'hidden'}>
+        <div className={mobileChartTab === 'siswa' ? 'block animate-chart-tab' : 'hidden'}>
           <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Grafik Siswa per Angkatan</h4>
