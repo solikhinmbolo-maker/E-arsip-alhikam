@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "short_name": "E-Arsip",
+  "name": "E-Arsip Digital SMP Al-Hikam Sendang Mulyo",
+  "icons": [
+    {
+      "src": "https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#080E21",
+  "theme_color": "#080E21",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "scope": "/"
+}

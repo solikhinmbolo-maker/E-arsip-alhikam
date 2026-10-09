@@ -1928,9 +1928,9 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (ROCK-SOLID FIXED 88px, CAMERA SAFE, IMMUNE TO STATUS BAR FLICKER) */}
+        {/* REFINED MOBILE HEADER (LARGER TITLE & LOGO, OPTIMIZED TOP SPACING) */}
         {/* ============================================================== */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-9 pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3 sm:px-5 pt-3 pb-2.5 sm:pt-4 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
           
           {/* Subtle Ambient Gradient Light Reflections */}
           <div className="absolute -top-10 left-1/4 w-48 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -1949,18 +1949,18 @@ function doGet(e) {
           <div className="relative z-10 flex items-center justify-between w-full">
             {activePage === 'dashboard' ? (
               /* Brand & Logo with Hamburger Garis 3 Menu Trigger */
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="-ml-1 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
+                  className="-ml-1 p-1 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
                   title="Buka Menu Lengkap E-Arsip"
                   aria-label="Buka Menu Navigasi"
                 >
-                  <Menu className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
+                  <Menu className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
                 </button>
 
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-md shadow-blue-500/30 flex items-center justify-center flex-shrink-0 border border-white/20">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 shadow-md shadow-blue-500/30 flex items-center justify-center flex-shrink-0 border border-white/20">
                   <img 
                     src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
                     alt="Logo SMP Al-Hikam" 
@@ -1969,7 +1969,7 @@ function doGet(e) {
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h1 className="text-sm font-extrabold tracking-tight text-white leading-none drop-shadow-sm">
+                    <h1 className="text-[17px] sm:text-lg font-black tracking-tight text-white leading-none drop-shadow-sm">
                       E-ARSIP AL-HICAM
                     </h1>
                     <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -1980,36 +1980,36 @@ function doGet(e) {
                       className="ml-1 p-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-cyan-400 hover:text-white active:scale-90 transition-all cursor-pointer"
                       title="Segarkan Data"
                     >
-                      <RefreshCw className={`w-2.5 h-2.5 ${isManualRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                      <RefreshCw className={`w-3 h-3 ${isManualRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-300 font-medium tracking-wide mt-1">
+                  <p className="text-[12.5px] sm:text-[13px] text-slate-200 font-medium tracking-wide mt-1">
                     SMP Al-Hikam • Digital Portal
                   </p>
                 </div>
               </div>
             ) : (
               /* Contextual Sub-page Header with Hamburger Menu & Back Navigation */
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
-                  className="-ml-1 p-1.5 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
+                  className="-ml-1 p-1 rounded-xl text-cyan-300 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer active:scale-90 flex items-center justify-center flex-shrink-0"
                   title="Buka Menu Lengkap E-Arsip"
                   aria-label="Buka Menu Navigasi"
                 >
-                  <Menu className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
+                  <Menu className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
                 </button>
                 <button
                   onClick={() => setActivePage('dashboard')}
                   className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-200 shadow-sm active:scale-95">
-                    <ArrowLeft className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-200 shadow-sm active:scale-95">
+                    <ArrowLeft className="w-4.5 h-4.5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest block leading-none">Kembali</span>
-                    <span className="text-sm font-bold text-white block mt-0.5 max-w-[195px] sm:max-w-xs truncate">
+                    <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest block leading-none">Kembali</span>
+                    <span className="text-[15px] sm:text-base font-bold text-white block mt-0.5 max-w-[195px] sm:max-w-xs truncate">
                       {pageTitles[activePage].split('(')[0]}
                     </span>
                   </div>
@@ -2025,25 +2025,25 @@ function doGet(e) {
               title="Manajemen Pengguna & Profil"
             >
               <div className="text-right pl-2 hidden sm:block">
-                <span className="text-[11px] font-bold text-white block leading-none truncate max-w-[95px] group-hover:text-cyan-300 transition-colors">
+                <span className="text-xs font-bold text-white block leading-none truncate max-w-[95px] group-hover:text-cyan-300 transition-colors">
                   {currentUser.name}
                 </span>
-                <span className="text-[9px] text-cyan-400 font-medium leading-none block mt-0.5">{currentUser.role}</span>
+                <span className="text-[9.5px] text-cyan-400 font-medium leading-none block mt-0.5">{currentUser.role}</span>
               </div>
-              <div className="relative w-9 h-9 flex-shrink-0 flex items-center justify-center">
+              <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
                 <img
                   src={getAvatarForUser(currentUser.email, currentUser.name)}
                   alt={currentUser.name}
-                  className="w-9 h-9 rounded-full border-2 border-cyan-400/80 group-hover:border-cyan-300 object-cover shadow-sm transition-colors"
+                  className="w-11 h-11 rounded-full border-2 border-cyan-400/80 group-hover:border-cyan-300 object-cover shadow-sm transition-colors"
                 />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#0F172A]" title="Online" />
+                <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0F172A]" title="Online" />
               </div>
             </button>
           </div>
         </header>
 
-        {/* View Contents with spacious clearance below fixed mobile header (matching screenshot 3) */}
-        <div className="p-3.5 sm:p-8 pt-[118px] lg:pt-8 flex-1 w-full max-w-full">
+        {/* View Contents with spacious clearance below fixed mobile header */}
+        <div className="p-3.5 sm:p-8 pt-[86px] sm:pt-[94px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}

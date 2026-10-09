@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">E-Arsip SMP Al-Hikam</string>
+    <string name="title_activity_main">E-Arsip SMP Al-Hikam</string>
+    <string name="package_name">com.alhikam.earsip</string>
+    <string name="custom_url_scheme">com.alhikam.earsip</string>
+</resources>
