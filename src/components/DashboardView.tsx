@@ -43,6 +43,34 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   const mobileDonutChart = useRef<Chart | null>(null);
   const mobileBarChart = useRef<Chart | null>(null);
 
+  // Viewport visibility tracker so mobile chart entrance animation triggers right when user scrolls to it
+  const chartsContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isChartsVisible, setIsChartsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = chartsContainerRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setIsChartsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setIsChartsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '60px'
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Tab switch for mobile charts view
   const [mobileChartTab, setMobileChartTab] = useState<'kategori' | 'siswa'>('kategori');
 
@@ -256,10 +284,28 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
             easing: 'easeOutQuart'
           },
           animations: {
-            numbers: {
+            circumference: {
               type: 'number',
               duration: 2600,
-              easing: 'easeOutQuart'
+              easing: 'easeOutQuart',
+              from: 0
+            },
+            endAngle: {
+              type: 'number',
+              duration: 2600,
+              easing: 'easeOutQuart',
+              from: (ctx: any) => {
+                if (ctx.type === 'data' && ctx.element && typeof ctx.element.startAngle === 'number') {
+                  return ctx.element.startAngle;
+                }
+                return undefined;
+              }
+            },
+            outerRadius: {
+              type: 'number',
+              duration: 2600,
+              easing: 'easeOutQuart',
+              from: 0
             }
           },
           cutout: '72%',
@@ -377,6 +423,8 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   };
 
   useEffect(() => {
+    if (!isChartsVisible) return;
+
     const donutChanged = prevDonutSignature.current !== currentDonutSignature;
     const barChanged = prevBarSignature.current !== currentBarSignature;
 
@@ -410,7 +458,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
 
     prevDonutSignature.current = currentDonutSignature;
     prevBarSignature.current = currentBarSignature;
-  }, [mobileChartTab, currentDonutSignature, currentBarSignature]);
+  }, [isChartsVisible, mobileChartTab, currentDonutSignature, currentBarSignature]);
 
   // Clean destruction only when component truly unmounts
   useEffect(() => {
@@ -685,8 +733,9 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       {/* 4. CHARTS SECTION (MOBILE REFINED TABS + DESKTOP SEJAJAR)       */}
       {/* ============================================================== */}
       
-      {/* Mobile-Only Segmented Tabs for Charts */}
-      <div className="block sm:hidden">
+      <div ref={chartsContainerRef} className="space-y-4">
+        {/* Mobile-Only Segmented Tabs for Charts */}
+        <div className="block sm:hidden">
         <div className="flex bg-slate-200/80 p-1 rounded-2xl mb-2.5">
           <button
             onClick={() => handleSwitchMobileTab('kategori')}
@@ -825,6 +874,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         </div>
 
       </section>
+      </div>
 
       {/* Desktop-Only Quick Shortcuts Banner */}
       <section className="hidden sm:block relative overflow-hidden bg-gradient-to-br from-indigo-50/80 via-purple-50/30 to-slate-50 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.08)] border border-indigo-200/80 hover:border-indigo-300 transition-all">
