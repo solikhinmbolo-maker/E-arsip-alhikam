@@ -5,6 +5,8 @@ const config: CapacitorConfig = {
   appName: 'E-Arsip Alhicam',
   webDir: 'dist',
   server: {
+    url: 'https://e-arsipalhicam.vercel.app',
+    cleartext: true,
     androidScheme: 'https'
   }
 };

@@ -1,15 +1,10 @@
 {
 	"appId": "com.alhikam.earsip",
-	"appName": "E-Arsip SMP Al-Hikam",
+	"appName": "E-Arsip Alhicam",
 	"webDir": "dist",
 	"server": {
+		"url": "https://e-arsipalhicam.vercel.app",
+		"cleartext": true,
 		"androidScheme": "https"
-	},
-	"plugins": {
-		"StatusBar": {
-			"overlaysWebView": true,
-			"style": "DARK",
-			"backgroundColor": "#080E21"
-		}
 	}
 }
