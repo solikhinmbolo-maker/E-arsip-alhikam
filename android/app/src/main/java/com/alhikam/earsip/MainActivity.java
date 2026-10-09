@@ -14,6 +14,13 @@ public class MainActivity extends BridgeActivity {
 
         // Edge-to-edge layout & LAYOUT_STABLE: window never resizes or jolts when bars toggle
         Window window = getWindow();
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            android.view.WindowManager.LayoutParams lp = window.getAttributes();
+            lp.layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            window.setAttributes(lp);
+        }
+
         WindowCompat.setDecorFitsSystemWindows(window, false);
 
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
