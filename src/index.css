@@ -110,17 +110,16 @@ body {
 @keyframes chartTabFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(6px) scale(0.985);
+    transform: translateY(4px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .animate-chart-tab {
-  animation: chartTabFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform, opacity;
+  animation: chartTabFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Smooth Checkmark Success Animations */

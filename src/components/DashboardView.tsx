@@ -221,25 +221,14 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
   }), [angkatanLabels]);
   const currentBarSignature = useMemo(() => JSON.stringify({ labels: barLabels, data: angkatanData }), [barLabels, angkatanData]);
 
-  // Update or build Donut Chart smoothly without canvas destroy/flicker
+  // Update or build Donut Chart with guaranteed smooth entrance animation
   const updateOrBuildDonutChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
     const labels = donutLabels.length > 0 ? donutLabels : ['Belum Ada'];
     const data = donutData.length > 0 ? donutData : [1];
 
     if (instanceRef.current) {
-      const chart = instanceRef.current;
-      if (chart.canvas && document.contains(chart.canvas)) {
-        chart.data.labels = labels;
-        if (chart.data.datasets[0]) {
-          chart.data.datasets[0].data = data;
-          chart.data.datasets[0].backgroundColor = donutColors.slice(0, labels.length || 1);
-        }
-        chart.update();
-        return;
-      } else {
-        try { chart.destroy(); } catch {}
-        instanceRef.current = null;
-      }
+      try { instanceRef.current.destroy(); } catch {}
+      instanceRef.current = null;
     }
 
     try {
@@ -259,30 +248,18 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          resizeDelay: 200,
           animation: {
             animateRotate: true,
             animateScale: true,
-            duration: 2600,
+            duration: 2600, // 3x lebih lambat, sangat halus & berputar anggun
             easing: 'easeOutQuart'
           },
           animations: {
-            circumference: {
+            numbers: {
               type: 'number',
-              property: 'circumference',
               duration: 2600,
-              easing: 'easeOutQuart',
-              from: 0,
-              delay: (ctx: any) => {
-                if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-                return ctx.dataIndex * 130; // Tiap segmen kategori mekar mengalir berurutan
-              }
-            },
-            scale: {
-              type: 'number',
-              properties: ['outerRadius', 'innerRadius'],
-              duration: 2600,
-              easing: 'easeOutQuart',
-              from: 0
+              easing: 'easeOutQuart'
             }
           },
           cutout: '72%',
@@ -303,7 +280,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     }
   };
 
-  // Update or build Bar Chart smoothly without canvas destroy/flicker
+  // Update or build Bar Chart with guaranteed smooth entrance animation
   const updateOrBuildBarChart = (canvas: HTMLCanvasElement, instanceRef: React.MutableRefObject<Chart | null>) => {
     const ctx = canvas.getContext('2d');
     let gradient: any = '#2563EB';
@@ -315,19 +292,8 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     }
 
     if (instanceRef.current) {
-      const chart = instanceRef.current;
-      if (chart.canvas && document.contains(chart.canvas)) {
-        chart.data.labels = barLabels;
-        if (chart.data.datasets[0]) {
-          chart.data.datasets[0].data = angkatanData;
-          chart.data.datasets[0].backgroundColor = gradient;
-        }
-        chart.update();
-        return;
-      } else {
-        try { chart.destroy(); } catch {}
-        instanceRef.current = null;
-      }
+      try { instanceRef.current.destroy(); } catch {}
+      instanceRef.current = null;
     }
 
     try {
@@ -346,6 +312,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          resizeDelay: 200,
           animations: {
             y: {
               duration: 2600, // 3x lebih lambat, naik perlahan dan sangat halus
