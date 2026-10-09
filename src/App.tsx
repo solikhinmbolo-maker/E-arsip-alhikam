@@ -1928,21 +1928,20 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (SEAMLESS OLED BLACK TO NAVY GRADIENT, NOTCH-COMPATIBLE) */}
+        {/* REFINED MOBILE HEADER (MAXIMUM TOP REACH, TIGHT & CRISP PADDING) */}
         {/* ============================================================== */}
         <header 
-          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-[#000000] via-[#060D22] to-[#09132E] text-white px-3 sm:px-5 pb-2.5 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
-          style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-[#000000] via-[#060D22] to-[#09132E] text-white px-2.5 sm:px-4 pt-1 pb-1.5 border-b-2 border-blue-500/60 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
         >
           
           {/* Subtle Ambient Gradient Light Reflections */}
-          <div className="absolute top-0 left-1/4 w-48 h-20 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute bottom-0 right-12 w-40 h-16 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 left-1/4 w-48 h-16 bg-blue-500/15 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute bottom-0 right-12 w-40 h-12 bg-cyan-400/15 rounded-full blur-xl pointer-events-none" />
 
-          {/* TOPMOST NOTIFICATION (MOBILE): Absolutely positioned at top, no background, pure blue text, no expanding header, no text clipping */}
+          {/* TOPMOST NOTIFICATION (MOBILE): Compact top badge */}
           {globalNotice && (
-            <div className="absolute top-0.5 inset-x-0 z-50 pointer-events-none px-3 flex items-center justify-center animate-fadeIn">
-              <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-blue-400 tracking-normal text-center leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] flex items-center justify-center gap-1.5 max-w-full">
+            <div className="absolute top-0 inset-x-0 z-50 pointer-events-none px-2 flex items-center justify-center animate-fadeIn">
+              <p className="text-[9px] sm:text-[10px] font-semibold text-blue-400 tracking-normal text-center leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] flex items-center justify-center gap-1 max-w-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
                 <span className="break-words">{globalNotice}</span>
               </p>
@@ -1952,7 +1951,7 @@ function doGet(e) {
           <div className="relative z-10 flex items-center justify-between w-full">
             {activePage === 'dashboard' ? (
               /* Brand & Logo with Hamburger Garis 3 Menu Trigger */
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
@@ -1963,7 +1962,7 @@ function doGet(e) {
                   <Menu className="w-7 h-7 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]" />
                 </button>
 
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 shadow-md shadow-blue-500/30 flex items-center justify-center flex-shrink-0 border border-white/20">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-md shadow-blue-500/30 flex items-center justify-center flex-shrink-0 border border-white/20">
                   <img 
                     src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
                     alt="Logo SMP Al-Hikam" 
@@ -1986,14 +1985,14 @@ function doGet(e) {
                       <RefreshCw className={`w-3 h-3 ${isManualRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
                     </button>
                   </div>
-                  <p className="text-[12.5px] sm:text-[13px] text-slate-200 font-medium tracking-wide mt-1">
+                  <p className="text-[12px] sm:text-[13px] text-slate-200 font-medium tracking-wide mt-0.5">
                     SMP Al-Hikam • Digital Portal
                   </p>
                 </div>
               </div>
             ) : (
               /* Contextual Sub-page Header with Hamburger Menu & Back Navigation */
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setMobileSidebarOpen(true)}
@@ -2024,7 +2023,7 @@ function doGet(e) {
             <button
               type="button"
               onClick={() => setShowUserModal(true)}
-              className="flex items-center gap-2.5 p-1 rounded-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/50 text-white active:scale-95 transition-all cursor-pointer shadow-md group"
+              className="flex items-center gap-2 p-1 rounded-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-500/50 text-white active:scale-95 transition-all cursor-pointer shadow-md group"
               title="Manajemen Pengguna & Profil"
             >
               <div className="text-right pl-2 hidden sm:block">
@@ -2033,20 +2032,20 @@ function doGet(e) {
                 </span>
                 <span className="text-[9.5px] text-cyan-400 font-medium leading-none block mt-0.5">{currentUser.role}</span>
               </div>
-              <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center">
                 <img
                   src={getAvatarForUser(currentUser.email, currentUser.name)}
                   alt={currentUser.name}
-                  className="w-11 h-11 rounded-full border-2 border-cyan-400/80 group-hover:border-cyan-300 object-cover shadow-sm transition-colors"
+                  className="w-full h-full rounded-full border-2 border-cyan-400/80 group-hover:border-cyan-300 object-cover shadow-sm transition-colors"
                 />
-                <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0F172A]" title="Online" />
+                <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#0F172A]" title="Online" />
               </div>
             </button>
           </div>
         </header>
 
-        {/* View Contents with spacious clearance below fixed mobile header */}
-        <div className="p-3.5 sm:p-8 pt-[86px] sm:pt-[94px] lg:pt-8 flex-1 w-full max-w-full">
+        {/* View Contents with compact clearance below fixed mobile header */}
+        <div className="p-3 sm:p-6 pt-[62px] sm:pt-[68px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
