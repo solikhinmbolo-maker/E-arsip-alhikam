@@ -262,8 +262,28 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           animation: {
             animateRotate: true,
             animateScale: true,
-            duration: 3000, // 3x lebih lambat, sangat halus, anggun & memanjakan mata
+            duration: 2600,
             easing: 'easeOutQuart'
+          },
+          animations: {
+            circumference: {
+              type: 'number',
+              property: 'circumference',
+              duration: 2600,
+              easing: 'easeOutQuart',
+              from: 0,
+              delay: (ctx: any) => {
+                if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+                return ctx.dataIndex * 130; // Tiap segmen kategori mekar mengalir berurutan
+              }
+            },
+            scale: {
+              type: 'number',
+              properties: ['outerRadius', 'innerRadius'],
+              duration: 2600,
+              easing: 'easeOutQuart',
+              from: 0
+            }
           },
           cutout: '72%',
           plugins: {
