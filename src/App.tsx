@@ -1928,10 +1928,10 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (MAXIMUM TOP REACH, TIGHT & CRISP PADDING) */}
+        {/* REFINED MOBILE HEADER (BALANCED TOP SPACING & COMFORTABLE MARGIN) */}
         {/* ============================================================== */}
         <header 
-          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-[#000000] via-[#060D22] to-[#09132E] text-white px-2.5 sm:px-4 pt-1 pb-1.5 border-b-2 border-blue-500/60 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-[#000000] via-[#060D22] to-[#09132E] text-white px-3 sm:px-5 pt-3.5 pb-2.5 sm:pt-4 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
         >
           
           {/* Subtle Ambient Gradient Light Reflections */}
@@ -2036,7 +2036,7 @@ function doGet(e) {
 
         {/* Mobile Global Toast Notification (Clean Floating Badge, Zero Header Push) */}
         {globalNotice && (
-          <div className="lg:hidden fixed top-[54px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
+          <div className="lg:hidden fixed top-[78px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-cyan-500/40 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 max-w-full">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
               <p className="text-[10px] font-semibold text-cyan-300 truncate">{globalNotice}</p>
@@ -2044,8 +2044,8 @@ function doGet(e) {
           </div>
         )}
 
-        {/* View Contents with compact clearance below fixed mobile header */}
-        <div className="p-3 sm:p-6 pt-[62px] sm:pt-[68px] lg:pt-8 flex-1 w-full max-w-full">
+        {/* View Contents with spacious clearance below fixed mobile header */}
+        <div className="p-3.5 sm:p-6 pt-[88px] sm:pt-[96px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
