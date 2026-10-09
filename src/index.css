@@ -6,7 +6,7 @@ html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   scroll-behavior: smooth;
-  background-color: #080E21; /* Matches app header gradient seamlessly */
+  background-color: #000000; /* Pure black matches phone status bar & notch cutout seamlessly */
 }
 
 body {

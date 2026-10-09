@@ -1928,13 +1928,16 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (LARGER TITLE & LOGO, OPTIMIZED TOP SPACING) */}
+        {/* REFINED MOBILE HEADER (SEAMLESS OLED BLACK TO NAVY GRADIENT, NOTCH-COMPATIBLE) */}
         {/* ============================================================== */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3 sm:px-5 pt-3 pb-2.5 sm:pt-4 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+        <header 
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-[#000000] via-[#060D22] to-[#09132E] text-white px-3 sm:px-5 pb-2.5 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_8px_30px_rgba(0,0,0,0.6)]"
+          style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}
+        >
           
           {/* Subtle Ambient Gradient Light Reflections */}
-          <div className="absolute -top-10 left-1/4 w-48 h-28 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-8 right-12 w-40 h-20 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute top-0 left-1/4 w-48 h-20 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 right-12 w-40 h-16 bg-cyan-400/15 rounded-full blur-2xl pointer-events-none" />
 
           {/* TOPMOST NOTIFICATION (MOBILE): Absolutely positioned at top, no background, pure blue text, no expanding header, no text clipping */}
           {globalNotice && (
