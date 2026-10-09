@@ -34,9 +34,10 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Accept Android SDK Licenses
+      - name: Setup Android SDK Platform 36
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" 2>/dev/null || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
