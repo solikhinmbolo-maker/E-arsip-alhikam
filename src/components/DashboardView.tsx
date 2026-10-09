@@ -262,7 +262,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           animation: {
             animateRotate: true,
             animateScale: true,
-            duration: 1050, // Silky smooth, natural and elegant pace
+            duration: 3000, // 3x lebih lambat, sangat halus, anggun & memanjakan mata
             easing: 'easeOutQuart'
           },
           cutout: '72%',
@@ -328,7 +328,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           maintainAspectRatio: false,
           animations: {
             y: {
-              duration: 920, // Natural fluid upward glide
+              duration: 2600, // 3x lebih lambat, naik perlahan dan sangat halus
               easing: 'easeOutQuart',
               from: (ctx: any) => {
                 if (ctx.type === 'data') {
@@ -338,7 +338,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
               },
               delay: (ctx: any) => {
                 if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-                return ctx.dataIndex * 65; // Soft cascading wave from left to right
+                return ctx.dataIndex * 150; // Efek ombak mengalir bertahap dari kiri ke kanan
               }
             },
             x: {
@@ -373,45 +373,35 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
     }
   };
 
-  // Seamless tab switch with zero-flash/zero-jolt and silky smooth animations
+  // Seamless tab switch with complete cleanup of previous canvas instance
   const handleSwitchMobileTab = (targetTab: 'kategori' | 'siswa') => {
     if (targetTab === mobileChartTab) return;
 
-    // PRE-RESET the incoming target chart WHILE it is still hidden!
-    // This completely eliminates the "hentakan" / flash of completed chart on first paint
-    if (targetTab === 'kategori' && mobileDonutChart.current) {
-      mobileDonutChart.current.reset();
-    } else if (targetTab === 'siswa' && mobileBarChart.current) {
-      mobileBarChart.current.reset();
+    // Destroy the departing chart instance so memory is clean
+    if (mobileChartTab === 'kategori') {
+      try { mobileDonutChart.current?.destroy(); } catch {}
+      mobileDonutChart.current = null;
+    } else {
+      try { mobileBarChart.current?.destroy(); } catch {}
+      mobileBarChart.current = null;
     }
 
     setMobileChartTab(targetTab);
-
-    // On the next frame after DOM is painted with zero-state, trigger fluid animation
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (targetTab === 'kategori' && mobileDonutChart.current) {
-          mobileDonutChart.current.update();
-        } else if (targetTab === 'siswa' && mobileBarChart.current) {
-          mobileBarChart.current.update();
-        }
-      });
-    });
   };
 
   useEffect(() => {
     const donutChanged = prevDonutSignature.current !== currentDonutSignature;
     const barChanged = prevBarSignature.current !== currentBarSignature;
 
-    // Mobile Donut
-    if (mobileDonutRef.current) {
+    // Mobile Donut (starts completely from zero on fresh blank canvas)
+    if (mobileChartTab === 'kategori' && mobileDonutRef.current) {
       if (!mobileDonutChart.current || donutChanged) {
         updateOrBuildDonutChart(mobileDonutRef.current, mobileDonutChart);
       }
     }
 
-    // Mobile Bar
-    if (mobileBarRef.current) {
+    // Mobile Bar (starts completely from zero on fresh blank canvas)
+    if (mobileChartTab === 'siswa' && mobileBarRef.current) {
       if (!mobileBarChart.current || barChanged) {
         updateOrBuildBarChart(mobileBarRef.current, mobileBarChart);
       }
@@ -433,7 +423,7 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
 
     prevDonutSignature.current = currentDonutSignature;
     prevBarSignature.current = currentBarSignature;
-  }, [currentDonutSignature, currentBarSignature]);
+  }, [mobileChartTab, currentDonutSignature, currentBarSignature]);
 
   // Clean destruction only when component truly unmounts
   useEffect(() => {
@@ -733,9 +723,9 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           </button>
         </div>
 
-        {/* Mobile Donut Chart Container */}
-        <div className={mobileChartTab === 'kategori' ? 'block animate-chart-tab' : 'hidden'}>
-          <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
+        {/* Conditional Fresh-Mounting Chart Container (Eliminates Canvas Jolt / Flash) */}
+        {mobileChartTab === 'kategori' ? (
+          <div key="kategori" className="animate-chart-tab bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm min-h-[365px] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Distribusi Kategori</h4>
               <span className="text-[10px] font-semibold text-slate-400">{totalArsip} total file</span>
@@ -761,20 +751,20 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
               })}
             </div>
           </div>
-        </div>
-
-        {/* Mobile Bar Chart Container */}
-        <div className={mobileChartTab === 'siswa' ? 'block animate-chart-tab' : 'hidden'}>
-          <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm">
+        ) : (
+          <div key="siswa" className="animate-chart-tab bg-white rounded-3xl p-4 border border-slate-200/90 shadow-sm min-h-[365px] flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-bold text-slate-800">Grafik Siswa per Angkatan</h4>
               <span className="text-[10px] text-blue-600 font-semibold">{allSiswa.length} total siswa</span>
             </div>
-            <div className="w-full h-48 relative">
+            <div className="w-full h-52 relative my-auto">
               <canvas ref={mobileBarRef} />
             </div>
+            <div className="text-center pt-2.5 border-t border-slate-100 text-[11px] text-slate-400">
+              Total {allSiswa.length} siswa terdaftar di seluruh angkatan
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Desktop-Only 2 Columns Charts (Sejajar Sesuai Desain Awal) */}
