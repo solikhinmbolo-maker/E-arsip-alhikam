@@ -238,7 +238,7 @@ _# Digital E Arsip Alhicam_`;
       <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Login Card Glassmorphism - Fixed Height & Dimension Lock for Desktop & Mobile */}
-      <div className="relative z-10 w-full max-w-[410px] min-h-[580px] sm:min-h-[600px] bg-[#0F172A]/90 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(6,182,212,0.15)] my-auto -mt-3 sm:mt-auto animate-scaleUp flex flex-col justify-between">
+      <div className="relative z-10 w-full max-w-[410px] min-h-[580px] sm:min-h-[600px] bg-[#0F172A]/90 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(6,182,212,0.15)] my-auto animate-scaleUp flex flex-col justify-between">
         
         <div>
           {/* Header with Logo */}

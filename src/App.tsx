@@ -1938,16 +1938,6 @@ function doGet(e) {
           <div className="absolute top-0 left-1/4 w-48 h-16 bg-blue-500/15 rounded-full blur-xl pointer-events-none" />
           <div className="absolute bottom-0 right-12 w-40 h-12 bg-cyan-400/15 rounded-full blur-xl pointer-events-none" />
 
-          {/* TOPMOST NOTIFICATION (MOBILE): Compact top badge */}
-          {globalNotice && (
-            <div className="absolute top-0 inset-x-0 z-50 pointer-events-none px-2 flex items-center justify-center animate-fadeIn">
-              <p className="text-[9px] sm:text-[10px] font-semibold text-blue-400 tracking-normal text-center leading-tight drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] flex items-center justify-center gap-1 max-w-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
-                <span className="break-words">{globalNotice}</span>
-              </p>
-            </div>
-          )}
-
           <div className="relative z-10 flex items-center justify-between w-full">
             {activePage === 'dashboard' ? (
               /* Brand & Logo with Hamburger Garis 3 Menu Trigger */
@@ -2043,6 +2033,16 @@ function doGet(e) {
             </button>
           </div>
         </header>
+
+        {/* Mobile Global Toast Notification (Clean Floating Badge, Zero Header Push) */}
+        {globalNotice && (
+          <div className="lg:hidden fixed top-[54px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
+            <div className="bg-[#0F172A]/95 backdrop-blur-md border border-cyan-500/40 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 max-w-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
+              <p className="text-[10px] font-semibold text-cyan-300 truncate">{globalNotice}</p>
+            </div>
+          </div>
+        )}
 
         {/* View Contents with compact clearance below fixed mobile header */}
         <div className="p-3 sm:p-6 pt-[62px] sm:pt-[68px] lg:pt-8 flex-1 w-full max-w-full">
