@@ -1928,10 +1928,10 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (TALLER & MORE SPACIOUS VERTICAL BACKGROUND) */}
+        {/* REFINED MOBILE HEADER (CAMERA PUNCH-HOLE SAFE, CONTENT SHIFTED DOWN) */}
         {/* ============================================================== */}
         <header 
-          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-7 pb-4 sm:pt-8 sm:pb-5 border-b-2 border-blue-500/60 shadow-[0_8px_25px_rgba(0,0,0,0.6)]"
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-[38px] pb-3 sm:pt-[42px] sm:pb-3.5 border-b-2 border-blue-500/60 shadow-[0_8px_25px_rgba(0,0,0,0.6)]"
         >
           
           {/* Subtle Ambient Gradient Light Reflections */}
@@ -2036,7 +2036,7 @@ function doGet(e) {
 
         {/* Mobile Global Toast Notification (Clean Floating Badge, Zero Header Push) */}
         {globalNotice && (
-          <div className="lg:hidden fixed top-[104px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
+          <div className="lg:hidden fixed top-[110px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-cyan-500/40 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 max-w-full">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
               <p className="text-[10px] font-semibold text-cyan-300 truncate">{globalNotice}</p>
@@ -2045,7 +2045,7 @@ function doGet(e) {
         )}
 
         {/* View Contents with spacious clearance below fixed mobile header */}
-        <div className="p-3.5 sm:p-6 pt-[112px] sm:pt-[120px] lg:pt-8 flex-1 w-full max-w-full">
+        <div className="p-3.5 sm:p-6 pt-[118px] sm:pt-[126px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
