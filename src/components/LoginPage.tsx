@@ -225,7 +225,7 @@ _# Digital E Arsip Alhicam_`;
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-3 sm:p-4 bg-gradient-to-b from-[#000000] via-[#050B1B] to-[#080E21] relative overflow-hidden font-['Poppins']">
+    <div className="min-h-screen w-full flex items-center justify-center p-3 sm:p-4 bg-[#080E21] relative overflow-hidden font-['Poppins']">
       
       {/* Background Building with low opacity */}
       <div 

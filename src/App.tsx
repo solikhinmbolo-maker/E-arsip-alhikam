@@ -1928,10 +1928,10 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (BALANCED TOP SPACING & COMFORTABLE MARGIN) */}
+        {/* REFINED MOBILE HEADER (ORIGINAL RICH NAVY BLUE GRADIENT) */}
         {/* ============================================================== */}
         <header 
-          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-[#000000] via-[#060D22] to-[#09132E] text-white px-3 sm:px-5 pt-3.5 pb-2.5 sm:pt-4 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3 sm:px-5 pt-3.5 pb-2.5 sm:pt-4 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
         >
           
           {/* Subtle Ambient Gradient Light Reflections */}
