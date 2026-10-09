@@ -1928,15 +1928,15 @@ function doGet(e) {
         {/* ============================================================== */}
         {/* REFINED MOBILE HEADER (SEAMLESS APP COLOR BEHIND NOTCH & STATUS BAR) */}
         {/* ============================================================== */}
-        {/* REFINED MOBILE HEADER (ORIGINAL RICH NAVY BLUE GRADIENT) */}
+        {/* REFINED MOBILE HEADER (TALLER & MORE SPACIOUS VERTICAL BACKGROUND) */}
         {/* ============================================================== */}
         <header 
-          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3 sm:px-5 pt-3.5 pb-2.5 sm:pt-4 sm:pb-3 border-b-2 border-blue-500/60 shadow-[0_6px_20px_rgba(0,0,0,0.6)]"
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-7 pb-4 sm:pt-8 sm:pb-5 border-b-2 border-blue-500/60 shadow-[0_8px_25px_rgba(0,0,0,0.6)]"
         >
           
           {/* Subtle Ambient Gradient Light Reflections */}
-          <div className="absolute top-0 left-1/4 w-48 h-16 bg-blue-500/15 rounded-full blur-xl pointer-events-none" />
-          <div className="absolute bottom-0 right-12 w-40 h-12 bg-cyan-400/15 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute top-0 left-1/4 w-48 h-20 bg-blue-500/15 rounded-full blur-xl pointer-events-none" />
+          <div className="absolute bottom-0 right-12 w-40 h-16 bg-cyan-400/15 rounded-full blur-xl pointer-events-none" />
 
           <div className="relative z-10 flex items-center justify-between w-full">
             {activePage === 'dashboard' ? (
@@ -2036,7 +2036,7 @@ function doGet(e) {
 
         {/* Mobile Global Toast Notification (Clean Floating Badge, Zero Header Push) */}
         {globalNotice && (
-          <div className="lg:hidden fixed top-[78px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
+          <div className="lg:hidden fixed top-[104px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
             <div className="bg-[#0F172A]/95 backdrop-blur-md border border-cyan-500/40 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 max-w-full">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
               <p className="text-[10px] font-semibold text-cyan-300 truncate">{globalNotice}</p>
@@ -2045,7 +2045,7 @@ function doGet(e) {
         )}
 
         {/* View Contents with spacious clearance below fixed mobile header */}
-        <div className="p-3.5 sm:p-6 pt-[88px] sm:pt-[96px] lg:pt-8 flex-1 w-full max-w-full">
+        <div className="p-3.5 sm:p-6 pt-[112px] sm:pt-[120px] lg:pt-8 flex-1 w-full max-w-full">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
