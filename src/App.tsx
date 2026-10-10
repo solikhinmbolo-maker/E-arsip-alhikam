@@ -1948,12 +1948,19 @@ function doGet(e) {
         {/* REFINED MOBILE HEADER (CAMERA PUNCH-HOLE SAFE, CONTENT SHIFTED DOWN) */}
         {/* ============================================================== */}
         <header 
-          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-[38px] pb-3 sm:pt-[42px] sm:pb-3.5 border-b-2 border-blue-500/60 shadow-[0_8px_25px_rgba(0,0,0,0.6)]"
+          className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-[#080E21] via-[#0F1B3E] to-[#0A132C] text-white px-3.5 sm:px-6 pt-[32px] pb-3 sm:pt-[36px] sm:pb-3.5 border-b-2 border-blue-500/60 shadow-[0_8px_25px_rgba(0,0,0,0.6)] flex flex-col gap-1"
         >
-          
           {/* Subtle Ambient Gradient Light Reflections */}
           <div className="absolute top-0 left-1/4 w-48 h-20 bg-blue-500/15 rounded-full blur-xl pointer-events-none" />
           <div className="absolute bottom-0 right-12 w-40 h-16 bg-cyan-400/15 rounded-full blur-xl pointer-events-none" />
+
+          {/* Top Notification inside mobile header (No background, smaller text) */}
+          {globalNotice && (
+            <div className="relative z-20 flex items-center justify-center gap-1.5 px-2 text-cyan-300 text-[9px] font-medium animate-fadeIn text-center leading-tight">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
+              <span className="break-words">{globalNotice}</span>
+            </div>
+          )}
 
           <div className="relative z-10 flex items-center justify-between w-full">
             {activePage === 'dashboard' ? (
@@ -2050,16 +2057,6 @@ function doGet(e) {
             </button>
           </div>
         </header>
-
-        {/* Mobile Global Toast Notification (Clean Floating Badge, Zero Header Push) */}
-        {globalNotice && (
-          <div className="lg:hidden fixed top-[110px] inset-x-3 z-50 pointer-events-none flex items-center justify-center animate-slide-down">
-            <div className="bg-[#0F172A]/95 backdrop-blur-md border border-cyan-500/40 px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 max-w-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
-              <p className="text-[10px] font-semibold text-cyan-300 truncate">{globalNotice}</p>
-            </div>
-          </div>
-        )}
 
         {/* View Contents with spacious clearance below fixed mobile header */}
         <div className="p-3.5 sm:p-6 pt-[118px] sm:pt-[126px] lg:pt-8 flex-1 w-full max-w-full">
