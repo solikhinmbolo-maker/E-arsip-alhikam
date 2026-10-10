@@ -24,6 +24,7 @@ public class MainActivity extends BridgeActivity {
         }
 
         WindowCompat.setDecorFitsSystemWindows(window, false);
+        window.getDecorView().setBackgroundColor(android.graphics.Color.parseColor("#080E21"));
         hideSystemBars();
     }
 

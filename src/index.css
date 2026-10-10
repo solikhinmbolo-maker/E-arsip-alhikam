@@ -122,6 +122,26 @@ body {
   animation: chartTabFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Mobile Splash Screen Progress Animation */
+@keyframes splashFill {
+  0% {
+    width: 0%;
+  }
+  30% {
+    width: 40%;
+  }
+  70% {
+    width: 75%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-splash-fill {
+  animation: splashFill 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Smooth Checkmark Success Animations */
 @keyframes checkmarkDraw {
   0% {

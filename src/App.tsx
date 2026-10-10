@@ -41,6 +41,7 @@ import {
   Cloud
 } from 'lucide-react';
 import LoginPage from './components/LoginPage';
+import MobileSplashScreen from './components/MobileSplashScreen';
 import DashboardView from './components/DashboardView';
 import FormUploadView from './components/FormUploadView';
 import FormUnduhView from './components/FormUnduhView';
@@ -190,6 +191,27 @@ export default function App() {
 
   // Logout loading transition state
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
+
+  // Mobile Launch Splash Screen: Hanya muncul di ponsel (layar < 768px / mobile)
+  // saat aplikasi pertama kali dibuka (cold start / sesi baru / riwayat aplikasi dibersihkan).
+  // Sesuai permintaan: tidak muncul setiap keluar/buka lagi jika sesi masih ada, dan tidak menyenggol desktop.
+  const [showMobileSplash, setShowMobileSplash] = useState<boolean>(() => {
+    try {
+      if (typeof window === 'undefined') return false;
+      const isMobile = window.innerWidth < 768;
+      const hasShown = sessionStorage.getItem('EARSIP_SPLASH_SHOWN');
+      return isMobile && !hasShown;
+    } catch {
+      return false;
+    }
+  });
+
+  const handleSplashComplete = () => {
+    try {
+      sessionStorage.setItem('EARSIP_SPLASH_SHOWN', 'true');
+    } catch {}
+    setShowMobileSplash(false);
+  };
 
   // Auth state: Keamanan Maksimal.
   // Sesi akun hanya hidup selama browser/APK sedang aktif (sessionStorage).
@@ -1536,6 +1558,10 @@ function doGet(e) {
       }, 550);
     }
   };
+
+  if (showMobileSplash) {
+    return <MobileSplashScreen onComplete={handleSplashComplete} />;
+  }
 
   if (!currentUser) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} sessionNotice={sessionExpiredNotice} />;
