@@ -1956,9 +1956,8 @@ function doGet(e) {
 
           {/* Top Notification inside mobile header (No background, smaller text) */}
           {globalNotice && (
-            <div className="relative z-20 flex items-center justify-center gap-1.5 px-2 text-cyan-300 text-[9px] font-medium animate-fadeIn text-center leading-tight">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse flex-shrink-0" />
-              <span className="break-words">{globalNotice}</span>
+            <div className="relative z-20 px-2 text-cyan-300 text-[9px] font-medium animate-fadeIn text-center leading-tight break-words">
+              {globalNotice}
             </div>
           )}
 
