@@ -25,6 +25,9 @@ export default function SplashScreen({ onComplete, durationMs = 8000 }: SplashSc
     };
   }, [durationMs, onComplete]);
 
+  // Synchronize progress bar fill duration with durationMs
+  const fillDurationSec = Math.max((durationMs - 400) / 1000, 0.5);
+
   return (
     <div 
       className={`fixed inset-0 z-50 flex flex-col justify-between items-center bg-gradient-to-b from-[#0B132B] via-[#080E21] to-[#040817] text-white px-6 transition-all duration-500 ease-out select-none ${
@@ -50,8 +53,8 @@ export default function SplashScreen({ onComplete, durationMs = 8000 }: SplashSc
           <div className="absolute -inset-3.5 bg-gradient-to-r from-blue-500/35 to-cyan-400/35 rounded-3xl blur-2xl transition-all" />
           <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-b from-white/10 to-white/5 border border-cyan-400/40 p-4 shadow-[0_20px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(6,182,212,0.3)] flex items-center justify-center backdrop-blur-md">
             <img 
-              src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png"
-              alt="Logo E-Arsip Al-Hicam"
+              src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
+              alt="Logo E-Arsip Al-Hicam" 
               className="w-full h-full object-contain drop-shadow-[0_4px_14px_rgba(6,182,212,0.6)]"
             />
           </div>
@@ -64,7 +67,12 @@ export default function SplashScreen({ onComplete, durationMs = 8000 }: SplashSc
         <div className="flex flex-col items-center gap-3 w-full max-w-[260px]">
           {/* Progress Track */}
           <div className="w-full h-2.5 bg-slate-800/90 rounded-full overflow-hidden border border-cyan-500/30 p-[1.5px] shadow-inner">
-            <div className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 rounded-full animate-splash-fill" />
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 rounded-full"
+              style={{
+                animation: `splashFill ${fillDurationSec}s cubic-bezier(0.16, 1, 0.3, 1) forwards`
+              }}
+            />
           </div>
 
           {/* Loading Subtext */}

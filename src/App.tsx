@@ -192,9 +192,44 @@ export default function App() {
   // Logout loading transition state
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
-  // Mobile Launch Splash Screen: Hanya muncul di ponsel (layar < 768px / mobile)
-  // saat aplikasi pertama kali dibuka (cold start / sesi baru / riwayat aplikasi dibersihkan).
-  // Sesuai permintaan: tidak muncul setiap keluar/buka lagi jika sesi masih ada, dan tidak menyenggol desktop.
+  // Durasi Splash Screen Pintar:
+  // - Awal membuka APK / cold start / sesi baru: 8 detik (sesuai konsep awal)
+  // - Refresh halaman (F5, Hard Refresh, Browser Reload): 3.5 detik (3-4 detik, tidak terlalu lama)
+  const [splashDuration] = useState<number>(() => {
+    if (typeof window === 'undefined') return 8000;
+    try {
+      let isReload = false;
+
+      // 1. Modern Performance Navigation Timing API (Mendeteksi F5, Ctrl+F5 / Hard Refresh, Reload)
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries && navEntries.length > 0) {
+        const navTiming = navEntries[0] as PerformanceNavigationTiming;
+        if (navTiming.type === 'reload') {
+          isReload = true;
+        }
+      }
+
+      // 2. Fallback legacy Performance Navigation API
+      if (!isReload && (performance as any)?.navigation?.type === 1) {
+        isReload = true;
+      }
+
+      // 3. Session tracking: Jika halaman sudah pernah dimuat sebelumnya di tab/sesi ini
+      const hasInitialized = sessionStorage.getItem('EARSIP_APP_SESSION_INITIALIZED');
+      if (hasInitialized === 'true') {
+        isReload = true;
+      }
+
+      // Tandai bahwa aplikasi sudah pernah dimuat dalam sesi ini
+      sessionStorage.setItem('EARSIP_APP_SESSION_INITIALIZED', 'true');
+
+      // Jika reload/F5: 3.5 detik (3-4 dtk). Jika awal buka: 8 detik.
+      return isReload ? 3500 : 8000;
+    } catch {
+      return 8000;
+    }
+  });
+
   // Universal Launch Splash Screen: Muncul setiap kali aplikasi/website dibuka di desktop maupun ponsel.
   const [showSplash, setShowSplash] = useState<boolean>(() => {
     return typeof window !== 'undefined';
@@ -1551,7 +1586,7 @@ function doGet(e) {
   };
 
   if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
+    return <SplashScreen onComplete={handleSplashComplete} durationMs={splashDuration} />;
   }
 
   if (!currentUser) {
