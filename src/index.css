@@ -142,11 +142,14 @@ body {
   animation: splashFill 7.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Smooth Checkmark Success Animations */
-@keyframes checkmarkDraw {
+/* Smooth Slow-Motion Neon Checkmark Success Animations */
+@keyframes checkmarkDrawSlow {
   0% {
-    stroke-dashoffset: 50;
+    stroke-dashoffset: 65;
     opacity: 0;
+  }
+  20% {
+    opacity: 1;
   }
   100% {
     stroke-dashoffset: 0;
@@ -154,18 +157,62 @@ body {
   }
 }
 
-@keyframes successCirclePop {
+@keyframes successCirclePopSlow {
   0% {
-    transform: scale(0.5);
+    transform: scale(0.35) rotate(-12deg);
     opacity: 0;
   }
-  70% {
-    transform: scale(1.1);
+  45% {
+    transform: scale(1.08) rotate(3deg);
+    opacity: 0.95;
   }
-  100% {
-    transform: scale(1);
+  75% {
+    transform: scale(0.97) rotate(-1deg);
     opacity: 1;
   }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes neonHaloPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.95;
+  }
+}
+
+@keyframes haloRotateSlow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-checkmark-slow {
+  stroke-dasharray: 65;
+  stroke-dashoffset: 65;
+  animation: checkmarkDrawSlow 1.35s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+}
+
+.animate-circle-pop-slow {
+  transform-origin: center;
+  animation: successCirclePopSlow 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-neon-halo {
+  animation: neonHaloPulse 3s ease-in-out infinite;
+}
+
+.animate-halo-rotate {
+  animation: haloRotateSlow 12s linear infinite;
 }
 
 .animate-checkmark {

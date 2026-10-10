@@ -2515,29 +2515,74 @@ function doGet(e) {
 
       {/* 10. FULL-SCREEN UPLOAD SUCCESS MODAL (RICH BLUR & CENTERED LAYOUT) */}
       {uploadSuccessModal && (
-        <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-2xl animate-fadeIn">
-          <div className="bg-gradient-to-br from-white via-slate-50 to-blue-50 border border-slate-200/90 rounded-[32px] p-8 sm:p-10 max-w-md sm:max-w-lg w-full text-center shadow-2xl animate-scaleUp text-slate-800 relative overflow-hidden">
-            <div className="relative flex justify-center mb-6">
-              <svg className="w-18 h-18 sm:w-22 sm:h-22 animate-circle-pop" viewBox="0 0 52 52">
-                <circle className="stroke-emerald-500 fill-none" cx="26" cy="26" r="25" strokeWidth="2.5" />
-                <path className="stroke-emerald-500 fill-none animate-checkmark" d="M14 27l7 7 16-16" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+        <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-2xl animate-fadeIn">
+          <div className="bg-gradient-to-b from-[#0F1E3D] via-[#091326] to-[#050A18] border border-cyan-500/35 rounded-[32px] p-7 sm:p-9 max-w-md sm:max-w-lg w-full text-center shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),0_0_40px_rgba(6,182,212,0.2)] animate-scaleUp text-slate-100 relative overflow-hidden">
+            
+            {/* Top Ambient Radial Glows */}
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-44 bg-gradient-to-r from-emerald-500/25 via-cyan-400/30 to-blue-500/25 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 right-0 w-64 h-44 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Glowing Slow-Motion Checkmark Badge */}
+            <div className="relative flex justify-center mb-5">
+              {/* Pulsing Neon Halo Aura */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/30 via-cyan-400/35 to-emerald-400/30 rounded-full blur-2xl animate-neon-halo pointer-events-none" />
+              
+              <div className="relative w-22 h-22 sm:w-26 sm:h-26 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full border border-emerald-400/35 bg-gradient-to-b from-emerald-400/15 to-cyan-500/10 shadow-[0_0_35px_rgba(16,185,129,0.45),inset_0_0_20px_rgba(6,182,212,0.25)] animate-circle-pop-slow" />
+                
+                {/* Animated Neon Glowing SVG Checkmark */}
+                <svg className="w-full h-full relative z-10 animate-circle-pop-slow" viewBox="0 0 80 80">
+                  <defs>
+                    <linearGradient id="glowCheckGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#34D399" />
+                      <stop offset="50%" stopColor="#10B981" />
+                      <stop offset="100%" stopColor="#06B6D4" />
+                    </linearGradient>
+                    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#34D399" floodOpacity="0.9"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="7" floodColor="#06B6D4" floodOpacity="0.7"/>
+                    </filter>
+                  </defs>
+                  {/* Glowing Outer Circle Ring */}
+                  <circle 
+                    cx="40" cy="40" r="32" 
+                    fill="none" 
+                    stroke="url(#glowCheckGrad)" 
+                    strokeWidth="3" 
+                    filter="url(#neonGlow)"
+                  />
+                  {/* Slow-Motion Drawing Checkmark Path */}
+                  <path 
+                    className="animate-checkmark-slow" 
+                    d="M26 41 L36 51 L54 30" 
+                    fill="none" 
+                    stroke="url(#glowCheckGrad)" 
+                    strokeWidth="4.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    filter="url(#neonGlow)"
+                  />
+                </svg>
+              </div>
             </div>
             
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-2">
+            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-1 drop-shadow-sm">
               Berhasil Mengunggah Berkas!
             </h3>
+            <p className="text-xs text-cyan-300/80 font-medium mb-6">
+              Arsip digital telah berhasil disimpan & diverifikasi
+            </p>
             
-            <div className="bg-white/80 border border-slate-200/80 rounded-2xl p-5 mb-8 text-left space-y-3.5 shadow-sm">
+            <div className="bg-[#0B152B]/90 border border-cyan-500/25 rounded-2xl p-5 mb-7 text-left space-y-3.5 shadow-inner backdrop-blur-md">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Subjek / Nama Berkas:</span>
-                <strong className="text-sm sm:text-base text-blue-600 font-extrabold block break-words mt-1 line-clamp-3 leading-snug">
+                <strong className="text-sm sm:text-base text-cyan-300 font-extrabold block break-words mt-1 line-clamp-3 leading-snug drop-shadow-[0_2px_8px_rgba(6,182,212,0.3)]">
                   {uploadSuccessModal.name}
                 </strong>
               </div>
 
               {uploadSuccessModal.categories && uploadSuccessModal.categories.length > 0 && (
-                <div className="pt-3 border-t border-slate-100">
+                <div className="pt-3 border-t border-slate-800">
                   <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
                     Keterangan Berkas Terunggah ({uploadSuccessModal.count} dokumen):
                   </span>
@@ -2549,14 +2594,14 @@ function doGet(e) {
                       return (
                         <div 
                           key={idx} 
-                          className="text-xs sm:text-sm text-slate-700 font-medium flex items-start gap-2.5 bg-slate-50/80 p-2.5 border border-slate-100 rounded-xl text-left"
+                          className="text-xs sm:text-sm text-slate-200 font-medium flex items-start gap-2.5 bg-slate-900/80 p-2.5 border border-cyan-500/20 rounded-xl text-left"
                         >
-                          <span className="w-4.5 h-4.5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-[10px] font-black border border-emerald-200 mt-0.5">
+                          <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center flex-shrink-0 text-xs font-black border border-emerald-400/50 mt-0.5 shadow-[0_0_8px_rgba(16,185,129,0.4)]">
                             ✓
                           </span>
                           <div className="flex-1 min-w-0">
-                            <span className="font-extrabold text-slate-900 block leading-tight">{categoryName}</span>
-                            {fileInfo && <span className="text-slate-500 text-[11px] block mt-0.5 break-all leading-normal">{fileInfo}</span>}
+                            <span className="font-extrabold text-white block leading-tight">{categoryName}</span>
+                            {fileInfo && <span className="text-slate-400 text-[11px] block mt-0.5 break-all leading-normal">{fileInfo}</span>}
                           </div>
                         </div>
                       );
@@ -2565,16 +2610,16 @@ function doGet(e) {
                 </div>
               )}
 
-              <div className="pt-3 border-t border-slate-100">
+              <div className="pt-3 border-t border-slate-800">
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5">Status Penyimpanan:</span>
                 <div className="space-y-1.5">
-                  <p className="text-xs sm:text-sm text-slate-600 font-medium flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                    <span>Google Drive Storage (Terunggah)</span>
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                    <span>Google Drive Storage <strong className="text-emerald-400 font-semibold">(Terunggah)</strong></span>
                   </p>
-                  <p className="text-xs sm:text-sm text-slate-600 font-medium flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                    <span>Supabase PostgreSQL (Sinkron)</span>
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+                    <span>Supabase PostgreSQL <strong className="text-cyan-400 font-semibold">(Sinkron)</strong></span>
                   </p>
                 </div>
               </div>
@@ -2584,7 +2629,7 @@ function doGet(e) {
               <button
                 type="button"
                 onClick={() => setUploadSuccessModal(null)}
-                className="w-full py-3.5 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer hover:shadow-xl active:scale-98 text-center"
+                className="w-full py-3.5 px-8 bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-extrabold rounded-2xl shadow-[0_10px_25px_rgba(6,182,212,0.35)] hover:shadow-[0_12px_30px_rgba(6,182,212,0.5)] transition-all cursor-pointer active:scale-98 text-center uppercase tracking-wider"
               >
                 SELESAI
               </button>
