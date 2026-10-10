@@ -41,7 +41,7 @@ import {
   Cloud
 } from 'lucide-react';
 import LoginPage from './components/LoginPage';
-import MobileSplashScreen from './components/MobileSplashScreen';
+import SplashScreen from './components/SplashScreen';
 import DashboardView from './components/DashboardView';
 import FormUploadView from './components/FormUploadView';
 import FormUnduhView from './components/FormUnduhView';
@@ -195,22 +195,13 @@ export default function App() {
   // Mobile Launch Splash Screen: Hanya muncul di ponsel (layar < 768px / mobile)
   // saat aplikasi pertama kali dibuka (cold start / sesi baru / riwayat aplikasi dibersihkan).
   // Sesuai permintaan: tidak muncul setiap keluar/buka lagi jika sesi masih ada, dan tidak menyenggol desktop.
-  const [showMobileSplash, setShowMobileSplash] = useState<boolean>(() => {
-    try {
-      if (typeof window === 'undefined') return false;
-      const isMobile = window.innerWidth < 768;
-      const hasShown = sessionStorage.getItem('EARSIP_SPLASH_SHOWN');
-      return isMobile && !hasShown;
-    } catch {
-      return false;
-    }
+  // Universal Launch Splash Screen: Muncul setiap kali aplikasi/website dibuka di desktop maupun ponsel.
+  const [showSplash, setShowSplash] = useState<boolean>(() => {
+    return typeof window !== 'undefined';
   });
 
   const handleSplashComplete = () => {
-    try {
-      sessionStorage.setItem('EARSIP_SPLASH_SHOWN', 'true');
-    } catch {}
-    setShowMobileSplash(false);
+    setShowSplash(false);
   };
 
   // Auth state: Keamanan Maksimal.
@@ -1559,8 +1550,8 @@ function doGet(e) {
     }
   };
 
-  if (showMobileSplash) {
-    return <MobileSplashScreen onComplete={handleSplashComplete} />;
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   if (!currentUser) {
