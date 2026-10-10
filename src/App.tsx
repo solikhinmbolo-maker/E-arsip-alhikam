@@ -2516,36 +2516,32 @@ function doGet(e) {
       {/* 10. FULL-SCREEN UPLOAD SUCCESS MODAL (RICH BLUR & CENTERED LAYOUT) */}
       {uploadSuccessModal && (
         <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-2xl animate-fadeIn">
-          <div className="bg-gradient-to-br from-[#FAFCFF] via-white to-[#F0F7FF] border border-blue-100/90 rounded-[32px] p-7 sm:p-9 max-w-md sm:max-w-lg w-full text-center shadow-[0_25px_60px_-15px_rgba(15,23,42,0.35),0_0_35px_rgba(59,130,246,0.12)] animate-scaleUp text-slate-800 relative overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-[32px] p-7 sm:p-9 max-w-md sm:max-w-lg w-full text-center shadow-2xl animate-scaleUp text-slate-800 relative overflow-hidden">
             
-            {/* Subtle Top Ambient Lighting & Decorative Accent */}
-            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-72 h-36 bg-gradient-to-r from-emerald-100/40 via-blue-100/50 to-cyan-100/40 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute top-0 inset-x-12 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-85" />
-
-            {/* Glowing Crisp Slow-Motion Checkmark Badge */}
-            <div className="relative flex justify-center mb-5">
-              {/* Soft Radiant Neon Halo Aura */}
-              <div className="absolute inset-0 max-w-[88px] max-h-[88px] mx-auto bg-gradient-to-tr from-emerald-400/35 via-teal-300/30 to-cyan-400/35 rounded-full blur-xl animate-emerald-glow pointer-events-none" />
-              
-              {/* Crisp Glowing Circular Ring Badge */}
-              <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-full bg-gradient-to-b from-white to-emerald-50/90 border-2 border-emerald-400/75 shadow-[0_0_22px_rgba(16,185,129,0.32),0_8px_18px_-4px_rgba(16,185,129,0.22)] flex items-center justify-center animate-circle-pop-slow">
-                
-                {/* Animated Vector SVG (Crisp & Radiant) */}
-                <svg className="w-12 h-12 sm:w-13 sm:h-13 drop-shadow-[0_2px_8px_rgba(16,185,129,0.45)]" viewBox="0 0 52 52">
-                  {/* Animated outer ring stroke */}
+            {/* Dynamic Green Verification Checkmark Icon (Exact Match to User Sample) */}
+            <div className="flex justify-center mb-5">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center animate-check-pop">
+                <svg className="w-full h-full drop-shadow-sm" viewBox="0 0 100 100">
+                  {/* Bold Green Circular Ring */}
                   <circle 
-                    className="stroke-emerald-500 fill-none animate-ring-slow" 
-                    cx="26" cy="26" r="23" 
-                    strokeWidth="2.5" 
-                    strokeLinecap="round"
+                    cx="50" 
+                    cy="50" 
+                    r="38" 
+                    fill="none" 
+                    stroke="#22C55E" 
+                    strokeWidth="7" 
+                    strokeLinecap="round" 
+                    className="animate-check-ring"
                   />
-                  {/* Slow-motion drawing checkmark */}
+                  {/* Bold Dynamic Checkmark Swoosh */}
                   <path 
-                    className="stroke-emerald-500 fill-none animate-checkmark-slow" 
-                    d="M15 27 L22 34 L37 18" 
-                    strokeWidth="3.6" 
+                    d="M30 48 L46 68 L84 26" 
+                    fill="none" 
+                    stroke="#22C55E" 
+                    strokeWidth="10.5" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
+                    className="animate-check-swoosh"
                   />
                 </svg>
               </div>
