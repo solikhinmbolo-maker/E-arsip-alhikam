@@ -81,7 +81,7 @@ export default function SplashScreen({ onComplete, durationMs = 8000 }: SplashSc
           v1.0 • Secure Enterprise Architecture
         </p>
         <p className="text-[9px] sm:text-[10px] text-slate-500">
-          SMP Al-Hikam Bangkalan © 2026
+          SMP Al-Hikam Sendang Mulyo © 2026
         </p>
       </div>
     </div>
