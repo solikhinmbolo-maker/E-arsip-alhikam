@@ -536,7 +536,7 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
   };
 
   return (
-    <div className="bg-white rounded-3xl p-3 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] max-w-full">
+    <div className="bg-white rounded-3xl p-3 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] w-full max-w-full min-w-0 overflow-hidden">
       
       {/* Header Banner */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
@@ -660,7 +660,7 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
           </div>
 
           {/* Side-by-Side Horizontal Scrollable Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar w-full min-w-0">
             {/* Shortcut: Edit Semua Siswa */}
             <button
               type="button"
@@ -769,9 +769,9 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
       </div>
 
       {/* TABLE VIEW */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-xs w-full max-w-full min-w-0">
         {activeTab === 'siswa' ? (
-          <table className="w-full text-left text-xs sm:text-sm border-collapse">
+          <table className="w-full min-w-[680px] text-left text-xs sm:text-sm border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4">Siswa / Alumni</th>
@@ -878,7 +878,7 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
             </tbody>
           </table>
         ) : (
-          <table className="w-full text-left text-xs sm:text-sm border-collapse">
+          <table className="w-full min-w-[620px] text-left text-xs sm:text-sm border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4">Nama Guru / Tendik</th>

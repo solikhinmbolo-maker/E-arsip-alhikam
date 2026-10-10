@@ -252,7 +252,7 @@ export default function AuditLogView() {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-3 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] max-w-full">
+    <div className="bg-white rounded-3xl p-3 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] w-full max-w-full min-w-0 overflow-hidden">
       
       {/* Live Sync Status Banner */}
       <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
@@ -306,7 +306,7 @@ export default function AuditLogView() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-3 mb-5 w-full min-w-0">
         <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
           <div className="flex items-center justify-between text-slate-500 text-[11px] mb-1 font-medium">
             <span>Total Log</span>
@@ -363,7 +363,7 @@ export default function AuditLogView() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mb-4 w-full min-w-0">
         <div className="sm:col-span-2 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
           <input
@@ -465,8 +465,8 @@ export default function AuditLogView() {
       </div>
 
       {/* Desktop Log Activity Timeline Table */}
-      <div className="hidden sm:block overflow-x-auto rounded-2xl border border-slate-200">
-        <table className="w-full text-left text-xs text-slate-700 border-collapse">
+      <div className="hidden sm:block overflow-x-auto rounded-2xl border border-slate-200 w-full max-w-full min-w-0">
+        <table className="w-full min-w-[760px] text-left text-xs text-slate-700 border-collapse">
           <thead>
             <tr className="border-b border-slate-200 text-slate-600 font-semibold uppercase text-[10px] tracking-wider bg-slate-100/80">
               <th className="py-3 px-4">Waktu & Tanggal</th>

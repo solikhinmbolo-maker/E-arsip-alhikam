@@ -746,7 +746,7 @@ export default function SettingsView({
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fadeIn pb-24 max-w-full overflow-hidden">
+    <div className="space-y-4 sm:space-y-6 animate-fadeIn pb-24 w-full max-w-full min-w-0 overflow-hidden">
       
       {/* Hidden File Input for JSON Restore */}
       <input
@@ -758,7 +758,7 @@ export default function SettingsView({
       />
 
       {/* Modern Responsive Header Banner */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs relative overflow-hidden">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs relative overflow-hidden w-full max-w-full min-w-0">
         <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-gradient-to-bl from-blue-500/10 via-indigo-500/5 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none" />
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 relative z-10">
@@ -808,7 +808,7 @@ export default function SettingsView({
         </div>
 
         {/* Tab Navigation Menu (Pills Bar with Smooth Horizontal Scroll) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 mt-3.5 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 overflow-x-auto pb-1 scrollbar-none snap-x -mx-1 px-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 mt-3.5 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100 overflow-x-auto pb-2 scrollbar-none snap-x -mx-1 px-1 w-full min-w-0">
           {navTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -842,8 +842,8 @@ export default function SettingsView({
       {/* TAB 1: PREFERENSI TAMPILAN, FONT & AUDIO                                 */}
       {/* ========================================================================= */}
       {activeTab === 'preferensi' && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full min-w-0">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             <div className="flex items-center gap-2.5 pb-3 sm:pb-4 border-b border-slate-100">
               <div className="p-2 rounded-xl bg-purple-50 text-purple-600 flex-shrink-0">
                 <Palette className="w-4 h-4 sm:w-5 sm:h-5" />

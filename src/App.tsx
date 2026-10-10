@@ -1607,7 +1607,7 @@ function doGet(e) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-['Poppins'] text-slate-800 antialiased selection:bg-blue-600 selection:text-white w-full max-w-full">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-['Poppins'] text-slate-800 antialiased selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
       
       {/* 1. MOBILE DRAWER OVERLAY (Ultra-smooth hardware accelerated, zero jank, smooth fade in & out) */}
       <div 
@@ -1898,13 +1898,13 @@ function doGet(e) {
       </aside>
 
       {/* 3. MAIN CONTENT CONTAINER (Smooth scrolling, stable layout, generous bottom spacing) */}
-      <main className="flex-1 lg:ml-64 flex flex-col min-h-screen pb-28 lg:pb-8 w-full max-w-full">
+      <main className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen pb-28 lg:pb-8 w-full max-w-full lg:max-w-[calc(100vw-16rem)] overflow-x-hidden">
         
         {/* ============================================================== */}
         {/* DESKTOP HEADER (TETAP SAMA PERSIS DENGAN YANG DISUKAI USER)     */}
         {/* ============================================================== */}
-        <header className="hidden lg:flex sticky top-0 z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b-2 border-blue-500/70 text-white px-8 py-3.5 shadow-md items-center justify-between">
-          <div className="flex items-center gap-3">
+        <header className="hidden lg:flex sticky top-0 z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b-2 border-blue-500/70 text-white px-6 sm:px-8 py-3.5 shadow-md items-center justify-between w-full min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
             <div>
               <h1 className="text-lg font-bold text-white tracking-tight">
                 {pageTitles[activePage]}
@@ -1929,7 +1929,7 @@ function doGet(e) {
           </div>
 
           {/* Centered Notification on Desktop: Pure blue text, no background, no text truncation */}
-          <div className="flex-1 flex justify-center px-4">
+          <div className="flex-1 min-w-0 flex justify-center px-4">
             {globalNotice && (
               <div className="flex items-center gap-2 px-3 py-1 text-blue-400 text-xs font-semibold animate-fadeIn max-w-xl text-center leading-tight">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
@@ -1938,7 +1938,7 @@ function doGet(e) {
             )}
           </div>
 
-          <div className="flex items-center gap-4 sm:gap-5">
+          <div className="flex items-center gap-4 sm:gap-5 flex-shrink-0">
             <button
               onClick={() => setShowLogoutModal(true)}
               className="flex flex-col items-center justify-center text-red-400 hover:text-red-300 transition-transform active:scale-95 cursor-pointer group"
@@ -2093,7 +2093,7 @@ function doGet(e) {
         </header>
 
         {/* View Contents with spacious clearance below fixed mobile header */}
-        <div className="p-3.5 sm:p-6 pt-[118px] sm:pt-[126px] lg:pt-8 flex-1 w-full max-w-full">
+        <div className="p-3.5 sm:p-6 pt-[118px] sm:pt-[126px] lg:pt-8 flex-1 w-full max-w-full min-w-0 overflow-x-hidden">
           {activePage === 'dashboard' && (
             <DashboardView
               dataVersion={dbVersion}
