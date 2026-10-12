@@ -1898,7 +1898,7 @@ function doGet(e) {
       </aside>
 
       {/* 3. MAIN CONTENT CONTAINER (Smooth scrolling, stable layout, generous bottom spacing) */}
-      <main className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen pb-28 lg:pb-8 w-full max-w-full lg:max-w-[calc(100vw-16rem)] overflow-x-hidden">
+      <main className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen pb-28 lg:pb-8 w-full lg:w-[calc(100%-16rem)] max-w-full lg:max-w-[calc(100%-16rem)] overflow-x-hidden">
         
         {/* ============================================================== */}
         {/* DESKTOP HEADER (TETAP SAMA PERSIS DENGAN YANG DISUKAI USER)     */}

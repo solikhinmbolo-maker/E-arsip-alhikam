@@ -761,7 +761,7 @@ export default function SettingsView({
       <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs relative overflow-hidden w-full max-w-full min-w-0">
         <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-gradient-to-bl from-blue-500/10 via-indigo-500/5 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none" />
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 relative z-10">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 relative z-10 w-full min-w-0">
           
           {/* Header Title Info */}
           <div className="flex items-center gap-3 sm:gap-4">
@@ -991,9 +991,9 @@ export default function SettingsView({
       {/* TAB 2: KATEGORI DOKUMEN & ATURAN BERKAS                                   */}
       {/* ========================================================================= */}
       {activeTab === 'kategori' && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
           
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 sm:pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-600 flex-shrink-0">
@@ -1232,8 +1232,8 @@ export default function SettingsView({
       {/* TAB 3: LEGALISIR & WATERMARK                                              */}
       {/* ========================================================================= */}
       {activeTab === 'legalisir' && (
-        <form onSubmit={handleSaveLegalisirConfig} className="space-y-4 sm:space-y-6 animate-fadeIn">
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6">
+        <form onSubmit={handleSaveLegalisirConfig} className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-600 flex-shrink-0">
@@ -1320,10 +1320,10 @@ export default function SettingsView({
       {/* TAB 4: SERVER CLOUD & SINKRONISASI                                        */}
       {/* ========================================================================= */}
       {activeTab === 'cloud' && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
           
           {/* Supabase Primary Cloud Server Card (Optimized for Mobile) */}
-          <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-800 shadow-xl space-y-4 sm:space-y-6">
+          <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-800 shadow-xl space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             
             {/* Server Card Header */}
             <div className="flex items-start sm:items-center gap-3 pb-3 sm:pb-4 border-b border-slate-800">
@@ -1526,8 +1526,8 @@ export default function SettingsView({
       {/* TAB 5: CADANGAN & PEMULIHAN (BACKUP & RESTORE)                            */}
       {/* ========================================================================= */}
       {activeTab === 'backup' && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             <div className="flex items-center gap-2.5 pb-3 sm:pb-4 border-b border-slate-100">
               <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 flex-shrink-0">
                 <Database className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1651,9 +1651,9 @@ export default function SettingsView({
       {/* TAB 6: KEAMANAN & MANAJEMEN SESI                                         */}
       {/* ========================================================================= */}
       {activeTab === 'keamanan' && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
           
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 sm:pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 flex-shrink-0">
@@ -1792,8 +1792,8 @@ export default function SettingsView({
       {/* TAB 7: DIAGNOSTIK MEMORI & STATUS SISTEM (Superadmin Only)               */}
       {/* ========================================================================= */}
       {activeTab === 'diagnostik' && isSuperAdmin && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
-          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
             <div className="flex items-center gap-2.5 pb-3 sm:pb-4 border-b border-slate-100">
               <div className="p-2 rounded-xl bg-blue-50 text-blue-600 flex-shrink-0">
                 <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1861,10 +1861,10 @@ export default function SettingsView({
       {/* TAB 8: INFORMASI, LISENSI & PANDUAN APLIKASI (All Users)                  */}
       {/* ========================================================================= */}
       {activeTab === 'info' && (
-        <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-full min-w-0 overflow-hidden">
           
           {/* Main App Profile Card */}
-          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden w-full max-w-full min-w-0">
             <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="relative z-10 space-y-5">

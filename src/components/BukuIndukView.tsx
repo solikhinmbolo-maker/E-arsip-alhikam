@@ -539,26 +539,26 @@ export default function BukuIndukView({ onNavigateToArsip, onPreview, onNavigate
     <div className="bg-white rounded-3xl p-3 sm:p-8 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] border border-slate-200/90 animate-fadeIn font-['Poppins'] w-full max-w-full min-w-0 overflow-hidden">
       
       {/* Header Banner */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100 w-full min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-md shadow-blue-500/25 flex-shrink-0">
             <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-xl font-bold text-slate-900 leading-tight">Master Data (Siswa & Guru)</h2>
-              <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 flex-shrink-0">
                 Terintegrasi
               </span>
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate sm:whitespace-normal">
               Direktori resmi basis data siswa, alumni, dan dewan guru SMP Al-Hikam
             </p>
           </div>
         </div>
 
         {/* Tab Switcher & Clean Action CTA */}
-        <div className="w-full lg:w-auto flex flex-wrap items-center justify-between lg:justify-end gap-2">
+        <div className="w-full xl:w-auto flex flex-wrap items-center justify-between xl:justify-end gap-2 min-w-0">
           <div className="flex items-center bg-slate-100 p-1 rounded-2xl">
             <button
               onClick={() => {

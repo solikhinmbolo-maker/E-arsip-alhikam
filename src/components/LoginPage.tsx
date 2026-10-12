@@ -225,71 +225,180 @@ _# Digital E Arsip Alhicam_`;
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-3 sm:p-4 bg-[#080E21] relative overflow-hidden font-['Poppins']">
+    <div className="min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-white md:bg-[#080E21] relative overflow-x-hidden font-['Poppins']">
       
-      {/* Background Building with low opacity */}
+      {/* Background Building with low opacity - Desktop only */}
       <div 
-        className="absolute inset-0 bg-cover bg-center pointer-events-none opacity-15"
+        className="hidden md:block absolute inset-0 bg-cover bg-center pointer-events-none opacity-15"
         style={{ backgroundImage: `url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920')` }}
       />
 
-      {/* Ambient Glowing Blobs */}
-      <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Ambient Glowing Blobs - Desktop only */}
+      <div className="hidden md:block absolute top-1/3 left-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="hidden md:block absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Login Card Glassmorphism - Fixed Height & Dimension Lock for Desktop & Mobile */}
-      <div className="relative z-10 w-full max-w-[410px] min-h-[580px] sm:min-h-[600px] bg-[#0F172A]/90 backdrop-blur-2xl border border-cyan-500/30 rounded-3xl p-5 sm:p-7 shadow-[0_20px_50px_rgba(0,0,0,0.6),0_0_30px_rgba(6,182,212,0.15)] my-auto animate-scaleUp flex flex-col justify-between">
+      {/* Login Card: Fullscreen on Mobile, Elegant Glassmorphism Card on Desktop */}
+      <div className="relative z-10 w-full min-h-screen md:min-h-[600px] md:max-w-[410px] bg-gradient-to-b from-white via-slate-50 to-sky-100 md:from-white/88 md:via-slate-50/80 md:to-sky-100/75 backdrop-blur-2xl md:backdrop-blur-3xl border-none md:border md:border-white/70 rounded-none md:rounded-3xl px-5 py-6 sm:px-7 sm:py-7 shadow-none md:shadow-[0_25px_60px_-15px_rgba(3,10,30,0.45),0_0_40px_rgba(2,132,199,0.14),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-0 md:my-auto animate-scaleUp flex flex-col justify-between overflow-x-hidden overflow-y-auto">
         
-        <div>
+        {/* ============================================================== */}
+        {/* HARMONIZING VECTOR TEXTURES (VISIBLE ON MOBILE & DESKTOP)      */}
+        {/* ============================================================== */}
+        
+        {/* A. Full-Card Geometric Security Grid Texture */}
+        <div className="block absolute inset-0 pointer-events-none z-0 opacity-[0.06]">
+          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="cardGridPattern" width="22" height="22" patternUnits="userSpaceOnUse">
+                <path d="M 22 0 L 0 0 0 22" fill="none" stroke="#1E3A8A" strokeWidth="0.75" />
+                <circle cx="22" cy="22" r="0.75" fill="#0284C7" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#cardGridPattern)" />
+          </svg>
+        </div>
+
+        {/* B. Flowing Topographic Contour Lines */}
+        <div className="block absolute inset-0 pointer-events-none z-0 opacity-20 overflow-hidden">
+          <svg className="w-full h-full" viewBox="0 0 400 600" fill="none" preserveAspectRatio="none">
+            {/* Upper Flowing Contours */}
+            <path d="M-40 130 C70 170 160 110 250 160 C340 210 390 150 450 180" stroke="url(#topoGrad1)" strokeWidth="1.5" />
+            <path d="M-40 155 C80 195 170 135 265 185 C350 230 400 175 460 205" stroke="url(#topoGrad1)" strokeWidth="1" strokeDasharray="3 4" />
+            
+            {/* Mid-Lower Horizon Contours */}
+            <path d="M-40 370 C70 420 170 360 260 410 C350 460 410 410 460 440" stroke="url(#topoGrad2)" strokeWidth="1.25" />
+            <path d="M-40 395 C80 445 180 385 275 435 C360 480 420 435 470 465" stroke="url(#topoGrad2)" strokeWidth="0.85" strokeDasharray="4 5" />
+            
+            <defs>
+              <linearGradient id="topoGrad1" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#1D4ED8" />
+                <stop offset="0.5" stopColor="#0284C7" />
+                <stop offset="1" stopColor="#38BDF8" />
+              </linearGradient>
+              <linearGradient id="topoGrad2" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#0284C7" />
+                <stop offset="0.5" stopColor="#2563EB" />
+                <stop offset="1" stopColor="#0F172A" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* 1. Top-Left Flowing Vector Waves */}
+        <div className="block absolute -top-1 -left-1 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none z-0">
+          <svg className="w-full h-full" viewBox="0 0 120 120" fill="none">
+            <path d="M0 0 L95 0 C70 20 55 45 40 70 C28 90 12 105 0 115 Z" fill="url(#blueWaveGradTL)" opacity="0.95" />
+            <path d="M0 0 L70 0 C52 18 42 38 28 60 C15 80 5 95 0 100 Z" fill="url(#cyanWaveGradTL)" opacity="0.85" />
+            <path d="M0 15 C18 28 32 52 40 78 C48 98 42 110 30 125 L0 125 Z" fill="url(#softBlueGradTL)" opacity="0.3" />
+            <defs>
+              <linearGradient id="blueWaveGradTL" x1="0" y1="0" x2="95" y2="95" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#1D4ED8" />
+                <stop offset="1" stopColor="#0284C7" />
+              </linearGradient>
+              <linearGradient id="cyanWaveGradTL" x1="0" y1="0" x2="70" y2="80" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#0284C7" />
+                <stop offset="1" stopColor="#38BDF8" />
+              </linearGradient>
+              <linearGradient id="softBlueGradTL" x1="0" y1="20" x2="40" y2="120" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#60A5FA" />
+                <stop offset="1" stopColor="#BFDBFE" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* 2. Bottom-Right Flowing Vector Waves */}
+        <div className="block absolute -bottom-1 -right-1 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none z-0">
+          <svg className="w-full h-full" viewBox="0 0 120 120" fill="none">
+            <path d="M120 120 L25 120 C50 100 65 75 80 50 C92 30 108 15 120 5 Z" fill="url(#blueWaveGradBR)" opacity="0.95" />
+            <path d="M120 120 L50 120 C68 102 78 82 92 60 C105 40 115 25 120 20 Z" fill="url(#cyanWaveGradBR)" opacity="0.85" />
+            <defs>
+              <linearGradient id="blueWaveGradBR" x1="120" y1="120" x2="25" y2="25" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#1D4ED8" />
+                <stop offset="1" stopColor="#0284C7" />
+              </linearGradient>
+              <linearGradient id="cyanWaveGradBR" x1="120" y1="120" x2="50" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#0284C7" />
+                <stop offset="1" stopColor="#38BDF8" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* 3. Top-Right Dot-Matrix Grid Accent */}
+        <div className="grid absolute top-4 right-4 sm:top-5 sm:right-5 grid-cols-5 gap-1 sm:gap-1.5 opacity-25 pointer-events-none z-0">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <span key={i} className="w-1 h-1 rounded-full bg-blue-600" />
+          ))}
+        </div>
+
+        {/* 4. Lower-Left Subtle Curved Linework */}
+        <div className="block absolute bottom-8 -left-8 w-36 h-36 sm:w-40 sm:h-40 pointer-events-none z-0 opacity-20">
+          <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+            <path d="M0 20 Q40 40 55 75 T110 105" stroke="#2563EB" strokeWidth="1" />
+            <path d="M0 35 Q40 55 55 85 T110 115" stroke="#2563EB" strokeWidth="1" />
+            <path d="M0 50 Q40 70 55 95 T110 125" stroke="#0284C7" strokeWidth="1" />
+          </svg>
+        </div>
+
+        <div className="relative z-10 w-full my-auto">
           {/* Header with Logo */}
-          <div className="text-center mb-4 sm:mb-5">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2 relative">
-              <div className="absolute inset-0 bg-cyan-400/20 rounded-full blur-lg" />
+          <div className="text-center mb-3 sm:mb-4">
+            <div className="w-13 h-13 sm:w-16 sm:h-16 mx-auto mb-1.5 sm:mb-2 relative">
+              <div className="absolute inset-0 bg-blue-500/15 rounded-full blur-lg" />
               <img 
                 src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
                 alt="Logo SMP Al-Hikam" 
-                className="w-full h-full object-contain relative z-10 drop-shadow-[0_4px_10px_rgba(6,182,212,0.4)]"
+                className="w-full h-full object-contain relative z-10 drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]"
               />
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white leading-tight">
-              E-ARSIP <span className="text-cyan-400">AL-HICAM</span>
+            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
+              E-ARSIP <span className="text-blue-600">AL-HICAM</span>
             </h1>
-            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
-            <div className="h-0.5 w-12 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mt-2" />
+            <p className="text-[11.5px] sm:text-xs text-slate-600 font-medium mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
+            
+            {/* Pill Accent underneath subtitle */}
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <span className="w-5 h-1 rounded-full bg-cyan-400" />
+              <span className="w-2.5 h-1 rounded-full bg-blue-600" />
+              <span className="w-1 h-1 rounded-full bg-blue-400" />
+            </div>
           </div>
 
           {/* Reserved Fixed Alert Slot (Prevents card from jumping/expanding when messages appear) */}
-          <div className="min-h-[48px] mb-3 flex items-center justify-center">
+          <div className="min-h-[44px] mb-2 sm:mb-3 flex items-center justify-center">
             {errorMessage ? (
-              <div className="w-full p-2.5 bg-red-500/15 border border-red-500/40 rounded-xl text-red-300 text-xs flex items-center gap-2 animate-bounce">
-                <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-400" />
+              <div className="w-full p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-bounce">
+                <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
                 <span className="leading-tight">{errorMessage}</span>
               </div>
             ) : resetSuccessMsg ? (
-              <div className="w-full p-2.5 bg-emerald-500/15 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+              <div className="w-full p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs flex items-center gap-2 animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
                 <span className="truncate">{resetSuccessMsg}</span>
               </div>
             ) : sessionNotice ? (
-              <div className="w-full p-2.5 bg-amber-500/20 border border-amber-500/50 rounded-xl text-amber-200 text-xs flex items-start gap-2.5 animate-fadeIn">
-                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="w-full p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-start gap-2.5 animate-fadeIn">
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <span className="leading-snug">{sessionNotice}</span>
               </div>
             ) : null}
           </div>
 
-          {/* Form Login (Secured against browser password leak warnings) */}
+          {/* Form Login */}
           <form 
             onSubmit={handleSubmit} 
             autoComplete="off" 
             data-lpignore="true" 
             data-form-type="other"
-            className="space-y-3.5"
+            className="space-y-3 sm:space-y-3.5"
           >
           <div>
-            <label className="block text-[11px] font-semibold text-slate-300 mb-1">Email / Username</label>
+            <label className="block text-[11.5px] font-bold text-slate-700 mb-1">
+              <span className="inline mr-1 text-blue-600">👤</span>
+              Email / Username
+            </label>
             <div className="relative flex items-center">
-              <Mail className="absolute left-3.5 w-4 h-4 text-cyan-400 pointer-events-none" />
+              <Mail className="absolute left-3.5 w-4 h-4 text-blue-600 pointer-events-none" />
               <input
                 type="text"
                 name="portal_user_id"
@@ -303,15 +412,18 @@ _# Digital E Arsip Alhicam_`;
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="User Name"
                 required
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all font-medium"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-white/90 border border-blue-200/80 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all font-medium shadow-2xs"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-300 mb-1">Password</label>
+            <label className="block text-[11.5px] font-bold text-slate-700 mb-1">
+              <span className="inline mr-1 text-blue-600">🔒</span>
+              Password
+            </label>
             <div className="relative flex items-center">
-              <Lock className="absolute left-3.5 w-4 h-4 text-cyan-400 pointer-events-none" />
+              <Lock className="absolute left-3.5 w-4 h-4 text-blue-600 pointer-events-none" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="portal_auth_code"
@@ -323,12 +435,12 @@ _# Digital E Arsip Alhicam_`;
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Kata sandi"
                 required
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all font-medium"
+                className="w-full pl-10 pr-10 py-2.5 bg-white/90 border border-blue-200/80 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all font-medium shadow-2xs"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-slate-400 hover:text-cyan-400 transition-colors p-1"
+                className="absolute right-3 text-slate-400 hover:text-blue-600 transition-colors p-1"
                 title={showPassword ? 'Sembunyikan sandi' : 'Lihat sandi'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -337,20 +449,20 @@ _# Digital E Arsip Alhicam_`;
           </div>
 
           {/* Options: Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between text-[11px] pt-0.5">
-            <label className="flex items-center gap-1.5 cursor-pointer text-slate-300 select-none">
+          <div className="flex items-center justify-between text-[11.5px] pt-0.5">
+            <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 font-medium select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-slate-700 text-cyan-500 focus:ring-cyan-400 bg-slate-900 w-3.5 h-3.5"
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 bg-white w-3.5 h-3.5"
               />
               <span>Ingat saya</span>
             </label>
             <button
               type="button"
               onClick={handleOpenResetModal}
-              className="text-cyan-400 hover:text-cyan-300 hover:underline transition-colors"
+              className="text-blue-600 hover:text-blue-700 hover:underline transition-colors font-semibold"
             >
               Lupa sandi?
             </button>
@@ -360,7 +472,7 @@ _# Digital E Arsip Alhicam_`;
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-[0_4px_16px_rgba(6,182,212,0.35)] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-400 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -377,18 +489,18 @@ _# Digital E Arsip Alhicam_`;
         </form>
 
         {/* Portal Info Pill */}
-        <div className="mt-3.5 p-2 rounded-xl bg-cyan-950/40 border border-cyan-800/40 text-[10px] sm:text-[11px] text-cyan-300 text-center flex items-center justify-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+        <div className="mt-3 p-2 rounded-xl sm:rounded-2xl bg-sky-50/80 border border-blue-200/70 text-[10.5px] sm:text-[11px] text-blue-700 font-semibold text-center flex items-center justify-center gap-1.5 shadow-2xs">
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
           <span>Portal Resmi E-Arsip • Masuk dengan Akun Terdaftar</span>
         </div>
 
         {/* Divider */}
-        <div className="relative my-3.5">
+        <div className="relative my-3">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-700/60" />
+            <div className="w-full border-t border-slate-200" />
           </div>
-          <div className="relative flex justify-center text-[9px] uppercase font-bold text-slate-400">
-            <span className="bg-[#0F172A] px-2.5 tracking-wider">ATAU</span>
+          <div className="relative flex justify-center text-[9px] uppercase font-bold text-slate-500">
+            <span className="bg-slate-100/90 text-slate-500 px-2.5 tracking-wider rounded font-medium">ATAU</span>
           </div>
         </div>
 
@@ -398,7 +510,7 @@ _# Digital E Arsip Alhicam_`;
         <button
           type="button"
           onClick={() => setShowGoogleModal(true)}
-          className="w-full py-2.5 px-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-200 font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
+          className="relative z-10 w-full py-2.5 px-3 bg-white/90 hover:bg-white border border-blue-200/70 shadow-2xs rounded-xl sm:rounded-2xl text-slate-700 font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
