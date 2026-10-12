@@ -2555,7 +2555,7 @@ function doGet(e) {
             
             {/* Dynamic Green Verification Checkmark Icon (Exact Match to User Sample) */}
             <div className="flex justify-center mb-5">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center animate-check-pop">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center animate-check-pop">
                 <svg className="w-full h-full drop-shadow-sm" viewBox="0 0 100 100">
                   {/* Bold Green Circular Ring */}
                   <circle 
@@ -2564,7 +2564,7 @@ function doGet(e) {
                     r="38" 
                     fill="none" 
                     stroke="#22C55E" 
-                    strokeWidth="7" 
+                    strokeWidth="9" 
                     strokeLinecap="round" 
                     className="animate-check-ring"
                   />
@@ -2573,7 +2573,7 @@ function doGet(e) {
                     d="M30 48 L46 68 L84 26" 
                     fill="none" 
                     stroke="#22C55E" 
-                    strokeWidth="10.5" 
+                    strokeWidth="12.5" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
                     className="animate-check-swoosh"

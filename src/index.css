@@ -148,7 +148,7 @@ body {
     stroke-dashoffset: 240;
     opacity: 0;
   }
-  15% {
+  12% {
     opacity: 1;
   }
   100% {
@@ -159,10 +159,10 @@ body {
 
 @keyframes checkSwooshDraw {
   0% {
-    stroke-dashoffset: 95;
+    stroke-dashoffset: 100;
     opacity: 0;
   }
-  20% {
+  15% {
     opacity: 1;
   }
   100% {
@@ -173,37 +173,37 @@ body {
 
 @keyframes checkIconPopSpring {
   0% {
-    transform: scale(0.3) rotate(-10deg);
+    transform: scale(0.4);
     opacity: 0;
   }
-  50% {
-    transform: scale(1.15) rotate(2deg);
+  55% {
+    transform: scale(1.08);
     opacity: 1;
   }
-  75% {
-    transform: scale(0.96) rotate(-1deg);
+  78% {
+    transform: scale(0.97);
   }
   100% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
     opacity: 1;
   }
 }
 
 .animate-check-pop {
   transform-origin: center;
-  animation: checkIconPopSpring 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: checkIconPopSpring 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-check-ring {
   stroke-dasharray: 240;
   stroke-dashoffset: 240;
-  animation: checkRingDraw 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: checkRingDraw 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-check-swoosh {
-  stroke-dasharray: 95;
-  stroke-dashoffset: 95;
-  animation: checkSwooshDraw 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.22s forwards;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: checkSwooshDraw 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
 }
 
 .animate-checkmark {
