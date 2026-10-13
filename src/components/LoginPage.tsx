@@ -225,20 +225,20 @@ _# Digital E Arsip Alhicam_`;
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-white md:bg-[#080E21] relative overflow-x-hidden font-['Poppins']">
+    <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-6 bg-[#080E21] relative overflow-hidden font-['Poppins']">
       
-      {/* Background Building with low opacity - Desktop only */}
+      {/* Background Building with low opacity - Desktop only so mobile has 100% fullscreen card with zero background leakage */}
       <div 
-        className="hidden md:block absolute inset-0 bg-cover bg-center pointer-events-none opacity-15"
+        className="hidden sm:block absolute inset-0 bg-cover bg-center pointer-events-none opacity-20"
         style={{ backgroundImage: `url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1920')` }}
       />
 
       {/* Ambient Glowing Blobs - Desktop only */}
-      <div className="hidden md:block absolute top-1/3 left-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="hidden md:block absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="hidden sm:block absolute top-1/3 left-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="hidden sm:block absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Login Card: Fullscreen on Mobile, Elegant Glassmorphism Card on Desktop */}
-      <div className="relative z-10 w-full min-h-screen md:min-h-[600px] md:max-w-[410px] bg-gradient-to-b from-white via-slate-50 to-sky-100 md:from-white/88 md:via-slate-50/80 md:to-sky-100/75 backdrop-blur-2xl md:backdrop-blur-3xl border-none md:border md:border-white/70 rounded-none md:rounded-3xl px-5 py-6 sm:px-7 sm:py-7 shadow-none md:shadow-[0_25px_60px_-15px_rgba(3,10,30,0.45),0_0_40px_rgba(2,132,199,0.14),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-0 md:my-auto animate-scaleUp flex flex-col justify-between overflow-x-hidden overflow-y-auto">
+      {/* Login Card: Fullscreen on mobile (no background leaks, edge-to-edge), centered floating card on desktop */}
+      <div className="relative z-10 w-full min-h-screen sm:min-h-0 sm:max-w-[420px] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/92 sm:via-slate-50/85 sm:to-sky-100/80 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-7 pt-7 sm:pt-7 pb-7 sm:pb-7 shadow-none sm:shadow-[0_25px_60px_-15px_rgba(3,10,30,0.45),0_0_40px_rgba(2,132,199,0.14),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-0 sm:my-auto flex flex-col justify-center overflow-x-hidden overflow-y-auto">
         
         {/* ============================================================== */}
         {/* HARMONIZING VECTOR TEXTURES (VISIBLE ON MOBILE & DESKTOP)      */}
@@ -341,31 +341,31 @@ _# Digital E Arsip Alhicam_`;
         </div>
 
         <div className="relative z-10 w-full my-auto">
-          {/* Header with Logo */}
-          <div className="text-center mb-3 sm:mb-4">
-            <div className="w-13 h-13 sm:w-16 sm:h-16 mx-auto mb-1.5 sm:mb-2 relative">
-              <div className="absolute inset-0 bg-blue-500/15 rounded-full blur-lg" />
+          {/* Header with Logo - Prominent, positioned higher up */}
+          <div className="text-center mb-2.5 sm:mb-3">
+            <div className="w-18 h-18 sm:w-20 sm:h-20 mx-auto mb-1.5 relative">
+              <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
               <img 
                 src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
                 alt="Logo SMP Al-Hikam" 
-                className="w-full h-full object-contain relative z-10 drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]"
+                className="w-full h-full object-contain relative z-10 drop-shadow-[0_6px_14px_rgba(37,99,235,0.3)]"
               />
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
+            <h1 className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 leading-tight">
               E-ARSIP <span className="text-blue-600">AL-HICAM</span>
             </h1>
-            <p className="text-[11.5px] sm:text-xs text-slate-600 font-medium mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
+            <p className="text-xs sm:text-[13px] text-slate-600 font-semibold mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
             
             {/* Pill Accent underneath subtitle */}
             <div className="flex items-center justify-center gap-1.5 mt-2">
-              <span className="w-5 h-1 rounded-full bg-cyan-400" />
-              <span className="w-2.5 h-1 rounded-full bg-blue-600" />
-              <span className="w-1 h-1 rounded-full bg-blue-400" />
+              <span className="w-6 h-1 rounded-full bg-cyan-400" />
+              <span className="w-3 h-1 rounded-full bg-blue-600" />
+              <span className="w-1.5 h-1 rounded-full bg-blue-400" />
             </div>
           </div>
 
           {/* Reserved Fixed Alert Slot (Prevents card from jumping/expanding when messages appear) */}
-          <div className="min-h-[44px] mb-2 sm:mb-3 flex items-center justify-center">
+          <div className="min-h-[40px] mb-2 sm:mb-2.5 flex items-center justify-center">
             {errorMessage ? (
               <div className="w-full p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-bounce">
                 <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
@@ -393,12 +393,12 @@ _# Digital E Arsip Alhicam_`;
             className="space-y-3 sm:space-y-3.5"
           >
           <div>
-            <label className="block text-[11.5px] font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1">
               <span className="inline mr-1 text-blue-600">👤</span>
               Email / Username
             </label>
             <div className="relative flex items-center">
-              <Mail className="absolute left-3.5 w-4 h-4 text-blue-600 pointer-events-none" />
+              <Mail className="absolute left-3.5 w-4.5 h-4.5 text-blue-600 pointer-events-none" />
               <input
                 type="text"
                 name="portal_user_id"
@@ -412,18 +412,18 @@ _# Digital E Arsip Alhicam_`;
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="User Name"
                 required
-                className="w-full pl-10 pr-3.5 py-2.5 bg-white/90 border border-blue-200/80 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all font-medium shadow-2xs"
+                className="w-full pl-10.5 pr-3.5 py-2.5 sm:py-3 bg-white border-2 border-blue-500/80 hover:border-blue-600 focus:border-blue-600 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/15 transition-all font-semibold shadow-xs shadow-blue-500/10"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11.5px] font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1">
               <span className="inline mr-1 text-blue-600">🔒</span>
               Password
             </label>
             <div className="relative flex items-center">
-              <Lock className="absolute left-3.5 w-4 h-4 text-blue-600 pointer-events-none" />
+              <Lock className="absolute left-3.5 w-4.5 h-4.5 text-blue-600 pointer-events-none" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="portal_auth_code"
@@ -435,7 +435,7 @@ _# Digital E Arsip Alhicam_`;
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Kata sandi"
                 required
-                className="w-full pl-10 pr-10 py-2.5 bg-white/90 border border-blue-200/80 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-400 transition-all font-medium shadow-2xs"
+                className="w-full pl-10.5 pr-10 py-2.5 sm:py-3 bg-white border-2 border-blue-500/80 hover:border-blue-600 focus:border-blue-600 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/15 transition-all font-semibold shadow-xs shadow-blue-500/10"
               />
               <button
                 type="button"
@@ -450,7 +450,7 @@ _# Digital E Arsip Alhicam_`;
 
           {/* Options: Remember Me & Forgot Password */}
           <div className="flex items-center justify-between text-[11.5px] pt-0.5">
-            <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 font-medium select-none">
+            <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 font-semibold select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
@@ -489,30 +489,28 @@ _# Digital E Arsip Alhicam_`;
         </form>
 
         {/* Portal Info Pill */}
-        <div className="mt-3 p-2 rounded-xl sm:rounded-2xl bg-sky-50/80 border border-blue-200/70 text-[10.5px] sm:text-[11px] text-blue-700 font-semibold text-center flex items-center justify-center gap-1.5 shadow-2xs">
+        <div className="mt-2.5 p-2 rounded-xl sm:rounded-2xl bg-sky-50/80 border border-blue-200/70 text-[10.5px] sm:text-[11px] text-blue-700 font-semibold text-center flex items-center justify-center gap-1.5 shadow-2xs">
           <ShieldCheck className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
           <span>Portal Resmi E-Arsip • Masuk dengan Akun Terdaftar</span>
         </div>
 
-        {/* Divider */}
-        <div className="relative my-3">
+        {/* Divider ATAU - Positioned closely with Google button */}
+        <div className="relative my-2.5">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-200" />
+            <div className="w-full border-t border-slate-200/90" />
           </div>
           <div className="relative flex justify-center text-[9px] uppercase font-bold text-slate-500">
-            <span className="bg-slate-100/90 text-slate-500 px-2.5 tracking-wider rounded font-medium">ATAU</span>
+            <span className="bg-slate-100/95 text-slate-500 px-2.5 tracking-wider rounded font-semibold">ATAU</span>
           </div>
         </div>
 
-        </div>
-
-        {/* Google Workspace Button */}
+        {/* Google Workspace Button - Positioned immediately below ATAU */}
         <button
           type="button"
           onClick={() => setShowGoogleModal(true)}
-          className="relative z-10 w-full py-2.5 px-3 bg-white/90 hover:bg-white border border-blue-200/70 shadow-2xs rounded-xl sm:rounded-2xl text-slate-700 font-semibold text-xs flex items-center justify-center gap-2.5 transition-colors cursor-pointer"
+          className="w-full py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl sm:rounded-2xl text-slate-700 font-bold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-98"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
@@ -520,6 +518,7 @@ _# Digital E Arsip Alhicam_`;
           </svg>
           <span>Login Google Workspace</span>
         </button>
+        </div>
       </div>
 
       {/* Modal Reset Password Flow (Step 1: Pertanyaan, Step 2: Form Input -> WA Admin 081998245759) */}
