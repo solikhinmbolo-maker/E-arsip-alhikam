@@ -341,9 +341,9 @@ _# Digital E Arsip Alhicam_`;
         </div>
 
         <div className="relative z-10 w-full my-auto">
-          {/* Header with Logo - Prominent, positioned higher up */}
-          <div className="text-center mb-2">
-            <div className="w-14 h-14 sm:w-15 sm:h-15 mx-auto mb-1 relative">
+          {/* Header with Logo - Shifted further upwards on mobile using relative top offset, strictly preserving position of features below */}
+          <div className="text-center -mt-10 sm:mt-0 mb-8 sm:mb-2 relative -top-12 sm:top-0">
+            <div className="w-16 h-16 sm:w-15 sm:h-15 mx-auto mb-1 relative">
               <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
               <img 
                 src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
@@ -355,13 +355,6 @@ _# Digital E Arsip Alhicam_`;
               E-ARSIP <span className="text-blue-600">AL-HICAM</span>
             </h1>
             <p className="text-[11px] sm:text-xs text-slate-600 font-semibold mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
-            
-            {/* Pill Accent underneath subtitle */}
-            <div className="flex items-center justify-center gap-1.5 mt-1">
-              <span className="w-5 h-0.5 rounded-full bg-cyan-400" />
-              <span className="w-2.5 h-0.5 rounded-full bg-blue-600" />
-              <span className="w-1.5 h-0.5 rounded-full bg-blue-400" />
-            </div>
           </div>
 
           {/* Alert Slot - Only consumes space when an active message is present */}
