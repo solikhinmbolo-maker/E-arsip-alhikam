@@ -237,8 +237,8 @@ _# Digital E Arsip Alhicam_`;
       <div className="hidden sm:block absolute top-1/3 left-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="hidden sm:block absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Login Card: Fullscreen on mobile (no background leaks, edge-to-edge), centered floating card on desktop */}
-      <div className="relative z-10 w-full min-h-screen sm:min-h-0 sm:max-w-[420px] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/92 sm:via-slate-50/85 sm:to-sky-100/80 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-7 pt-7 sm:pt-7 pb-7 sm:pb-7 shadow-none sm:shadow-[0_25px_60px_-15px_rgba(3,10,30,0.45),0_0_40px_rgba(2,132,199,0.14),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-0 sm:my-auto flex flex-col justify-center overflow-x-hidden overflow-y-auto">
+      {/* Login Card: Fullscreen on mobile (no background leaks, edge-to-edge), perfectly proportioned 1-screen floating card on desktop */}
+      <div className="relative z-10 w-full min-h-screen sm:min-h-0 sm:max-w-[390px] sm:max-h-[96vh] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/92 sm:via-slate-50/85 sm:to-sky-100/80 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-5 sm:py-4 shadow-none sm:shadow-[0_20px_50px_-12px_rgba(3,10,30,0.45),0_0_35px_rgba(2,132,199,0.12),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-0 sm:my-auto flex flex-col justify-center overflow-x-hidden overflow-y-auto">
         
         {/* ============================================================== */}
         {/* HARMONIZING VECTOR TEXTURES (VISIBLE ON MOBILE & DESKTOP)      */}
@@ -284,7 +284,7 @@ _# Digital E Arsip Alhicam_`;
         </div>
 
         {/* 1. Top-Left Flowing Vector Waves */}
-        <div className="block absolute -top-1 -left-1 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none z-0">
+        <div className="block absolute -top-1 -left-1 w-24 h-24 sm:w-28 sm:h-28 pointer-events-none z-0">
           <svg className="w-full h-full" viewBox="0 0 120 120" fill="none">
             <path d="M0 0 L95 0 C70 20 55 45 40 70 C28 90 12 105 0 115 Z" fill="url(#blueWaveGradTL)" opacity="0.95" />
             <path d="M0 0 L70 0 C52 18 42 38 28 60 C15 80 5 95 0 100 Z" fill="url(#cyanWaveGradTL)" opacity="0.85" />
@@ -307,7 +307,7 @@ _# Digital E Arsip Alhicam_`;
         </div>
 
         {/* 2. Bottom-Right Flowing Vector Waves */}
-        <div className="block absolute -bottom-1 -right-1 w-28 h-28 sm:w-32 sm:h-32 pointer-events-none z-0">
+        <div className="block absolute -bottom-1 -right-1 w-24 h-24 sm:w-28 sm:h-28 pointer-events-none z-0">
           <svg className="w-full h-full" viewBox="0 0 120 120" fill="none">
             <path d="M120 120 L25 120 C50 100 65 75 80 50 C92 30 108 15 120 5 Z" fill="url(#blueWaveGradBR)" opacity="0.95" />
             <path d="M120 120 L50 120 C68 102 78 82 92 60 C105 40 115 25 120 20 Z" fill="url(#cyanWaveGradBR)" opacity="0.85" />
@@ -325,14 +325,14 @@ _# Digital E Arsip Alhicam_`;
         </div>
 
         {/* 3. Top-Right Dot-Matrix Grid Accent */}
-        <div className="grid absolute top-4 right-4 sm:top-5 sm:right-5 grid-cols-5 gap-1 sm:gap-1.5 opacity-25 pointer-events-none z-0">
+        <div className="grid absolute top-3.5 right-3.5 sm:top-4 sm:right-4 grid-cols-5 gap-1 opacity-25 pointer-events-none z-0">
           {Array.from({ length: 20 }).map((_, i) => (
             <span key={i} className="w-1 h-1 rounded-full bg-blue-600" />
           ))}
         </div>
 
         {/* 4. Lower-Left Subtle Curved Linework */}
-        <div className="block absolute bottom-8 -left-8 w-36 h-36 sm:w-40 sm:h-40 pointer-events-none z-0 opacity-20">
+        <div className="block absolute bottom-6 -left-6 w-32 h-32 sm:w-36 sm:h-36 pointer-events-none z-0 opacity-20">
           <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
             <path d="M0 20 Q40 40 55 75 T110 105" stroke="#2563EB" strokeWidth="1" />
             <path d="M0 35 Q40 55 55 85 T110 115" stroke="#2563EB" strokeWidth="1" />
@@ -342,47 +342,49 @@ _# Digital E Arsip Alhicam_`;
 
         <div className="relative z-10 w-full my-auto">
           {/* Header with Logo - Prominent, positioned higher up */}
-          <div className="text-center mb-2.5 sm:mb-3">
-            <div className="w-18 h-18 sm:w-20 sm:h-20 mx-auto mb-1.5 relative">
+          <div className="text-center mb-2">
+            <div className="w-14 h-14 sm:w-15 sm:h-15 mx-auto mb-1 relative">
               <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
               <img 
                 src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
                 alt="Logo SMP Al-Hikam" 
-                className="w-full h-full object-contain relative z-10 drop-shadow-[0_6px_14px_rgba(37,99,235,0.3)]"
+                className="w-full h-full object-contain relative z-10 drop-shadow-[0_4px_10px_rgba(37,99,235,0.25)]"
               />
             </div>
-            <h1 className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 leading-tight">
+            <h1 className="text-xl sm:text-[22px] font-black tracking-tight text-slate-900 leading-tight">
               E-ARSIP <span className="text-blue-600">AL-HICAM</span>
             </h1>
-            <p className="text-xs sm:text-[13px] text-slate-600 font-semibold mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
+            <p className="text-[11px] sm:text-xs text-slate-600 font-semibold mt-0.5">Sistem Informasi Manajemen Digital SMP Al-Hikam</p>
             
             {/* Pill Accent underneath subtitle */}
-            <div className="flex items-center justify-center gap-1.5 mt-2">
-              <span className="w-6 h-1 rounded-full bg-cyan-400" />
-              <span className="w-3 h-1 rounded-full bg-blue-600" />
-              <span className="w-1.5 h-1 rounded-full bg-blue-400" />
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              <span className="w-5 h-0.5 rounded-full bg-cyan-400" />
+              <span className="w-2.5 h-0.5 rounded-full bg-blue-600" />
+              <span className="w-1.5 h-0.5 rounded-full bg-blue-400" />
             </div>
           </div>
 
-          {/* Reserved Fixed Alert Slot (Prevents card from jumping/expanding when messages appear) */}
-          <div className="min-h-[40px] mb-2 sm:mb-2.5 flex items-center justify-center">
-            {errorMessage ? (
-              <div className="w-full p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-bounce">
-                <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
-                <span className="leading-tight">{errorMessage}</span>
-              </div>
-            ) : resetSuccessMsg ? (
-              <div className="w-full p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs flex items-center gap-2 animate-fadeIn">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
-                <span className="truncate">{resetSuccessMsg}</span>
-              </div>
-            ) : sessionNotice ? (
-              <div className="w-full p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-start gap-2.5 animate-fadeIn">
-                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <span className="leading-snug">{sessionNotice}</span>
-              </div>
-            ) : null}
-          </div>
+          {/* Alert Slot - Only consumes space when an active message is present */}
+          {(errorMessage || resetSuccessMsg || sessionNotice) && (
+            <div className="mb-2 flex items-center justify-center">
+              {errorMessage ? (
+                <div className="w-full p-2 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2 animate-bounce">
+                  <ShieldAlert className="w-4 h-4 flex-shrink-0 text-red-600" />
+                  <span className="leading-tight">{errorMessage}</span>
+                </div>
+              ) : resetSuccessMsg ? (
+                <div className="w-full p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs flex items-center gap-2 animate-fadeIn">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                  <span className="truncate">{resetSuccessMsg}</span>
+                </div>
+              ) : (
+                <div className="w-full p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-start gap-2 animate-fadeIn">
+                  <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <span className="leading-snug">{sessionNotice}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Form Login */}
           <form 
@@ -390,15 +392,15 @@ _# Digital E Arsip Alhicam_`;
             autoComplete="off" 
             data-lpignore="true" 
             data-form-type="other"
-            className="space-y-3 sm:space-y-3.5"
+            className="space-y-2.5"
           >
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5">
               <span className="inline mr-1 text-blue-600">👤</span>
               Email / Username
             </label>
             <div className="relative flex items-center">
-              <Mail className="absolute left-3.5 w-4.5 h-4.5 text-blue-600 pointer-events-none" />
+              <Mail className="absolute left-3 w-4 h-4 text-blue-600 pointer-events-none" />
               <input
                 type="text"
                 name="portal_user_id"
@@ -412,18 +414,18 @@ _# Digital E Arsip Alhicam_`;
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="User Name"
                 required
-                className="w-full pl-10.5 pr-3.5 py-2.5 sm:py-3 bg-white border-2 border-blue-500/80 hover:border-blue-600 focus:border-blue-600 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/15 transition-all font-semibold shadow-xs shadow-blue-500/10"
+                className="w-full pl-9 pr-3 py-2 sm:py-2.5 bg-white border-2 border-blue-500/80 hover:border-blue-600 focus:border-blue-600 rounded-xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-3 focus:ring-blue-500/15 transition-all font-semibold shadow-xs shadow-blue-500/10"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-0.5">
               <span className="inline mr-1 text-blue-600">🔒</span>
               Password
             </label>
             <div className="relative flex items-center">
-              <Lock className="absolute left-3.5 w-4.5 h-4.5 text-blue-600 pointer-events-none" />
+              <Lock className="absolute left-3 w-4 h-4 text-blue-600 pointer-events-none" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="portal_auth_code"
@@ -435,21 +437,21 @@ _# Digital E Arsip Alhicam_`;
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Kata sandi"
                 required
-                className="w-full pl-10.5 pr-10 py-2.5 sm:py-3 bg-white border-2 border-blue-500/80 hover:border-blue-600 focus:border-blue-600 rounded-xl sm:rounded-2xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/15 transition-all font-semibold shadow-xs shadow-blue-500/10"
+                className="w-full pl-9 pr-9 py-2 sm:py-2.5 bg-white border-2 border-blue-500/80 hover:border-blue-600 focus:border-blue-600 rounded-xl text-slate-900 placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-3 focus:ring-blue-500/15 transition-all font-semibold shadow-xs shadow-blue-500/10"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-slate-400 hover:text-blue-600 transition-colors p-1"
+                className="absolute right-2.5 text-slate-400 hover:text-blue-600 transition-colors p-1"
                 title={showPassword ? 'Sembunyikan sandi' : 'Lihat sandi'}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
 
           {/* Options: Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between text-[11.5px] pt-0.5">
+          <div className="flex items-center justify-between text-[11px] pt-0.5">
             <label className="flex items-center gap-1.5 cursor-pointer text-slate-600 font-semibold select-none">
               <input
                 type="checkbox"
@@ -472,7 +474,7 @@ _# Digital E Arsip Alhicam_`;
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-gradient-to-r from-cyan-400 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full py-2.5 px-4 bg-gradient-to-r from-cyan-400 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-[0_6px_16px_rgba(37,99,235,0.3)] active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -489,18 +491,18 @@ _# Digital E Arsip Alhicam_`;
         </form>
 
         {/* Portal Info Pill */}
-        <div className="mt-2.5 p-2 rounded-xl sm:rounded-2xl bg-sky-50/80 border border-blue-200/70 text-[10.5px] sm:text-[11px] text-blue-700 font-semibold text-center flex items-center justify-center gap-1.5 shadow-2xs">
+        <div className="mt-2 p-1.5 rounded-xl bg-sky-50/80 border border-blue-200/70 text-[10px] sm:text-[10.5px] text-blue-700 font-semibold text-center flex items-center justify-center gap-1.5 shadow-2xs">
           <ShieldCheck className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
           <span>Portal Resmi E-Arsip • Masuk dengan Akun Terdaftar</span>
         </div>
 
         {/* Divider ATAU - Positioned closely with Google button */}
-        <div className="relative my-2.5">
+        <div className="relative my-2">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-slate-200/90" />
           </div>
           <div className="relative flex justify-center text-[9px] uppercase font-bold text-slate-500">
-            <span className="bg-slate-100/95 text-slate-500 px-2.5 tracking-wider rounded font-semibold">ATAU</span>
+            <span className="bg-slate-100/95 text-slate-500 px-2 tracking-wider rounded font-semibold">ATAU</span>
           </div>
         </div>
 
@@ -508,7 +510,7 @@ _# Digital E Arsip Alhicam_`;
         <button
           type="button"
           onClick={() => setShowGoogleModal(true)}
-          className="w-full py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl sm:rounded-2xl text-slate-700 font-bold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-98"
+          className="w-full py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs rounded-xl text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
         >
           <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
