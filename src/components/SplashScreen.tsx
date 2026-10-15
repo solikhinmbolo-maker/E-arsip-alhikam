@@ -25,72 +25,107 @@ export default function SplashScreen({ onComplete, durationMs = 8000 }: SplashSc
     };
   }, [durationMs, onComplete]);
 
-  // Synchronize progress bar fill duration with durationMs
-  const fillDurationSec = Math.max((durationMs - 400) / 1000, 0.5);
-
   return (
     <div 
-      className={`fixed inset-0 z-50 flex flex-col justify-between items-center bg-gradient-to-b from-[#0B132B] via-[#080E21] to-[#040817] text-white px-6 transition-all duration-500 ease-out select-none ${
-        isFadingOut ? 'opacity-0 scale-[1.02] pointer-events-none' : 'opacity-100 scale-100'
+      className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 backdrop-blur-md transition-all duration-600 ease-out select-none ${
+        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
-      style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2rem)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)'
-      }}
     >
-      {/* Background Ambient Glows */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/2 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Spacer Top for balanced centering */}
-      <div className="w-full flex-shrink-0 pt-4" />
-
-      {/* CENTER CONTENT (Logo shifted higher up, with loading bar perfectly balanced) */}
-      <div className="flex-1 w-full max-w-sm flex flex-col items-center justify-center text-center my-auto px-4 z-10 -mt-12">
+      {/* Exact Center Luxury Rotating Loading Animation with High-Contrast Lens */}
+      <div className="relative flex items-center justify-center">
         
-        {/* Logo Badge with Soft Cyan Glow */}
-        <div className="relative mb-6 group">
-          <div className="absolute -inset-3.5 bg-gradient-to-r from-blue-500/35 to-cyan-400/35 rounded-3xl blur-2xl transition-all" />
-          <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-b from-white/10 to-white/5 border border-cyan-400/40 p-4 shadow-[0_20px_45px_rgba(0,0,0,0.7),0_0_30px_rgba(6,182,212,0.3)] flex items-center justify-center backdrop-blur-md">
-            <img 
-              src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
-              alt="Logo E-Arsip Al-Hicam" 
-              className="w-full h-full object-contain drop-shadow-[0_4px_14px_rgba(6,182,212,0.6)]"
-            />
+        {/* Ambient Glow Aura */}
+        <div className="absolute w-44 h-44 rounded-full bg-gradient-to-tr from-blue-600/30 via-cyan-500/30 to-blue-400/20 blur-3xl pointer-events-none" />
+
+        {/* Contrast Dark Glass Pod (Ensures 100% bold visibility on both bright and dark backgrounds) */}
+        <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-950/75 border border-cyan-400/30 shadow-[0_16px_40px_rgba(0,0,0,0.65),0_0_30px_rgba(6,182,212,0.25)] flex items-center justify-center backdrop-blur-md">
+          
+          {/* 1. Outer Bold Orbit Ring (Smooth Clockwise 2.6s) */}
+          <div 
+            className="w-20 h-20 sm:w-22 sm:h-22 relative flex items-center justify-center animate-[spin_2.6s_linear_infinite]"
+            style={{ willChange: 'transform' }}
+          >
+            <svg className="w-full h-full" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="vibrantOuterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#1E40AF" stopOpacity="0.2" />
+                  <stop offset="35%" stopColor="#2563EB" stopOpacity="0.8" />
+                  <stop offset="70%" stopColor="#0284C7" stopOpacity="1" />
+                  <stop offset="90%" stopColor="#00D2FF" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#FFFFFF" stopOpacity="1" />
+                </linearGradient>
+              </defs>
+
+              {/* Sub-track for continuous circular outline */}
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="42" 
+                fill="none" 
+                stroke="#334155" 
+                strokeWidth="4.5" 
+                strokeOpacity="0.45" 
+              />
+
+              {/* Bold Primary Gradient Arc (Stroke Width 7px) */}
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="42" 
+                fill="none" 
+                stroke="url(#vibrantOuterGrad)" 
+                strokeWidth="7" 
+                strokeLinecap="round" 
+                strokeDasharray="190 80" 
+              />
+
+              {/* Leading High-Glow White Pearl */}
+              <circle 
+                cx="92" 
+                cy="50" 
+                r="5" 
+                fill="#FFFFFF" 
+                filter="drop-shadow(0 0 6px #00D2FF)" 
+              />
+            </svg>
           </div>
+
+          {/* 2. Inner Reverse Orbit Ring (Smooth Counter-Clockwise 1.8s) */}
+          <div 
+            className="absolute w-12 h-12 sm:w-13 sm:h-13 flex items-center justify-center animate-[spin_1.8s_linear_infinite_reverse]"
+            style={{ willChange: 'transform' }}
+          >
+            <svg className="w-full h-full" viewBox="0 0 60 60">
+              <defs>
+                <linearGradient id="vibrantInnerGrad" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#1D4ED8" stopOpacity="0.2" />
+                  <stop offset="60%" stopColor="#06B6D4" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#FFFFFF" stopOpacity="1" />
+                </linearGradient>
+              </defs>
+
+              {/* Inner Bold Gradient Arc (Stroke Width 5px) */}
+              <circle 
+                cx="30" 
+                cy="30" 
+                r="22" 
+                fill="none" 
+                stroke="url(#vibrantInnerGrad)" 
+                strokeWidth="5" 
+                strokeLinecap="round" 
+                strokeDasharray="85 55" 
+              />
+            </svg>
+          </div>
+
+          {/* 3. Center Glowing Crystal Core */}
+          <div className="absolute flex items-center justify-center pointer-events-none">
+            <div className="w-4 h-4 rounded-full bg-cyan-400/40 animate-ping" />
+            <div className="absolute w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_12px_#00D2FF,0_0_24px_#2563EB]" />
+          </div>
+
         </div>
 
-        {/* Divider Accent */}
-        <div className="h-0.5 w-20 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mb-6 opacity-80" />
-
-        {/* Loading Progress & Dynamic Label */}
-        <div className="flex flex-col items-center gap-3 w-full max-w-[260px]">
-          {/* Progress Track */}
-          <div className="w-full h-2.5 bg-slate-800/90 rounded-full overflow-hidden border border-cyan-500/30 p-[1.5px] shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 rounded-full"
-              style={{
-                animation: `splashFill ${fillDurationSec}s cubic-bezier(0.16, 1, 0.3, 1) forwards`
-              }}
-            />
-          </div>
-
-          {/* Loading Subtext */}
-          <div className="flex items-center gap-2 text-cyan-200 text-xs sm:text-sm font-medium tracking-wide">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>Sedang memuat sistem e-arsip...</span>
-          </div>
-        </div>
-      </div>
-
-      {/* BOTTOM FOOTER */}
-      <div className="w-full flex-shrink-0 flex flex-col items-center justify-center text-center space-y-1 opacity-75 pb-2 z-10">
-        <p className="text-[10px] sm:text-xs text-slate-400 font-mono tracking-wider">
-          v1.0 • Secure Enterprise Architecture
-        </p>
-        <p className="text-[9px] sm:text-[10px] text-slate-500">
-          SMP Al-Hikam Sendang Mulyo © 2026
-        </p>
       </div>
     </div>
   );

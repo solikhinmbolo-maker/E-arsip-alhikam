@@ -1585,12 +1585,15 @@ function doGet(e) {
     }
   };
 
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} durationMs={splashDuration} />;
-  }
-
   if (!currentUser) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} sessionNotice={sessionExpiredNotice} />;
+    return (
+      <>
+        <LoginPage onLoginSuccess={handleLoginSuccess} sessionNotice={sessionExpiredNotice} />
+        {showSplash && (
+          <SplashScreen onComplete={handleSplashComplete} durationMs={splashDuration} />
+        )}
+      </>
+    );
   }
 
   // Titles mapping
@@ -2652,6 +2655,10 @@ function doGet(e) {
             </div>
           </div>
         </div>
+      )}
+
+      {showSplash && (
+        <SplashScreen onComplete={handleSplashComplete} durationMs={splashDuration} />
       )}
 
     </div>
