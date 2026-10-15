@@ -237,8 +237,8 @@ _# Digital E Arsip Alhicam_`;
       <div className="hidden sm:block absolute top-1/3 left-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="hidden sm:block absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Login Card: Fullscreen on mobile (no background leaks, edge-to-edge), perfectly proportioned 1-screen floating card on desktop */}
-      <div className="relative z-10 w-full min-h-screen sm:min-h-0 sm:max-w-[390px] sm:max-h-[96vh] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/92 sm:via-slate-50/85 sm:to-sky-100/80 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-5 sm:py-4 shadow-none sm:shadow-[0_20px_50px_-12px_rgba(3,10,30,0.45),0_0_35px_rgba(2,132,199,0.12),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-0 sm:my-auto flex flex-col justify-center overflow-x-hidden overflow-y-auto">
+      {/* Login Card: Fullscreen on mobile (no background leaks, edge-to-edge), perfectly proportioned ideal floating card on desktop */}
+      <div className="relative z-10 w-full max-sm:min-h-screen sm:min-h-[580px] sm:max-w-[420px] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/95 sm:via-slate-50/90 sm:to-sky-100/85 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-8 sm:pt-9 sm:pb-8 shadow-none sm:shadow-[0_20px_50px_-12px_rgba(3,10,30,0.45),0_0_35px_rgba(2,132,199,0.12),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-auto flex flex-col justify-center overflow-x-hidden max-sm:overflow-y-auto">
         
         {/* ============================================================== */}
         {/* HARMONIZING VECTOR TEXTURES (VISIBLE ON MOBILE & DESKTOP)      */}
@@ -341,9 +341,9 @@ _# Digital E Arsip Alhicam_`;
         </div>
 
         <div className="relative z-10 w-full my-auto">
-          {/* Header with Logo - Shifted further upwards on mobile using relative top offset, strictly preserving position of features below */}
-          <div className="text-center -mt-10 sm:mt-0 mb-8 sm:mb-2 relative -top-12 sm:top-0">
-            <div className="w-16 h-16 sm:w-15 sm:h-15 mx-auto mb-1 relative">
+          {/* Header with Logo - Shifted upwards on mobile, perfectly proportioned and spaced on desktop */}
+          <div className="text-center -mt-10 sm:mt-0 mb-8 sm:mb-6 relative -top-12 sm:top-0">
+            <div className="w-16 h-16 sm:w-16 sm:h-16 mx-auto mb-1.5 relative">
               <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl" />
               <img 
                 src="https://i.ibb.co.com/Jw175yjb/file-00000000c4287208bc89c0bb125befc2-1.png" 
