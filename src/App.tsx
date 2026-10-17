@@ -455,6 +455,13 @@ export default function App() {
     currentUser?.email?.toLowerCase().replace(/^@/, '') === 'superadmin' || 
     currentUser?.email?.toLowerCase() === 'admin@alhicam.sch.id';
 
+  // Guard: Fitur Log & Jejak Audit Pengarsipan dibatasi hanya untuk Super Administrator
+  useEffect(() => {
+    if (!isSuperAdmin && activePage === 'audit-log') {
+      setActivePage('dashboard');
+    }
+  }, [isSuperAdmin, activePage]);
+
   // App User Preferences
   const [userPrefs, setUserPrefs] = useState(() => {
     try {
@@ -1783,21 +1790,23 @@ function doGet(e) {
             <span>Verifikasi & Legalisir</span>
           </button>
 
-          {/* Log Aktivitas & Audit */}
-          <button
-            onClick={() => {
-              setActivePage('audit-log');
-              setMobileSidebarOpen(false);
-            }}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-              activePage === 'audit-log'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>Log Aktivitas & Audit</span>
-          </button>
+          {/* Log Aktivitas & Audit (Khusus Super Administrator) */}
+          {isSuperAdmin && (
+            <button
+              onClick={() => {
+                setActivePage('audit-log');
+                setMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+                activePage === 'audit-log'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              <span>Log Aktivitas & Audit</span>
+            </button>
+          )}
 
           {/* Divider */}
           <div className="pt-4 pb-1 px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -2144,7 +2153,7 @@ function doGet(e) {
             <LegalisirView />
           )}
 
-          {activePage === 'audit-log' && (
+          {activePage === 'audit-log' && isSuperAdmin && (
             <AuditLogView />
           )}
 
@@ -2226,7 +2235,7 @@ function doGet(e) {
                 <div className="w-7 h-7 rounded-lg bg-blue-500/30 text-blue-300 flex items-center justify-center">
                   <User className="w-4 h-4" />
                 </div>
-                <span>Manajemen Pengguna & Profil</span>
+                <span>{isSuperAdmin ? 'Manajemen Pengguna & Profil' : 'Profil Pengguna & Avatar'}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-blue-400" />
             </button>
@@ -2246,21 +2255,23 @@ function doGet(e) {
               <ChevronRight className="w-4 h-4 text-slate-500" />
             </button>
 
-            <button
-              onClick={() => {
-                setMobileProfileSheetOpen(false);
-                setShowUserModal(true);
-              }}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                  <Users className="w-4 h-4" />
+            {isSuperAdmin && (
+              <button
+                onClick={() => {
+                  setMobileProfileSheetOpen(false);
+                  setShowUserModal(true);
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span>Manajemen Hak Akses Pengguna</span>
                 </div>
-                <span>Manajemen Hak Akses Pengguna</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-500" />
-            </button>
+                <ChevronRight className="w-4 h-4 text-slate-500" />
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -2353,22 +2364,42 @@ function doGet(e) {
           <span className="text-[10px] tracking-tight">Unduh</span>
         </button>
 
-        {/* Log & Jejak Audit */}
-        <button
-          onClick={() => setActivePage('audit-log')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
-            activePage === 'audit-log'
-              ? 'text-blue-600 font-bold'
-              : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          <div className={`p-1.5 rounded-xl transition-all ${
-            activePage === 'audit-log' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
-          }`}>
-            <History className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] tracking-tight">Log Audit</span>
-        </button>
+        {/* Navigasi Ke-4: Khusus Super Admin = Log Audit, Akun Selain Super Admin = Statistik & Laporan */}
+        {isSuperAdmin ? (
+          <button
+            onClick={() => setActivePage('audit-log')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+              activePage === 'audit-log'
+                ? 'text-blue-600 font-bold'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-all ${
+              activePage === 'audit-log' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            }`}>
+              <History className="w-5 h-5" />
+            </div>
+            <span className="text-[10px] tracking-tight">Log Audit</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => setActivePage('laporan')}
+            className={`flex flex-col items-center gap-1 py-1 px-1.5 rounded-2xl transition-all cursor-pointer ${
+              activePage === 'laporan'
+                ? 'text-blue-600 font-bold'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl transition-all ${
+              activePage === 'laporan' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            }`}>
+              <BarChart3 className="w-5 h-5" />
+            </div>
+            <span className="text-[9px] sm:text-[10px] tracking-tight font-medium text-center leading-none whitespace-nowrap">
+              Statistik & Laporan
+            </span>
+          </button>
+        )}
 
         {/* Setting / Pengaturan Sistem */}
         <button

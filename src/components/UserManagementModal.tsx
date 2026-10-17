@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   X, 
   Users, 
@@ -18,10 +18,12 @@ import {
   Save,
   RefreshCw,
   Copy,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
 import { addAuditLog, DB_KEYS, getAvatarForUser, saveAvatarForUser } from '../data/mockDatabase';
 import { syncAllUsersToSupabase, saveSingleUserToSupabase, deleteUserFromSupabase, fetchUsersFromSupabase } from '../supabase';
+import { getFullAvatarCatalog, AVATAR_CATEGORIES } from '../data/avatarCatalog';
 
 export interface SystemUser {
   id: string;
@@ -118,6 +120,17 @@ export default function UserManagementModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [selectedAvatarCategory, setSelectedAvatarCategory] = useState<'all' | 'notion' | 'hijab' | 'pria' | 'wanita' | 'anime' | 'tech' | 'inisial'>('all');
+
+  const avatarCatalog = useMemo(() => {
+    return getFullAvatarCatalog(formName || currentUser.name || 'User');
+  }, [formName, currentUser.name]);
+
+  const filteredAvatars = useMemo(() => {
+    if (selectedAvatarCategory === 'all') return avatarCatalog;
+    return avatarCatalog.filter(item => item.category === selectedAvatarCategory);
+  }, [avatarCatalog, selectedAvatarCategory]);
 
   const isCurrentSuperAdmin = Boolean(
     currentUser.role === 'Super Administrator' || 
@@ -360,33 +373,35 @@ export default function UserManagementModal({
             email: cleanEmail,
             role: isMasterAdmin ? 'Super Administrator' : formRole,
             status: isMasterAdmin ? 'Aktif' : formStatus,
-            avatarUrl: isCurrentSuperAdmin ? formAvatar : u.avatarUrl,
+            avatarUrl: formAvatar || u.avatarUrl,
             password: formPassword || u.password
           };
         }
         return u;
       });
 
-      // Jika yang diedit adalah akun yang sedang aktif (termasuk Solikhin Mbolo / Superadmin):
+      // Jika yang diedit adalah akun yang sedang aktif (termasuk non-superadmin):
       if (isSelf) {
         const updatedSelf = {
           name: cleanName,
           email: cleanEmail,
           role: isMasterAdmin ? 'Super Administrator' : formRole,
-          avatarUrl: formAvatar
+          avatarUrl: formAvatar || editingUser.avatarUrl
         };
 
         onUpdateCurrentUser(updatedSelf);
 
-        // Update akun admin login di localStorage
-        const newAdminAcc = {
-          name: cleanName,
-          email: cleanEmail,
-          role: isMasterAdmin ? 'Super Administrator' : formRole,
-          avatarUrl: formAvatar,
-          password: formPassword || (editingUser.password || 'superadmin123')
-        };
-        localStorage.setItem('EARSIP_ADMIN_ACCOUNT', JSON.stringify(newAdminAcc));
+        // Update akun admin login di localStorage jika admin
+        if (isCurrentSuperAdmin || isMasterAdmin) {
+          const newAdminAcc = {
+            name: cleanName,
+            email: cleanEmail,
+            role: isMasterAdmin ? 'Super Administrator' : formRole,
+            avatarUrl: formAvatar || editingUser.avatarUrl,
+            password: formPassword || (editingUser.password || 'superadmin123')
+          };
+          localStorage.setItem('EARSIP_ADMIN_ACCOUNT', JSON.stringify(newAdminAcc));
+        }
         localStorage.setItem(DB_KEYS.AUTH_USER, JSON.stringify(updatedSelf));
         sessionStorage.setItem('EARSIP_SESSION_USER', JSON.stringify(updatedSelf));
       }
@@ -501,11 +516,15 @@ export default function UserManagementModal({
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
-              <Users className="w-5 h-5" />
+              {isCurrentSuperAdmin ? <Users className="w-5 h-5" /> : <User className="w-5 h-5" />}
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-white">Manajemen Pengguna</h3>
-              <p className="text-xs text-slate-400">Daftar akun berwenang & hak akses sistem E-Arsip</p>
+              <h3 className="text-base sm:text-lg font-bold text-white">
+                {isCurrentSuperAdmin ? 'Manajemen Pengguna' : 'Profil Pengguna & Avatar'}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {isCurrentSuperAdmin ? 'Daftar akun berwenang & hak akses sistem E-Arsip' : 'Kelola data akun dan pilih foto profil avatar resmi'}
+              </p>
             </div>
           </div>
           <button 
@@ -573,69 +592,149 @@ export default function UserManagementModal({
                   className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  <span>Kembali ke Daftar</span>
+                  <span>{isCurrentSuperAdmin ? 'Kembali ke Daftar' : 'Tutup'}</span>
                 </button>
                 <span className="text-xs font-bold text-cyan-400">
-                  {isCreatingNew ? 'Tambah Akun Baru' : `Edit Akun: ${editingUser?.name}`}
+                  {isCreatingNew ? 'Tambah Akun Baru' : (isCurrentSuperAdmin ? `Edit Akun: ${editingUser?.name}` : `Profil Saya: ${formName || currentUser.name}`)}
                 </span>
               </div>
 
-              {/* Avatar Uploader */}
-              <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-2xl flex items-center gap-4">
-                <div className="relative group">
-                  <img
-                    src={formAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(formName || 'User')}&background=2563eb&color=fff&size=100`}
-                    alt="Avatar"
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-500 shadow-md"
-                  />
-                  {isCurrentSuperAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
-                    >
-                      <Camera className="w-4 h-4" />
-                      <span className="text-[8px] font-bold">Ubah</span>
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex-1 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white block">Foto Profil Pengguna</span>
-                    {!isCurrentSuperAdmin && (
-                      <span className="text-[10px] text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-md font-medium">
-                        🔒 Hanya Super Admin yang dapat mengubah Foto Profil
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleAvatarFileChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  {isCurrentSuperAdmin && (
-                    <div className="flex gap-2">
+              {/* Avatar Uploader / Selector */}
+              <div className="p-3.5 bg-slate-900/90 border border-slate-800 rounded-2xl space-y-3.5">
+                <div className="flex items-center gap-4">
+                  <div className="relative group flex-shrink-0">
+                    <img
+                      src={formAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(formName || 'User')}&background=2563eb&color=fff&size=100`}
+                      alt="Avatar"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-blue-500 shadow-md bg-slate-800"
+                    />
+                    {isCurrentSuperAdmin && (
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                        className="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
                       >
-                        <Camera className="w-3 h-3" />
-                        <span>Unggah Foto</span>
+                        <Camera className="w-4 h-4" />
+                        <span className="text-[8px] font-bold">Ubah</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(formName || 'User')}&background=2563eb&color=fff&size=100`)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition-all cursor-pointer border border-slate-700"
-                      >
-                        Inisial
-                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <span className="text-xs font-bold text-white block">Foto Profil Pengguna</span>
+                      {!isCurrentSuperAdmin ? (
+                        <span className="text-[10px] text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-cyan-400" />
+                          <span>Pilihan Avatar Kekinian</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold">
+                          Super Administrator (Akses Bebas)
+                        </span>
+                      )}
                     </div>
-                  )}
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleAvatarFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+
+                    {isCurrentSuperAdmin && (
+                      <div className="flex gap-2 pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <Camera className="w-3 h-3" />
+                          <span>Unggah Foto</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(formName || 'User')}&background=2563eb&color=fff&size=100`)}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] font-medium transition-all cursor-pointer border border-slate-700"
+                        >
+                          Inisial
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Khusus Akun Selain Super Admin: Galeri Pilihan Avatar Lengkap */}
+                {!isCurrentSuperAdmin && (
+                  <div className="pt-2 border-t border-slate-800/80 space-y-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200">
+                        <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Koleksi Avatar Kekinian ({filteredAvatars.length} Pilihan)</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400">
+                        Klik avatar untuk memilih
+                      </span>
+                    </div>
+
+                    {/* Kategori Tabs */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                      {AVATAR_CATEGORIES.map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setSelectedAvatarCategory(cat.id)}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-semibold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                            selectedAvatarCategory === cat.id
+                              ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/40'
+                              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-700/60'
+                          }`}
+                        >
+                          <span>{cat.badge}</span>
+                          <span>{cat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Grid Avatar Pilihan */}
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-56 sm:max-h-64 overflow-y-auto pr-1 p-1.5 bg-slate-950/70 rounded-xl border border-slate-800">
+                      {filteredAvatars.map((item) => {
+                        const isSelected = formAvatar === item.url;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setFormAvatar(item.url)}
+                            className={`group relative flex flex-col items-center p-1.5 rounded-xl transition-all cursor-pointer border ${
+                              isSelected
+                                ? 'bg-blue-600/30 border-cyan-400 shadow-md shadow-cyan-500/20 ring-2 ring-cyan-400'
+                                : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/80'
+                            }`}
+                            title={item.name}
+                          >
+                            <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-slate-800 flex items-center justify-center">
+                              <img
+                                src={item.url}
+                                alt={item.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                loading="lazy"
+                              />
+                              {isSelected && (
+                                <div className="absolute inset-0 bg-blue-600/50 backdrop-blur-[1px] flex items-center justify-center">
+                                  <CheckCircle2 className="w-5 h-5 text-white drop-shadow" />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[9px] text-slate-300 font-medium truncate max-w-full mt-1 group-hover:text-white block text-center">
+                              {item.name.replace(/^(Pak|Bu|Ustadz|Ustadzah)\s+/, '')}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Nama Lengkap */}
@@ -756,7 +855,7 @@ export default function UserManagementModal({
                   className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/30 cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
                 >
                   <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
-                  <span>{isSaving ? 'Menyimpan ke Supabase...' : 'Simpan Akun'}</span>
+                  <span>{isSaving ? 'Menyimpan ke Supabase...' : (isCurrentSuperAdmin ? 'Simpan Akun' : 'Simpan Foto Profil & Data')}</span>
                 </button>
               </div>
 
