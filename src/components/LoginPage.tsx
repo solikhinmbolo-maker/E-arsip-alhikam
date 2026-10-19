@@ -225,7 +225,7 @@ _# Digital E Arsip Alhicam_`;
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-0 sm:p-6 bg-[#080E21] relative overflow-hidden font-['Poppins']">
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-start sm:justify-center p-0 sm:p-6 bg-[#080E21] relative overflow-y-auto font-['Poppins']">
       
       {/* Background Building with low opacity - Desktop only so mobile has 100% fullscreen card with zero background leakage */}
       <div 
@@ -238,7 +238,7 @@ _# Digital E Arsip Alhicam_`;
       <div className="hidden sm:block absolute bottom-1/3 right-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Login Card: Fullscreen on mobile (no background leaks, edge-to-edge), perfectly proportioned ideal floating card on desktop */}
-      <div className="relative z-10 w-full max-sm:min-h-screen sm:min-h-[580px] sm:max-w-[420px] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/95 sm:via-slate-50/90 sm:to-sky-100/85 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-8 sm:pt-9 sm:pb-8 shadow-none sm:shadow-[0_20px_50px_-12px_rgba(3,10,30,0.45),0_0_35px_rgba(2,132,199,0.12),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] my-auto flex flex-col justify-center overflow-x-hidden max-sm:overflow-y-auto">
+      <div className="relative z-10 w-full max-sm:min-h-[100dvh] sm:min-h-[580px] sm:max-w-[420px] bg-gradient-to-b from-white/95 via-slate-50/90 to-sky-100/85 sm:bg-gradient-to-b sm:from-white/95 sm:via-slate-50/90 sm:to-sky-100/85 backdrop-blur-3xl border-0 sm:border border-white/80 rounded-none sm:rounded-3xl p-5 sm:p-8 sm:pt-9 sm:pb-8 shadow-none sm:shadow-[0_20px_50px_-12px_rgba(3,10,30,0.45),0_0_35px_rgba(2,132,199,0.12),inset_0_1px_2px_rgba(255,255,255,0.95),inset_0_-2px_6px_rgba(30,58,138,0.08)] sm:my-auto flex flex-col justify-start sm:justify-center overflow-x-hidden">
         
         {/* ============================================================== */}
         {/* HARMONIZING VECTOR TEXTURES (VISIBLE ON MOBILE & DESKTOP)      */}
