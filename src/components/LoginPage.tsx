@@ -403,6 +403,8 @@ _# Digital E Arsip Alhicam_`;
                 spellCheck="false"
                 data-lpignore="true"
                 data-form-type="other"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="User Name"
@@ -426,6 +428,8 @@ _# Digital E Arsip Alhicam_`;
                 data-lpignore="true"
                 data-1p-ignore="true"
                 data-form-type="other"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Kata sandi"
