@@ -40,6 +40,7 @@ export default function FormUnduhView({
   const [filterJenis, setFilterJenis] = useState('SEMUA');
   const [searchTerm, setSearchTerm] = useState(initialSearch);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingItemId, setDownloadingItemId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadingItemName, setDownloadingItemName] = useState('');
   const [isSyncingFromGoogle, setIsSyncingFromGoogle] = useState(false);
@@ -163,6 +164,7 @@ function extractDriveIdForDownload(link?: string): string | null {
   // Handle Direct File Download (Never redirecting to Google Drive view tab)
   const handleDownload = async (item: ArsipItem) => {
     setIsDownloading(true);
+    setDownloadingItemId(item.id);
     setDownloadingItemName(item.namaFileAsli || item.subjek);
     setDownloadProgress(20);
 
@@ -293,6 +295,7 @@ function extractDriveIdForDownload(link?: string): string | null {
       console.error('Download error:', err);
     } finally {
       setIsDownloading(false);
+      setDownloadingItemId(null);
       setDownloadProgress(0);
     }
   };
@@ -500,11 +503,23 @@ function extractDriveIdForDownload(link?: string): string | null {
                 </button>
                 <button
                   type="button"
+                  disabled={downloadingItemId === item.id}
                   onClick={() => handleDownload(item)}
-                  className="py-1.5 px-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1 shadow-sm"
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1 shadow-sm transition-all ${
+                    downloadingItemId === item.id ? 'bg-emerald-700 text-white opacity-85 cursor-wait' : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                  }`}
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Unduh</span>
+                  {downloadingItemId === item.id ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-200" />
+                      <span>Proses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Unduh</span>
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -579,12 +594,24 @@ function extractDriveIdForDownload(link?: string): string | null {
 
                       <button
                         type="button"
+                        disabled={downloadingItemId === item.id}
                         onClick={() => handleDownload(item)}
-                        className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors flex items-center gap-1 ${
+                          downloadingItemId === item.id ? 'bg-emerald-700 text-white opacity-85 cursor-wait' : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer'
+                        }`}
                         title="Unduh Berkas Langsung"
                       >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Unduh</span>
+                        {downloadingItemId === item.id ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-200" />
+                            <span>Mengunduh...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Unduh</span>
+                          </>
+                        )}
                       </button>
 
                       <button
@@ -665,6 +692,17 @@ function extractDriveIdForDownload(link?: string): string | null {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* FLOATING STICKY DOWNLOAD INDICATOR (VISIBLE ANYWHERE ON SCROLL) */}
+      {isDownloading && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce">
+          <CloudDownload className="w-5 h-5 text-emerald-400 animate-pulse flex-shrink-0" />
+          <div className="text-xs">
+            <p className="font-bold text-white truncate max-w-[220px]">Mengunduh: {downloadingItemName}</p>
+            <p className="text-[10px] text-emerald-300">Mohon tunggu sebentar...</p>
+          </div>
+        </div>
       )}
 
     </div>
