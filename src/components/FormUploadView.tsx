@@ -438,6 +438,9 @@ export default function FormUploadView({
       fileDataUrl: optimizedBase64
     };
 
+    const sanitizedSubjek = (namaSubjek || 'berkas').trim().replace(/[^a-zA-Z0-9_\u00C0-\u017F]/g, '_');
+    const customFilename = `${newId}_${sanitizedSubjek}_${selectedFile.name}`;
+
     // 1. Unggah berkas fisik langsung ke Google Drive Private Storage dengan live real-time progress
     const driveUpload = await uploadFileToGoogleDriveApi(
       selectedFile,
@@ -448,7 +451,7 @@ export default function FormUploadView({
         kategori: kategori,
         kategoriUtama: jenisArsip,
         tahun: tahun || new Date().getFullYear().toString(),
-        customFilename: selectedFile.name
+        customFilename
       },
       (percent, statusText) => {
         setProgressPercent(percent);
@@ -559,6 +562,9 @@ export default function FormUploadView({
         fileDataUrl: fileObj.base64
       };
 
+      const sanitizedSubjek = (namaSubjek || 'berkas').trim().replace(/[^a-zA-Z0-9_\u00C0-\u017F]/g, '_');
+      const customFilename = `${newId}_${sanitizedSubjek}_${fileObj.file.name}`;
+
       const driveUpload = await uploadFileToGoogleDriveApi(
         fileObj.file, 
         {
@@ -568,7 +574,7 @@ export default function FormUploadView({
           kategori: katKey,
           kategoriUtama: jenisArsip,
           tahun: tahun || new Date().getFullYear().toString(),
-          customFilename: fileObj.file.name
+          customFilename
         },
         (p, status) => {
           setProgressStatus(`[${katKey}] ${status}`);
