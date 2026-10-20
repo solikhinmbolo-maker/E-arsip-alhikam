@@ -2,7 +2,6 @@ package com.alhikam.earsip;
 
 import android.app.DownloadManager;
 import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -55,17 +54,9 @@ public class MainActivity extends BridgeActivity {
                             DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
                             if (dm != null) {
                                 dm.enqueue(request);
-                                Toast.makeText(getApplicationContext(), "📥 Mengunduh: " + filename, Toast.LENGTH_LONG).show();
+                                Toast.makeText(getApplicationContext(), "📥 Mengunduh: " + filename, Toast.LENGTH_SHORT).show();
                             }
-                        } catch (Exception e) {
-                            try {
-                                Intent intent = new Intent(Intent.ACTION_VIEW);
-                                intent.setData(Uri.parse(url));
-                                startActivity(intent);
-                            } catch (Exception ex) {
-                                Toast.makeText(getApplicationContext(), "Gagal mengunduh: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        }
+                        } catch (Exception ignored) {}
                     }
                 });
             }

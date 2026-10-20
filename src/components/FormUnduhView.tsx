@@ -232,67 +232,16 @@ function extractDriveIdForDownload(link?: string): string | null {
         } catch {}
       }
 
-      // 3. Check Google Drive Direct Download via Server Proxy (Downloads directly to device storage without opening Google Drive)
+      // 3. Check Google Drive Direct Download via Server Proxy
       const driveId = extractDriveIdForDownload(item.linkDrive);
       if (driveId) {
-        setDownloadProgress(30);
+        setDownloadProgress(50);
         const proxyDownloadUrl = `/api/drive/download?fileId=${driveId}&filename=${encodeURIComponent(fallbackFilename)}`;
         
         window.dispatchEvent(new CustomEvent('earsip:notify', { 
-          detail: { message: `📥 Sedang mengunduh berkas "${fallbackFilename}"...`, duration: 4000 } 
+          detail: { message: `📥 Mengunduh berkas "${fallbackFilename}"...`, duration: 4000 } 
         }));
 
-        try {
-          setDownloadProgress(50);
-          const response = await fetch(proxyDownloadUrl);
-          if (response.ok) {
-            setDownloadProgress(80);
-            const blob = await response.blob();
-            setDownloadProgress(95);
-            
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = fallbackFilename;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
-
-            // Pada perangkat Android APK WebView, pemicu unduh latar belakang
-            const isAndroidApp = /Android/i.test(navigator.userAgent) || Boolean((window as any).Capacitor);
-            if (isAndroidApp) {
-              try {
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = proxyDownloadUrl;
-                document.body.appendChild(iframe);
-                setTimeout(() => document.body.removeChild(iframe), 4000);
-              } catch {}
-            }
-
-            setDownloadProgress(100);
-            window.dispatchEvent(new CustomEvent('earsip:notify', { 
-              detail: { message: `✓ Berkas "${fallbackFilename}" berhasil diunduh ke folder Download!`, duration: 6000 } 
-            }));
-            await new Promise(r => setTimeout(r, 1200));
-            setIsDownloading(false);
-
-            addAuditLog({
-              aksi: 'UNDUH',
-              kategori: item.kategoriUtama || item.kategori,
-              subjek: item.subjek,
-              detail: `Unduh berkas Google Drive "${fallbackFilename}" (${item.ukuran || '-'})`,
-              status: 'SUCCESS'
-            });
-            return;
-          }
-        } catch (fetchErr) {
-          console.warn('Proxy blob download error, fallback to direct stream:', fetchErr);
-        }
-
-        // Fallback navigasi langsung ke endpoint proxy download
         setDownloadProgress(90);
         const a = document.createElement('a');
         a.href = proxyDownloadUrl;
@@ -303,10 +252,7 @@ function extractDriveIdForDownload(link?: string): string | null {
         document.body.removeChild(a);
 
         setDownloadProgress(100);
-        window.dispatchEvent(new CustomEvent('earsip:notify', { 
-          detail: { message: `✓ Memulai unduhan berkas "${fallbackFilename}" ke perangkat!`, duration: 5000 } 
-        }));
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 600));
         setIsDownloading(false);
 
         addAuditLog({
