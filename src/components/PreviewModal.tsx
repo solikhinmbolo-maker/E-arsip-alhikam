@@ -230,10 +230,6 @@ export default function PreviewModal({ item, onClose, onPrint, onDownload }: Pre
         status: 'SUCCESS'
       });
     }
-    if (driveDirectDownloadUrl) {
-      window.open(driveDirectDownloadUrl, '_blank');
-      return;
-    }
     onDownload(item);
   };
 

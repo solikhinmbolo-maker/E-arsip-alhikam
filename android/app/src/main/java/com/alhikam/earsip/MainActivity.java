@@ -1,10 +1,20 @@
 package com.alhikam.earsip;
 
+import android.app.DownloadManager;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
+import android.webkit.URLUtil;
+import android.webkit.WebView;
+import android.widget.Toast;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -14,6 +24,52 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Pasang DownloadListener native Android agar WebView di APK dapat mengunduh berkas dengan notifikasi resmi
+        try {
+            if (this.bridge != null && this.bridge.getWebView() != null) {
+                WebView webView = this.bridge.getWebView();
+                webView.setDownloadListener(new DownloadListener() {
+                    @Override
+                    public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
+                        try {
+                            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                            String filename = URLUtil.guessFileName(url, contentDisposition, mimeType);
+                            
+                            if (mimeType != null && !mimeType.isEmpty()) {
+                                request.setMimeType(mimeType);
+                            }
+                            String cookies = CookieManager.getInstance().getCookie(url);
+                            if (cookies != null) {
+                                request.addRequestHeader("cookie", cookies);
+                            }
+                            if (userAgent != null) {
+                                request.addRequestHeader("User-Agent", userAgent);
+                            }
+                            request.setDescription("Mengunduh berkas e-Arsip Alhicam...");
+                            request.setTitle(filename);
+                            request.allowScanningByMediaScanner();
+                            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
+
+                            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                            if (dm != null) {
+                                dm.enqueue(request);
+                                Toast.makeText(getApplicationContext(), "📥 Mengunduh: " + filename, Toast.LENGTH_LONG).show();
+                            }
+                        } catch (Exception e) {
+                            try {
+                                Intent intent = new Intent(Intent.ACTION_VIEW);
+                                intent.setData(Uri.parse(url));
+                                startActivity(intent);
+                            } catch (Exception ex) {
+                                Toast.makeText(getApplicationContext(), "Gagal mengunduh: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (Exception ignored) {}
 
         Window window = getWindow();
 
