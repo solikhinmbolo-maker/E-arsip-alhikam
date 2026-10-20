@@ -232,68 +232,29 @@ function extractDriveIdForDownload(link?: string): string | null {
         } catch {}
       }
 
-      // 3. Check Google Drive Direct Binary Download
+      // 3. Check Google Drive Direct Download via Server Proxy (Downloads directly to device storage without opening Google Drive)
       const driveId = extractDriveIdForDownload(item.linkDrive);
       if (driveId) {
-        setDownloadProgress(70);
-        const directUrls = [
-          `https://lh3.googleusercontent.com/d/${driveId}`,
-          `https://drive.google.com/uc?export=download&id=${driveId}`
-        ];
+        setDownloadProgress(80);
+        const proxyDownloadUrl = `/api/drive/download?fileId=${driveId}&filename=${encodeURIComponent(fallbackFilename)}`;
+        
+        const a = document.createElement('a');
+        a.href = proxyDownloadUrl;
+        a.download = fallbackFilename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
-        let fetchedBlob: Blob | null = null;
-        for (const url of directUrls) {
-          try {
-            const res = await fetch(url);
-            if (res.ok) {
-              const b = await res.blob();
-              if (b.size > 100) {
-                fetchedBlob = b;
-                break;
-              }
-            }
-          } catch {}
-        }
-
-        if (fetchedBlob) {
-          setDownloadProgress(90);
-          const blobUrl = URL.createObjectURL(fetchedBlob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fallbackFilename;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          setDownloadProgress(100);
-          await new Promise(r => setTimeout(r, 200));
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
-          addAuditLog({
-            aksi: 'UNDUH',
-            kategori: item.kategoriUtama || item.kategori,
-            subjek: item.subjek,
-            detail: `Unduh berkas Google Drive "${fallbackFilename}" (${item.ukuran || '-'})`,
-            status: 'SUCCESS'
-          });
-          return;
-        }
-
-        // Trigger Google Drive download stream without target="_blank" so it downloads directly in browser
-        setDownloadProgress(90);
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = `https://drive.google.com/uc?export=download&id=${driveId}`;
-        document.body.appendChild(iframe);
         setDownloadProgress(100);
-        await new Promise(r => setTimeout(r, 1000));
-        document.body.removeChild(iframe);
+        await new Promise(r => setTimeout(r, 200));
+        setIsDownloading(false);
 
         addAuditLog({
           aksi: 'UNDUH',
           kategori: item.kategoriUtama || item.kategori,
           subjek: item.subjek,
-          detail: `Unduh berkas Google Drive Stream "${fallbackFilename}" (${item.ukuran || '-'})`,
+          detail: `Unduh berkas Google Drive "${fallbackFilename}" (${item.ukuran || '-'})`,
           status: 'SUCCESS'
         });
         return;

@@ -19,6 +19,17 @@ function globalServerConfigPlugin() {
         }
       });
 
+      server.middlewares.use('/api/drive/download', async (req: any, res: any) => {
+        try {
+          const { default: handler } = await import('./api/drive/download');
+          await handler(req, res);
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+
       server.middlewares.use('/api/drive/test-connection', async (req: any, res: any) => {
         try {
           const { default: handler } = await import('./api/drive/test-connection');
