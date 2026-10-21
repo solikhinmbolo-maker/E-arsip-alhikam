@@ -696,7 +696,7 @@ function extractDriveIdForDownload(link?: string): string | null {
 
       {/* FLOATING STICKY DOWNLOAD INDICATOR (VISIBLE ANYWHERE ON SCROLL) */}
       {isDownloading && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce">
           <CloudDownload className="w-5 h-5 text-emerald-400 animate-pulse flex-shrink-0" />
           <div className="text-xs">
             <p className="font-bold text-white truncate max-w-[220px]">Mengunduh: {downloadingItemName}</p>
