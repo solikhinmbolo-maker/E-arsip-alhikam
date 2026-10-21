@@ -19,32 +19,29 @@ export default async function handler(req: Request, res: Response) {
       `https://lh3.googleusercontent.com/d/${fileId}`
     ];
 
-    let fileBuffer: Buffer | null = null;
-    let contentType = 'application/octet-stream';
-
     for (const url of downloadUrls) {
       try {
         const response = await fetch(url, { redirect: 'follow' });
-        if (response.ok) {
-          const arrayBuf = await response.arrayBuffer();
-          if (arrayBuf.byteLength > 100) {
-            fileBuffer = Buffer.from(arrayBuf);
-            contentType = response.headers.get('content-type') || 'application/octet-stream';
-            break;
+        if (response.ok && response.body) {
+          res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
+          res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFilename)}"`);
+          
+          // Stream the body
+          const reader = response.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
           }
+          return res.end();
         }
-      } catch {}
+      } catch (err) {
+        console.error(`Download Attempt Failed for ${url}:`, err);
+      }
     }
 
-    if (!fileBuffer) {
-      res.writeHead(302, { Location: `https://drive.google.com/uc?export=download&id=${fileId}` });
-      return res.end();
-    }
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFilename)}"`);
-    res.setHeader('Content-Length', fileBuffer.length);
-    return res.end(fileBuffer);
+    res.writeHead(302, { Location: `https://drive.google.com/uc?export=download&id=${fileId}` });
+    return res.end();
   } catch (error: any) {
     console.error('Download Proxy Error:', error);
     res.statusCode = 500;
