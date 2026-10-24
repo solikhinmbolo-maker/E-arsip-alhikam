@@ -9,6 +9,16 @@ const config: CapacitorConfig = {
     url: 'https://e-arsipalhicam.vercel.app',
     cleartext: true,
     androidScheme: 'https'
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 0,
+      launchAutoHide: true,
+      backgroundColor: '#080E21',
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true
+    }
   }
 };
 
