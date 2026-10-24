@@ -2304,24 +2304,26 @@ function doGet(e) {
         </div>
 
       {/* ============================================================== */}
-      {/* 5. REFINED FLOATING BOTTOM NAVIGATION (ROCK-SOLID FIXED HEIGHT, IMMUNE TO ANDROID NAV BAR) */}
+      {/* 5. REFINED FLOATING BOTTOM NAVIGATION (OPTIMIZED ICONS & LABELS FOR MOBILE) */}
       {/* ============================================================== */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 h-[64px] bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex lg:hidden items-center justify-around px-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 h-[68px] bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex lg:hidden items-center justify-around px-2">
         {/* Dashboard */}
         <button
           onClick={() => setActivePage('dashboard')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
             activePage === 'dashboard'
-              ? 'text-blue-600 font-bold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-blue-600'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${
-            activePage === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            activePage === 'dashboard' ? 'bg-blue-50 text-blue-600 shadow-xs' : 'bg-transparent text-slate-500'
           }`}>
-            <LayoutDashboard className="w-5 h-5" />
+            <LayoutDashboard className="w-[23px] h-[23px]" />
           </div>
-          <span className="text-[10px] tracking-tight">Beranda</span>
+          <span className={`text-[11.5px] tracking-tight ${activePage === 'dashboard' ? 'font-bold' : 'font-semibold'}`}>
+            Beranda
+          </span>
         </button>
 
         {/* Upload */}
@@ -2330,18 +2332,20 @@ function doGet(e) {
             setActivePage('upload');
             setActiveSubKategori('Arsip Siswa');
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
             activePage === 'upload'
-              ? 'text-blue-600 font-bold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-blue-600'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${
-            activePage === 'upload' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            activePage === 'upload' ? 'bg-blue-50 text-blue-600 shadow-xs' : 'bg-transparent text-slate-500'
           }`}>
-            <CloudUpload className="w-5 h-5" />
+            <CloudUpload className="w-[23px] h-[23px]" />
           </div>
-          <span className="text-[10px] tracking-tight">Upload</span>
+          <span className={`text-[11.5px] tracking-tight ${activePage === 'upload' ? 'font-bold' : 'font-semibold'}`}>
+            Upload
+          </span>
         </button>
 
         {/* Unduh */}
@@ -2350,52 +2354,58 @@ function doGet(e) {
             setActivePage('unduh');
             setActiveSubKategori('Arsip Siswa');
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
             activePage === 'unduh'
-              ? 'text-blue-600 font-bold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-blue-600'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${
-            activePage === 'unduh' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            activePage === 'unduh' ? 'bg-blue-50 text-blue-600 shadow-xs' : 'bg-transparent text-slate-500'
           }`}>
-            <CloudDownload className="w-5 h-5" />
+            <CloudDownload className="w-[23px] h-[23px]" />
           </div>
-          <span className="text-[10px] tracking-tight">Unduh</span>
+          <span className={`text-[11.5px] tracking-tight ${activePage === 'unduh' ? 'font-bold' : 'font-semibold'}`}>
+            Unduh
+          </span>
         </button>
 
         {/* Navigasi Ke-4: Khusus Super Admin = Log Audit, Akun Selain Super Admin = Statistik & Laporan */}
         {isSuperAdmin ? (
           <button
             onClick={() => setActivePage('audit-log')}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
               activePage === 'audit-log'
-                ? 'text-blue-600 font-bold'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'text-blue-600'
+                : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             <div className={`p-1.5 rounded-xl transition-all ${
-              activePage === 'audit-log' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+              activePage === 'audit-log' ? 'bg-blue-50 text-blue-600 shadow-xs' : 'bg-transparent text-slate-500'
             }`}>
-              <History className="w-5 h-5" />
+              <History className="w-[23px] h-[23px]" />
             </div>
-            <span className="text-[10px] tracking-tight">Log Audit</span>
+            <span className={`text-[11.5px] tracking-tight ${activePage === 'audit-log' ? 'font-bold' : 'font-semibold'}`}>
+              Log Audit
+            </span>
           </button>
         ) : (
           <button
             onClick={() => setActivePage('laporan')}
-            className={`flex flex-col items-center gap-1 py-1 px-1.5 rounded-2xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 py-1 px-1.5 rounded-2xl transition-all cursor-pointer ${
               activePage === 'laporan'
-                ? 'text-blue-600 font-bold'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'text-blue-600'
+                : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             <div className={`p-1.5 rounded-xl transition-all ${
-              activePage === 'laporan' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+              activePage === 'laporan' ? 'bg-blue-50 text-blue-600 shadow-xs' : 'bg-transparent text-slate-500'
             }`}>
-              <BarChart3 className="w-5 h-5" />
+              <BarChart3 className="w-[23px] h-[23px]" />
             </div>
-            <span className="text-[9px] sm:text-[10px] tracking-tight font-medium text-center leading-none whitespace-nowrap">
+            <span className={`text-[10px] sm:text-[10.5px] tracking-tight text-center leading-none whitespace-nowrap ${
+              activePage === 'laporan' ? 'font-bold' : 'font-semibold'
+            }`}>
               Statistik & Laporan
             </span>
           </button>
@@ -2404,18 +2414,20 @@ function doGet(e) {
         {/* Setting / Pengaturan Sistem */}
         <button
           onClick={() => setActivePage('pengaturan')}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
             activePage === 'pengaturan'
-              ? 'text-blue-600 font-bold'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-blue-600'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${
-            activePage === 'pengaturan' ? 'bg-blue-50 text-blue-600' : 'bg-transparent'
+            activePage === 'pengaturan' ? 'bg-blue-50 text-blue-600 shadow-xs' : 'bg-transparent text-slate-500'
           }`}>
-            <Settings className="w-5 h-5" />
+            <Settings className="w-[23px] h-[23px]" />
           </div>
-          <span className="text-[10px] tracking-tight">Setting</span>
+          <span className={`text-[11.5px] tracking-tight ${activePage === 'pengaturan' ? 'font-bold' : 'font-semibold'}`}>
+            Setting
+          </span>
         </button>
       </nav>
 
