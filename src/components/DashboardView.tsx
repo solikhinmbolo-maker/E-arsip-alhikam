@@ -501,17 +501,17 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
 
           {/* Highlight Number & Storage Progress */}
           <div className="relative z-10 mb-2.5">
-            <span className="text-[11px] text-slate-400 font-medium block">Total Dokumen Tersimpan</span>
-            <div className="flex items-baseline gap-2 mt-0.5">
-              <span className="text-2xl font-extrabold text-white tracking-tight">{totalArsip}</span>
-              <span className="text-xs font-semibold text-emerald-400">Berkas Digital</span>
+            <span className="text-xs text-slate-300 font-medium block">Total Dokumen Tersimpan</span>
+            <div className="flex items-baseline gap-2.5 mt-1">
+              <span className="text-[28px] font-extrabold text-white tracking-tight leading-none">{totalArsip}</span>
+              <span className="text-[15px] font-bold text-emerald-400">Berkas Digital</span>
             </div>
 
             {/* Storage Progress Bar */}
-            <div className="mt-2 space-y-1">
-              <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+            <div className="mt-2.5 space-y-1">
+              <div className="flex justify-between text-[11px] text-slate-400 font-medium">
                 <span>Storage Penyimpanan</span>
-                <span className="text-slate-300 font-semibold">{usedStorageDisplay} / {totalStorageDisplay}</span>
+                <span className="text-slate-200 font-semibold">{usedStorageDisplay} / {totalStorageDisplay}</span>
               </div>
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60">
                 <div 
@@ -525,16 +525,16 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           {/* Micro Category Strip */}
           <div className="relative z-10 grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800/80 text-center">
             <div className="bg-slate-800/60 rounded-lg p-1.5 border border-slate-700/50">
-              <span className="text-[10px] text-slate-400 block">Siswa</span>
-              <strong className="text-xs font-bold text-white block mt-0.5">{siswaArsip}</strong>
+              <span className="text-[11px] text-slate-400 font-medium block">Siswa</span>
+              <strong className="text-sm font-bold text-white block mt-0.5">{siswaArsip}</strong>
             </div>
             <div className="bg-slate-800/60 rounded-lg p-1.5 border border-slate-700/50">
-              <span className="text-[10px] text-slate-400 block">Guru</span>
-              <strong className="text-xs font-bold text-white block mt-0.5">{guruArsip}</strong>
+              <span className="text-[11px] text-slate-400 font-medium block">Guru</span>
+              <strong className="text-sm font-bold text-white block mt-0.5">{guruArsip}</strong>
             </div>
             <div className="bg-slate-800/60 rounded-lg p-1.5 border border-slate-700/50">
-              <span className="text-[10px] text-slate-400 block">Lainnya</span>
-              <strong className="text-xs font-bold text-white block mt-0.5">{lainnyaArsip}</strong>
+              <span className="text-[11px] text-slate-400 font-medium block">Lainnya</span>
+              <strong className="text-sm font-bold text-white block mt-0.5">{lainnyaArsip}</strong>
             </div>
           </div>
 
