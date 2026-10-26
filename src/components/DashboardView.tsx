@@ -673,58 +673,82 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       {/* 3. KPI METRIC CARDS (ELEGANT SOFT-TINTED GRADIENTS)            */}
       {/* ============================================================== */}
       
-      <section className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5">
+      {/* ============================================================== */}
+      {/* 3. KPI METRIC CARDS (DAPODIK STYLE WITH UNIQUE OVERLAY & SOFT TINTS) */}
+      {/* ============================================================== */}
+      
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         
-        {/* Total Arsip */}
-        <div className="bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-slate-50 border border-blue-200/90 hover:border-blue-400/80 hover:shadow-md rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 relative overflow-hidden transition-all group">
-          <div className="w-1 h-full bg-blue-600 absolute left-0 top-0" />
-          <div className="flex items-center justify-between mb-1.5 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-950/70">Total Arsip</span>
-            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-blue-500/15 text-blue-600 border border-blue-200/60 flex items-center justify-center text-sm sm:text-xl shadow-xs group-hover:scale-110 transition-transform">
-              <FolderOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+        {/* Total Arsip (Ocean Blue Theme) */}
+        <div className="bg-gradient-to-br from-blue-500/10 via-blue-50/80 to-sky-100/40 border border-blue-200/90 hover:border-blue-400 hover:shadow-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative overflow-hidden transition-all duration-300 group cursor-pointer">
+          {/* Left Colored Border Bar */}
+          <div className="w-1.5 h-full bg-gradient-to-b from-blue-600 to-cyan-500 absolute left-0 top-0 rounded-l-2xl sm:rounded-l-3xl" />
+
+          <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-950/80">Total Arsip</span>
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 group-hover:scale-110 transition-transform">
+              <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{totalArsip}</h3>
-          <span className="text-[10px] sm:text-xs text-emerald-600 font-bold block mt-1">+12.5% bulan ini</span>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight relative z-10">{totalArsip}</h3>
+          <span className="text-[10px] sm:text-xs text-blue-700 font-bold block mt-1 relative z-10 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            +12.5% bulan ini
+          </span>
         </div>
 
-        {/* Arsip Siswa */}
-        <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-slate-50 border border-emerald-200/90 hover:border-emerald-400/80 hover:shadow-md rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 relative overflow-hidden transition-all group">
-          <div className="w-1 h-full bg-emerald-500 absolute left-0 top-0" />
-          <div className="flex items-center justify-between mb-1.5 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-950/70">Arsip Siswa</span>
-            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/15 text-emerald-600 border border-emerald-200/60 flex items-center justify-center text-sm sm:text-xl shadow-xs group-hover:scale-110 transition-transform">
-              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
+        {/* Arsip Siswa (Emerald Green Theme) */}
+        <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-50/80 to-teal-100/40 border border-emerald-200/90 hover:border-emerald-400 hover:shadow-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative overflow-hidden transition-all duration-300 group cursor-pointer">
+          {/* Left Colored Border Bar */}
+          <div className="w-1.5 h-full bg-gradient-to-b from-emerald-600 to-teal-500 absolute left-0 top-0 rounded-l-2xl sm:rounded-l-3xl" />
+
+          <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-950/80">Arsip Siswa</span>
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:scale-110 transition-transform">
+              <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{siswaArsip}</h3>
-          <span className="text-[10px] sm:text-xs text-slate-600 font-medium block mt-1">{allSiswa.length} data siswa</span>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight relative z-10">{siswaArsip}</h3>
+          <span className="text-[10px] sm:text-xs text-emerald-700 font-bold block mt-1 relative z-10 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            {allSiswa.length} data siswa
+          </span>
         </div>
 
-        {/* Arsip Guru */}
-        <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-slate-50 border border-amber-200/90 hover:border-amber-400/80 hover:shadow-md rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 relative overflow-hidden transition-all group">
-          <div className="w-1 h-full bg-amber-500 absolute left-0 top-0" />
-          <div className="flex items-center justify-between mb-1.5 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-950/70">Arsip Guru</span>
-            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-amber-500/15 text-amber-600 border border-amber-200/60 flex items-center justify-center text-sm sm:text-xl shadow-xs group-hover:scale-110 transition-transform">
-              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
+        {/* Arsip Guru & PTK (Warm Amber/Orange Theme) */}
+        <div className="bg-gradient-to-br from-amber-500/10 via-amber-50/80 to-orange-100/40 border border-amber-200/90 hover:border-amber-400 hover:shadow-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative overflow-hidden transition-all duration-300 group cursor-pointer">
+          {/* Left Colored Border Bar */}
+          <div className="w-1.5 h-full bg-gradient-to-b from-amber-500 to-orange-500 absolute left-0 top-0 rounded-l-2xl sm:rounded-l-3xl" />
+
+          <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-950/80">Arsip Guru</span>
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-600 text-white flex items-center justify-center shadow-md shadow-amber-600/30 group-hover:scale-110 transition-transform">
+              <Briefcase className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{guruArsip}</h3>
-          <span className="text-[10px] sm:text-xs text-slate-600 font-medium block mt-1">14 kategori SK</span>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight relative z-10">{guruArsip}</h3>
+          <span className="text-[10px] sm:text-xs text-amber-700 font-bold block mt-1 relative z-10 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            {allGuru.length} data guru & PTK
+          </span>
         </div>
 
-        {/* Arsip Lainnya */}
-        <div className="bg-gradient-to-br from-purple-50/90 via-indigo-50/40 to-slate-50 border border-purple-200/90 hover:border-purple-400/80 hover:shadow-md rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 relative overflow-hidden transition-all group">
-          <div className="w-1 h-full bg-purple-500 absolute left-0 top-0" />
-          <div className="flex items-center justify-between mb-1.5 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-purple-950/70">Lain Nya</span>
-            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-purple-500/15 text-purple-600 border border-purple-200/60 flex items-center justify-center text-sm sm:text-xl shadow-xs group-hover:scale-110 transition-transform">
-              <Boxes className="w-4 h-4 sm:w-5 sm:h-5" />
+        {/* Arsip Lainnya (Vibrant Purple/Indigo Theme) */}
+        <div className="bg-gradient-to-br from-purple-500/10 via-purple-50/80 to-indigo-100/40 border border-purple-200/90 hover:border-purple-400 hover:shadow-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative overflow-hidden transition-all duration-300 group cursor-pointer">
+          {/* Left Colored Border Bar */}
+          <div className="w-1.5 h-full bg-gradient-to-b from-purple-600 to-indigo-500 absolute left-0 top-0 rounded-l-2xl sm:rounded-l-3xl" />
+
+          <div className="flex items-center justify-between mb-2 sm:mb-3 relative z-10">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-purple-950/80">Arsip Lainnya</span>
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-600/30 group-hover:scale-110 transition-transform">
+              <Boxes className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
           </div>
-          <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">{lainnyaArsip}</h3>
-          <span className="text-[10px] sm:text-xs text-slate-600 font-medium block mt-1">Surat & LPJ</span>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight relative z-10">{lainnyaArsip}</h3>
+          <span className="text-[10px] sm:text-xs text-purple-700 font-bold block mt-1 relative z-10 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+            Surat, SK & LPJ
+          </span>
         </div>
 
       </section>

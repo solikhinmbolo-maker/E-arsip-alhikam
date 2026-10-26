@@ -721,7 +721,59 @@ export function getAllRawArsip(): ArsipItem[] {
 }
 
 export function getStoredArsip(): ArsipItem[] {
-  return getAllRawArsip().filter(item => !item.isTrash);
+  const activeItems = getAllRawArsip().filter(item => !item.isTrash);
+
+  const masterData = getSanitizedMasterData();
+  const siswaNamesSet = new Set(masterData.siswa.map(s => (s.nama || '').trim().toLowerCase()));
+  const guruNamesSet = new Set(masterData.guru.map(g => (g.nama || '').trim().toLowerCase()));
+
+  const katSiswaSet = new Set(getActiveKategoriSiswa().map(k => k.trim().toLowerCase()));
+  const katGuruSet = new Set(getActiveKategoriGuru().map(k => k.trim().toLowerCase()));
+  const katLainnyaSet = new Set(getActiveKategoriLainnya().map(k => k.trim().toLowerCase()));
+
+  const guruOnlyKeywords = ['ktp guru', 'akta iv', 'npwp', 'bpjs', 'buku rekening', 'sertifikat pendidik', 'serdik', 'sk kepala', 'nuptk'];
+  const siswaOnlyKeywords = ['skl', 'spmb', 'pip/kip', 'nisn', 'ijazah smp', 'berkas spmb', 'berkas pip'];
+  const lainnyaOnlyKeywords = ['surat masuk', 'surat keluar', 'proposal', 'lpj', 'nota dinas'];
+
+  return activeItems.map(item => {
+    const subjekLower = (item.subjek || '').trim().toLowerCase();
+    const catLower = (item.kategori || '').trim().toLowerCase();
+    const catUtamaLower = (item.kategoriUtama || '').trim().toLowerCase();
+
+    let resolved: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya' = item.kategoriUtama || 'Arsip Siswa';
+
+    // 1. Direct Subject Match against Master Data
+    if (siswaNamesSet.has(subjekLower)) {
+      resolved = 'Arsip Siswa';
+    } else if (guruNamesSet.has(subjekLower)) {
+      resolved = 'Arsip Guru';
+    }
+    // 2. Keyword / category fallback matching
+    else if (guruOnlyKeywords.some(kw => catLower.includes(kw))) {
+      resolved = 'Arsip Guru';
+    } else if (lainnyaOnlyKeywords.some(kw => catLower.includes(kw))) {
+      resolved = 'Arsip Lainnya';
+    } else if (siswaOnlyKeywords.some(kw => catLower.includes(kw))) {
+      resolved = 'Arsip Siswa';
+    } else if (katLainnyaSet.has(catLower)) {
+      resolved = 'Arsip Lainnya';
+    } else if (catUtamaLower.includes('guru') || catUtamaLower.includes('tendik')) {
+      resolved = 'Arsip Guru';
+    } else if (catUtamaLower.includes('lain')) {
+      resolved = 'Arsip Lainnya';
+    } else if (catUtamaLower.includes('siswa')) {
+      resolved = 'Arsip Siswa';
+    } else if (katSiswaSet.has(catLower) && !katGuruSet.has(catLower)) {
+      resolved = 'Arsip Siswa';
+    } else if (katGuruSet.has(catLower) && !katSiswaSet.has(catLower)) {
+      resolved = 'Arsip Guru';
+    }
+
+    if (item.kategoriUtama !== resolved) {
+      return { ...item, kategoriUtama: resolved };
+    }
+    return item;
+  });
 }
 
 export function saveStoredArsip(items: ArsipItem[]) {
