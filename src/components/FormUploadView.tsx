@@ -160,6 +160,23 @@ export default function FormUploadView({
     setQuickTahun('');
   };
 
+  const [categoryVersion, setCategoryVersion] = useState(0);
+
+  // Read max upload MB limit configured in Pengaturan Sistem
+  const getMaxUploadMb = (): number => {
+    try {
+      const saved = localStorage.getItem('EARSIP_FILE_RULES');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.maxUploadMb) {
+          const num = parseInt(parsed.maxUploadMb, 10);
+          if (!isNaN(num) && num > 0) return num;
+        }
+      }
+    } catch {}
+    return 50;
+  };
+
   // Load Master Data & Existing Archives
   useEffect(() => {
     const refreshData = () => {
@@ -168,10 +185,10 @@ export default function FormUploadView({
       setMasterSiswa(sList);
       setMasterGuru(gList);
       setStoredArsipList(getStoredArsip());
+      setCategoryVersion(v => v + 1);
 
       const distinctTahun = Array.from(new Set(sList.map(s => s.tahun))).sort().reverse();
       setTahunList(distinctTahun);
-      // Keep year as selected by user, do not auto-select top year
     };
 
     refreshData();
@@ -201,10 +218,11 @@ export default function FormUploadView({
   }, [modeUpload, namaSubjek, kategori, jenisArsip, identitas, tahun, storedArsipList]);
 
   // Update dynamic categories based on active type
-  const activeKategoriList = 
-    jenisArsip === 'Arsip Siswa' ? getActiveKategoriSiswa() :
-    jenisArsip === 'Arsip Guru' ? getActiveKategoriGuru() : 
-    getActiveKategoriLainnya();
+  const activeKategoriList = useMemo(() => {
+    return jenisArsip === 'Arsip Siswa' ? getActiveKategoriSiswa() :
+      jenisArsip === 'Arsip Guru' ? getActiveKategoriGuru() : 
+      getActiveKategoriLainnya();
+  }, [jenisArsip, categoryVersion]);
 
   // Filter & Sort siswa alphabetically (A-Z) by name
   const sortedSiswaList = useMemo(() => {
@@ -316,9 +334,10 @@ export default function FormUploadView({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      const maxMb = getMaxUploadMb();
       
-      if (file.size > 50 * 1024 * 1024) {
-        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal 50 MB.`);
+      if (file.size > maxMb * 1024 * 1024) {
+        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal ${maxMb} MB.`);
         return;
       }
       
@@ -340,8 +359,9 @@ export default function FormUploadView({
 
   // Kolektif file picker
   const handleKolektifFile = async (kat: string, file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      setErrorMessage(`Ukuran berkas "${kat}" (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas 50 MB.`);
+    const maxMb = getMaxUploadMb();
+    if (file.size > maxMb * 1024 * 1024) {
+      setErrorMessage(`Ukuran berkas "${kat}" (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas ${maxMb} MB.`);
       return;
     }
     const reader = new FileReader();

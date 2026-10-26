@@ -141,6 +141,80 @@ export function getActiveKategoriLainnya(): string[] {
   return KATEGORI_LAINNYA;
 }
 
+export function saveCategoryList(
+  kategoriUtama: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya' | 'siswa' | 'guru' | 'lainnya',
+  newList: string[]
+): string[] {
+  let key = 'EARSIP_CUSTOM_KAT_SISWA';
+  let catGroup = 'Arsip Siswa';
+  if (kategoriUtama === 'Arsip Guru' || kategoriUtama === 'guru') {
+    key = 'EARSIP_CUSTOM_KAT_GURU';
+    catGroup = 'Arsip Guru';
+  } else if (kategoriUtama === 'Arsip Lainnya' || kategoriUtama === 'lainnya') {
+    key = 'EARSIP_CUSTOM_KAT_LAINNYA';
+    catGroup = 'Arsip Lainnya';
+  }
+
+  // Deduplicate and trim
+  const cleanList: string[] = [];
+  const seen = new Set<string>();
+  newList.forEach(item => {
+    const trimmed = item.trim();
+    if (trimmed && !seen.has(trimmed.toLowerCase())) {
+      seen.add(trimmed.toLowerCase());
+      cleanList.push(trimmed);
+    }
+  });
+
+  try {
+    localStorage.setItem(key, JSON.stringify(cleanList));
+  } catch (e) {
+    console.error('Failed to save category list:', e);
+  }
+
+  invalidateKatCache();
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('earsip:categories-updated', {
+      detail: { kategoriUtama: catGroup, categories: cleanList }
+    }));
+    window.dispatchEvent(new CustomEvent('earsip:cloud-synced'));
+  }
+
+  return cleanList;
+}
+
+export function deleteCategoryInSettings(
+  kategoriUtama: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya' | 'siswa' | 'guru' | 'lainnya',
+  kategoriToDelete: string
+): string[] {
+  let current: string[] = [];
+  if (kategoriUtama === 'Arsip Guru' || kategoriUtama === 'guru') {
+    current = getActiveKategoriGuru();
+  } else if (kategoriUtama === 'Arsip Lainnya' || kategoriUtama === 'lainnya') {
+    current = getActiveKategoriLainnya();
+  } else {
+    current = getActiveKategoriSiswa();
+  }
+
+  const targetTrim = kategoriToDelete.trim().toLowerCase();
+  const updated = current.filter(k => k.trim().toLowerCase() !== targetTrim);
+  const saved = saveCategoryList(kategoriUtama, updated);
+
+  try {
+    addAuditLog({
+      aksi: 'PENGATURAN',
+      kategori: 'Pengaturan Kategori',
+      subjek: kategoriUtama.toString(),
+      detail: `Menghapus kategori "${kategoriToDelete}" dari daftar kategori`,
+      operator: getCurrentOperatorEmail(),
+      status: 'WARNING'
+    });
+  } catch {}
+
+  return saved;
+}
+
 /**
  * Renames a category across category configurations and cascades the change to all stored archive items.
  * If user renamed "KTP" to "KTP/Identitas", all archives belonging to Andi or anyone else with kategori="KTP"

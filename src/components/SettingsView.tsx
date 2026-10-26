@@ -52,6 +52,14 @@ import {
   saveStoredMasterGuru,
   restoreSampleArsipData,
   renameKategoriCascade,
+  saveCategoryList,
+  deleteCategoryInSettings,
+  getActiveKategoriSiswa,
+  getActiveKategoriGuru,
+  getActiveKategoriLainnya,
+  KATEGORI_SISWA,
+  KATEGORI_GURU,
+  KATEGORI_LAINNYA,
   addAuditLog,
   getStoredLegalisirConfig,
   saveStoredLegalisirConfig,
@@ -182,37 +190,24 @@ export default function SettingsView({
   };
 
   // 2. Kategori & Format Berkas
-  const DEFAULT_KATEGORI_SISWA = ['Ijazah SD/MI', 'SKL (Surat Keterangan Lulus)', 'SPMB (Formulir Masuk)', 'Kartu Keluarga (KK)', 'Akta Kelahiran', 'KIP / PIP / PKH', 'Rapor'];
-  const DEFAULT_KATEGORI_GURU = ['Ijazah S1 / S2', 'SK Pengangkatan & Penugasan', 'Sertifikat Pendidik (Serdik)', 'KTP Guru / Pegawai', 'Kartu Keluarga (KK)', 'Buku Rekening Gaji', 'NPWP'];
-  const DEFAULT_KATEGORI_LAINNYA = ['Surat Masuk', 'Surat Keluar', 'SK Kepala Sekolah', 'LPJ Dana BOS', 'Kurikulum & Silabus', 'Akreditasi Lembaga', 'Sertifikat & Piagam'];
-
-  const [kategoriSiswa, setKategoriSiswa] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_SISWA');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_KATEGORI_SISWA;
-  });
-
-  const [kategoriGuru, setKategoriGuru] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_GURU');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_KATEGORI_GURU;
-  });
-
-  const [kategoriLainnya, setKategoriLainnya] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('EARSIP_CUSTOM_KAT_LAINNYA');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_KATEGORI_LAINNYA;
-  });
+  const [kategoriSiswa, setKategoriSiswa] = useState<string[]>(() => getActiveKategoriSiswa());
+  const [kategoriGuru, setKategoriGuru] = useState<string[]>(() => getActiveKategoriGuru());
+  const [kategoriLainnya, setKategoriLainnya] = useState<string[]>(() => getActiveKategoriLainnya());
 
   const [newKatSiswa, setNewKatSiswa] = useState('');
   const [newKatGuru, setNewKatGuru] = useState('');
   const [newKatLainnya, setNewKatLainnya] = useState('');
+
+  // Listener to keep local category states in sync when events trigger
+  useEffect(() => {
+    const syncCategories = () => {
+      setKategoriSiswa(getActiveKategoriSiswa());
+      setKategoriGuru(getActiveKategoriGuru());
+      setKategoriLainnya(getActiveKategoriLainnya());
+    };
+    window.addEventListener('earsip:categories-updated', syncCategories);
+    return () => window.removeEventListener('earsip:categories-updated', syncCategories);
+  }, []);
 
   // State for Editing Category Name with Automatic Cascade
   const [editingCategory, setEditingCategory] = useState<{
@@ -227,9 +222,8 @@ export default function SettingsView({
         showNotification('Kategori sudah ada dalam daftar.', 'error');
         return;
       }
-      const updated = [...kategoriSiswa, newKatSiswa.trim()];
+      const updated = saveCategoryList('Arsip Siswa', [...kategoriSiswa, newKatSiswa.trim()]);
       setKategoriSiswa(updated);
-      localStorage.setItem('EARSIP_CUSTOM_KAT_SISWA', JSON.stringify(updated));
       addAuditLog({
         aksi: 'PENGATURAN',
         kategori: 'Arsip Siswa',
@@ -239,16 +233,14 @@ export default function SettingsView({
         status: 'SUCCESS'
       });
       setNewKatSiswa('');
-      window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
       showNotification('✓ Kategori Siswa baru berhasil ditambahkan');
     } else if (type === 'guru' && newKatGuru.trim()) {
       if (kategoriGuru.some(k => k.trim().toLowerCase() === newKatGuru.trim().toLowerCase())) {
         showNotification('Kategori sudah ada dalam daftar.', 'error');
         return;
       }
-      const updated = [...kategoriGuru, newKatGuru.trim()];
+      const updated = saveCategoryList('Arsip Guru', [...kategoriGuru, newKatGuru.trim()]);
       setKategoriGuru(updated);
-      localStorage.setItem('EARSIP_CUSTOM_KAT_GURU', JSON.stringify(updated));
       addAuditLog({
         aksi: 'PENGATURAN',
         kategori: 'Arsip Guru',
@@ -258,16 +250,14 @@ export default function SettingsView({
         status: 'SUCCESS'
       });
       setNewKatGuru('');
-      window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
       showNotification('✓ Kategori Guru baru berhasil ditambahkan');
     } else if (type === 'lainnya' && newKatLainnya.trim()) {
       if (kategoriLainnya.some(k => k.trim().toLowerCase() === newKatLainnya.trim().toLowerCase())) {
         showNotification('Kategori sudah ada dalam daftar.', 'error');
         return;
       }
-      const updated = [...kategoriLainnya, newKatLainnya.trim()];
+      const updated = saveCategoryList('Arsip Lainnya', [...kategoriLainnya, newKatLainnya.trim()]);
       setKategoriLainnya(updated);
-      localStorage.setItem('EARSIP_CUSTOM_KAT_LAINNYA', JSON.stringify(updated));
       addAuditLog({
         aksi: 'PENGATURAN',
         kategori: 'Arsip Lainnya',
@@ -277,9 +267,23 @@ export default function SettingsView({
         status: 'SUCCESS'
       });
       setNewKatLainnya('');
-      window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
       showNotification('✓ Kategori Surat/Lembaga baru berhasil ditambahkan');
     }
+  };
+
+  const handleDeleteCategory = (type: 'siswa' | 'guru' | 'lainnya', categoryName: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus kategori "${categoryName}"?`)) return;
+
+    let groupLabel = 'Arsip Siswa';
+    if (type === 'guru') groupLabel = 'Arsip Guru';
+    else if (type === 'lainnya') groupLabel = 'Arsip Lainnya';
+
+    const updated = deleteCategoryInSettings(type, categoryName);
+    if (type === 'siswa') setKategoriSiswa(updated);
+    else if (type === 'guru') setKategoriGuru(updated);
+    else setKategoriLainnya(updated);
+
+    showNotification(`✓ Kategori "${categoryName}" berhasil dihapus dari ${groupLabel}`);
   };
 
   const handleSaveEditCategory = (e?: React.FormEvent) => {
@@ -319,14 +323,14 @@ export default function SettingsView({
   };
 
   const handleResetKategoriDefault = () => {
-    setKategoriSiswa(DEFAULT_KATEGORI_SISWA);
-    setKategoriGuru(DEFAULT_KATEGORI_GURU);
-    setKategoriLainnya(DEFAULT_KATEGORI_LAINNYA);
-    localStorage.removeItem('EARSIP_CUSTOM_KAT_SISWA');
-    localStorage.removeItem('EARSIP_CUSTOM_KAT_GURU');
-    localStorage.removeItem('EARSIP_CUSTOM_KAT_LAINNYA');
-    window.dispatchEvent(new CustomEvent('earsip:categories-updated'));
-    showNotification('✓ Kategori dikembalikan ke standar');
+    if (!confirm('Kembalikan seluruh daftar kategori ke standar bawaan sistem?')) return;
+    const sUpdated = saveCategoryList('Arsip Siswa', KATEGORI_SISWA);
+    const gUpdated = saveCategoryList('Arsip Guru', KATEGORI_GURU);
+    const lUpdated = saveCategoryList('Arsip Lainnya', KATEGORI_LAINNYA);
+    setKategoriSiswa(sUpdated);
+    setKategoriGuru(gUpdated);
+    setKategoriLainnya(lUpdated);
+    showNotification('✓ Seluruh kategori berhasil dikembalikan ke standar awal');
   };
 
   // Archive Rules & File limits
@@ -1032,14 +1036,24 @@ export default function SettingsView({
                     {kategoriSiswa.map((kat, idx) => (
                       <div key={idx} className="flex items-center justify-between p-2 sm:p-2.5 bg-white border border-slate-200/90 hover:border-blue-300 rounded-xl text-xs font-semibold text-slate-800 transition-colors group shadow-2xs">
                         <span className="truncate flex-1 pr-2">{kat}</span>
-                        <button
-                          type="button"
-                          onClick={() => setEditingCategory({ type: 'siswa', oldName: kat, newName: kat })}
-                          className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                          title={`Ubah / Edit nama kategori "${kat}"`}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEditingCategory({ type: 'siswa', oldName: kat, newName: kat })}
+                            className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title={`Ubah / Edit nama kategori "${kat}"`}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory('siswa', kat)}
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title={`Hapus kategori "${kat}"`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1073,20 +1087,30 @@ export default function SettingsView({
                       <span className="w-2 h-2 rounded-full bg-amber-600" />
                       Arsip Guru & Tendik ({kategoriGuru.length})
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil untuk edit</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil edit / tong sampah hapus</span>
                   </div>
                   <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                     {kategoriGuru.map((kat, idx) => (
                       <div key={idx} className="flex items-center justify-between p-2 sm:p-2.5 bg-white border border-slate-200/90 hover:border-amber-300 rounded-xl text-xs font-semibold text-slate-800 transition-colors group shadow-2xs">
                         <span className="truncate flex-1 pr-2">{kat}</span>
-                        <button
-                          type="button"
-                          onClick={() => setEditingCategory({ type: 'guru', oldName: kat, newName: kat })}
-                          className="text-slate-400 hover:text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                          title={`Ubah / Edit nama kategori "${kat}"`}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEditingCategory({ type: 'guru', oldName: kat, newName: kat })}
+                            className="text-slate-400 hover:text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title={`Ubah / Edit nama kategori "${kat}"`}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory('guru', kat)}
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title={`Hapus kategori "${kat}"`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1120,20 +1144,30 @@ export default function SettingsView({
                       <span className="w-2 h-2 rounded-full bg-purple-600" />
                       Arsip Surat & Lembaga ({kategoriLainnya.length})
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil untuk edit</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Klik pensil edit / tong sampah hapus</span>
                   </div>
                   <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                     {kategoriLainnya.map((kat, idx) => (
                       <div key={idx} className="flex items-center justify-between p-2 sm:p-2.5 bg-white border border-slate-200/90 hover:border-purple-300 rounded-xl text-xs font-semibold text-slate-800 transition-colors group shadow-2xs">
                         <span className="truncate flex-1 pr-2">{kat}</span>
-                        <button
-                          type="button"
-                          onClick={() => setEditingCategory({ type: 'lainnya', oldName: kat, newName: kat })}
-                          className="text-slate-400 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors cursor-pointer flex-shrink-0"
-                          title={`Ubah / Edit nama kategori "${kat}"`}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setEditingCategory({ type: 'lainnya', oldName: kat, newName: kat })}
+                            className="text-slate-400 hover:text-purple-600 hover:bg-purple-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title={`Ubah / Edit nama kategori "${kat}"`}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory('lainnya', kat)}
+                            className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title={`Hapus kategori "${kat}"`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
