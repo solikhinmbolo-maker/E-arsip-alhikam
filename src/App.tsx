@@ -1619,29 +1619,7 @@ function doGet(e) {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-['Poppins'] text-slate-800 antialiased selection:bg-blue-600 selection:text-white w-full max-w-full overflow-x-hidden">
       
-      {/* Global Toast Notification Popup Banner (Prominent on Both Desktop & Mobile) */}
-      {globalNotice && (
-        <div className="fixed top-4 inset-x-4 sm:top-5 sm:right-6 sm:left-auto z-[999999] pointer-events-auto max-w-md animate-slideDown">
-          <div className="bg-slate-900/95 backdrop-blur-md text-white border-2 border-blue-500/80 rounded-2xl p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 border border-blue-500/40">
-                <CheckCircle2 className="w-4.5 h-4.5 text-cyan-300" />
-              </div>
-              <p className="text-xs sm:text-sm font-bold text-slate-100 leading-snug break-words">
-                {globalNotice}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setGlobalNotice('')}
-              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors flex-shrink-0 cursor-pointer"
-              title="Tutup Notifikasi"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+
       
       {/* 1. MOBILE DRAWER OVERLAY (Ultra-smooth hardware accelerated, zero jank, smooth fade in & out) */}
       <div 
