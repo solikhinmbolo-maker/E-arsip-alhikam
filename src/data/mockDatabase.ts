@@ -741,16 +741,16 @@ export function getStoredArsip(): ArsipItem[] {
     const catUtamaLower = (item.kategoriUtama || '').trim().toLowerCase();
     const idUpper = (item.id || '').toUpperCase();
 
-    // 1. Authoritative check on item ID prefix or explicit kategoriUtama (e.g. GRU-1112)
+    // 1. Authoritative check on item ID prefix or explicit kategoriUtama (e.g. GRU-1112, SSW-2041, LYN-3011)
     if (idUpper.startsWith('GRU-') || catUtamaLower.includes('guru') || catUtamaLower.includes('tendik')) {
       if (item.kategoriUtama !== 'Arsip Guru') return { ...item, kategoriUtama: 'Arsip Guru' };
       return item;
     }
-    if (idUpper.startsWith('LAIN-') || idUpper.startsWith('SUR-') || catUtamaLower.includes('lain')) {
+    if (idUpper.startsWith('LAIN-') || idUpper.startsWith('LYN-') || idUpper.startsWith('SUR-') || catUtamaLower.includes('lain')) {
       if (item.kategoriUtama !== 'Arsip Lainnya') return { ...item, kategoriUtama: 'Arsip Lainnya' };
       return item;
     }
-    if (idUpper.startsWith('SIS-') || idUpper.startsWith('S-') || catUtamaLower.includes('siswa')) {
+    if (idUpper.startsWith('SIS-') || idUpper.startsWith('SSW-') || idUpper.startsWith('S-') || catUtamaLower.includes('siswa')) {
       if (item.kategoriUtama !== 'Arsip Siswa') return { ...item, kategoriUtama: 'Arsip Siswa' };
       return item;
     }

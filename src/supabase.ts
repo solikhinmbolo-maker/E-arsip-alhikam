@@ -309,9 +309,9 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
 
         if (idUpper.startsWith('GRU-') || kuRaw.includes('Guru') || kuRaw.includes('Tendik')) {
           katUtama = 'Arsip Guru';
-        } else if (idUpper.startsWith('LAIN-') || idUpper.startsWith('SUR-') || kuRaw.includes('Lain')) {
+        } else if (idUpper.startsWith('LAIN-') || idUpper.startsWith('LYN-') || idUpper.startsWith('SUR-') || kuRaw.includes('Lain')) {
           katUtama = 'Arsip Lainnya';
-        } else if (idUpper.startsWith('SIS-') || idUpper.startsWith('S-') || kuRaw.includes('Siswa')) {
+        } else if (idUpper.startsWith('SIS-') || idUpper.startsWith('SSW-') || idUpper.startsWith('S-') || kuRaw.includes('Siswa')) {
           katUtama = 'Arsip Siswa';
         } else if (kuRaw === 'Arsip Guru' || kuRaw === 'Arsip Lainnya' || kuRaw === 'Arsip Siswa') {
           katUtama = kuRaw;
