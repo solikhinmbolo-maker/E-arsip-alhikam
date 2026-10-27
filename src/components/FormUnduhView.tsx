@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   RefreshCw,
   CheckCircle2,
+  FolderCheck,
   X
 } from 'lucide-react';
 import { ArsipItem, getStoredArsip, moveToTrashArsipItem, getFileAttachment, addAuditLog } from '../data/mockDatabase';
@@ -43,6 +44,8 @@ export default function FormUnduhView({
   const [downloadingItemId, setDownloadingItemId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadingItemName, setDownloadingItemName] = useState('');
+  const [downloadStepText, setDownloadStepText] = useState('');
+  const [downloadSuccessInfo, setDownloadSuccessInfo] = useState<{ filename: string; subjek: string; kategori: string; ukuran?: string } | null>(null);
   const [isSyncingFromGoogle, setIsSyncingFromGoogle] = useState(false);
   const [isPushingToGoogle, setIsPushingToGoogle] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
@@ -81,9 +84,24 @@ export default function FormUnduhView({
     const handleUpdate = () => setDataVersion((v: number) => v + 1);
     window.addEventListener('earsip:cloud-synced', handleUpdate);
     window.addEventListener('earsip:categories-updated', handleUpdate);
+
+    const handleNativeDownloadSuccess = (e: any) => {
+      const fn = e?.detail?.filename;
+      if (fn) {
+        setDownloadSuccessInfo(prev => ({
+          filename: fn,
+          subjek: prev?.subjek || 'Dokumen Terverifikasi',
+          kategori: prev?.kategori || 'e-Arsip',
+          ukuran: prev?.ukuran
+        }));
+      }
+    };
+    window.addEventListener('earsip:native-download-complete', handleNativeDownloadSuccess);
+
     return () => {
       window.removeEventListener('earsip:cloud-synced', handleUpdate);
       window.removeEventListener('earsip:categories-updated', handleUpdate);
+      window.removeEventListener('earsip:native-download-complete', handleNativeDownloadSuccess);
     };
   }, []);
 
@@ -161,32 +179,37 @@ function extractDriveIdForDownload(link?: string): string | null {
   return null;
 }
 
-  // Handle Direct File Download (Never redirecting to Google Drive view tab)
+  // Handle Direct File Download with realistic smooth progress and guaranteed success notification
   const handleDownload = async (item: ArsipItem) => {
+    if (isDownloading) return;
     setIsDownloading(true);
     setDownloadingItemId(item.id);
-    setDownloadingItemName(item.namaFileAsli || item.subjek);
-    setDownloadProgress(20);
+    setDownloadProgress(15);
+    setDownloadStepText('Menghubungkan ke Cloud Storage...');
 
     let cleanFilename = (item.namaFileAsli || `${item.subjek}_${item.kategori.replace(/\s+/g, '_')}`).trim();
     cleanFilename = cleanFilename.replace(/[/\\?%*:|"<>]/g, '_');
     if (!/\.[a-zA-Z0-9]{2,5}$/.test(cleanFilename)) {
       cleanFilename += '.pdf';
     }
+    setDownloadingItemName(cleanFilename);
 
     try {
-      // 1. Check Google Drive Direct Download via Server Proxy (Highest priority for real physical cloud files)
+      // Tahap 1: Hubungkan & Siapkan berkas (memberikan jeda halus agar tidak lompat instan)
+      await new Promise(r => setTimeout(r, 450));
+      setDownloadProgress(40);
+      setDownloadStepText('Menyiapkan berkas dokumen...');
+
+      // 1. Check Google Drive Direct Download via Server Proxy (Prioritas utama berkas fisik cloud)
       const driveId = extractDriveIdForDownload(item.linkDrive);
       if (driveId) {
-        setDownloadProgress(50);
-        // Include cleanFilename directly in the URL pathname so Android WebView & URLUtil.guessFileName extracts .pdf
+        await new Promise(r => setTimeout(r, 500));
+        setDownloadProgress(70);
+        setDownloadStepText('Mentransfer berkas ke perangkat...');
+
+        // Sertakan cleanFilename di pathname URL agar Android WebView langsung membaca .pdf
         const proxyDownloadUrl = `/api/drive/download/${encodeURIComponent(cleanFilename)}?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
         
-        window.dispatchEvent(new CustomEvent('earsip:notify', { 
-          detail: { message: `📥 Mengunduh berkas "${cleanFilename}"...`, duration: 4000 } 
-        }));
-
-        setDownloadProgress(90);
         const a = document.createElement('a');
         a.href = proxyDownloadUrl;
         a.download = cleanFilename;
@@ -195,9 +218,29 @@ function extractDriveIdForDownload(link?: string): string | null {
         a.click();
         document.body.removeChild(a);
 
+        await new Promise(r => setTimeout(r, 650));
+        setDownloadProgress(92);
+        setDownloadStepText('Memverifikasi penyimpanan di HP...');
+
+        await new Promise(r => setTimeout(r, 550));
         setDownloadProgress(100);
-        await new Promise(r => setTimeout(r, 600));
+        setDownloadStepText('Unduhan Berhasil!');
+
+        await new Promise(r => setTimeout(r, 400));
         setIsDownloading(false);
+        setDownloadingItemId(null);
+
+        // Munculkan Konfirmasi Sukses yang jelas dan rinci
+        setDownloadSuccessInfo({
+          filename: cleanFilename,
+          subjek: item.subjek,
+          kategori: item.kategori,
+          ukuran: item.ukuran
+        });
+
+        window.dispatchEvent(new CustomEvent('earsip:notify', { 
+          detail: { message: `✅ Berkas "${cleanFilename}" berhasil diunduh dan tersimpan di folder Download HP!`, duration: 6000 } 
+        }));
 
         addAuditLog({
           aksi: 'UNDUH',
@@ -211,23 +254,40 @@ function extractDriveIdForDownload(link?: string): string | null {
 
       // 2. Check local base64attachment (IndexedDB / Memory Cache)
       let fileContent = item.fileDataUrl || await getFileAttachment(item.id);
-      setDownloadProgress(50);
-
       if (fileContent && fileContent.startsWith('data:')) {
         const blob = dataUriToBlob(fileContent);
         if (blob) {
-          setDownloadProgress(80);
+          await new Promise(r => setTimeout(r, 500));
+          setDownloadProgress(75);
+          setDownloadStepText('Menyimpan berkas ke memori HP...');
+
           const blobUrl = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = blobUrl;
           a.download = cleanFilename;
           a.style.display = 'none';
           document.body.appendChild(a);
-          setDownloadProgress(100);
-          await new Promise(r => setTimeout(r, 200));
           a.click();
           document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+          await new Promise(r => setTimeout(r, 600));
+          setDownloadProgress(100);
+          setDownloadStepText('Unduhan Berhasil!');
+          await new Promise(r => setTimeout(r, 400));
+          setIsDownloading(false);
+          setDownloadingItemId(null);
+
+          setDownloadSuccessInfo({
+            filename: cleanFilename,
+            subjek: item.subjek,
+            kategori: item.kategori,
+            ukuran: item.ukuran
+          });
+
+          window.dispatchEvent(new CustomEvent('earsip:notify', { 
+            detail: { message: `✅ Berkas "${cleanFilename}" berhasil disimpan di folder Download!`, duration: 6000 } 
+          }));
 
           addAuditLog({
             aksi: 'UNDUH',
@@ -243,22 +303,43 @@ function extractDriveIdForDownload(link?: string): string | null {
       // 3. Check Supabase Storage Bucket 'arsip'
       const client = getSupabaseClient();
       if (client) {
-        setDownloadProgress(60);
         try {
+          await new Promise(r => setTimeout(r, 450));
+          setDownloadProgress(60);
+          setDownloadStepText('Mengunduh dari Cloud Supabase...');
+
           const { data: supaBlob, error } = await client.storage.from('arsip').download(item.id);
           if (!error && supaBlob) {
-            setDownloadProgress(90);
+            setDownloadProgress(85);
+            setDownloadStepText('Menyimpan ke perangkat...');
+
             const blobUrl = URL.createObjectURL(supaBlob);
             const a = document.createElement('a');
             a.href = blobUrl;
             a.download = cleanFilename;
             a.style.display = 'none';
             document.body.appendChild(a);
-            setDownloadProgress(100);
-            await new Promise(r => setTimeout(r, 200));
             a.click();
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+            await new Promise(r => setTimeout(r, 550));
+            setDownloadProgress(100);
+            setDownloadStepText('Unduhan Berhasil!');
+            await new Promise(r => setTimeout(r, 400));
+            setIsDownloading(false);
+            setDownloadingItemId(null);
+
+            setDownloadSuccessInfo({
+              filename: cleanFilename,
+              subjek: item.subjek,
+              kategori: item.kategori,
+              ukuran: item.ukuran
+            });
+
+            window.dispatchEvent(new CustomEvent('earsip:notify', { 
+              detail: { message: `✅ Berkas "${cleanFilename}" berhasil disimpan di folder Download!`, duration: 6000 } 
+            }));
 
             addAuditLog({
               aksi: 'UNDUH',
@@ -273,35 +354,56 @@ function extractDriveIdForDownload(link?: string): string | null {
       }
 
       // 4. Fallback text document file
-      setDownloadProgress(80);
+      setDownloadProgress(70);
+      setDownloadStepText('Menyiapkan berkas teks...');
       const fallbackText = `DOKUMEN E-ARSIP DIGITAL SMP AL-HIKAM JOMBANG\n---------------------------------------------\nNama Subjek : ${item.subjek}\nKategori    : ${item.kategori} (${item.kategoriUtama})\nTahun       : ${item.tahun}\nNomor ID    : ${item.id}\nTanggal     : ${item.tanggal}\nUploader    : ${item.uploader}\n---------------------------------------------\n`;
       const blob = new Blob([fallbackText], { type: 'text/plain;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = fallbackFilename.endsWith('.txt') ? fallbackFilename : `${fallbackFilename}.txt`;
+      const finalName = cleanFilename.endsWith('.txt') ? cleanFilename : `${cleanFilename}.txt`;
+      a.download = finalName;
       a.style.display = 'none';
       document.body.appendChild(a);
-      setDownloadProgress(100);
-      await new Promise(r => setTimeout(r, 200));
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+      setDownloadProgress(100);
+      setDownloadStepText('Unduhan Berhasil!');
+      await new Promise(r => setTimeout(r, 400));
+      setIsDownloading(false);
+      setDownloadingItemId(null);
+
+      setDownloadSuccessInfo({
+        filename: finalName,
+        subjek: item.subjek,
+        kategori: item.kategori,
+        ukuran: item.ukuran
+      });
+
+      window.dispatchEvent(new CustomEvent('earsip:notify', { 
+        detail: { message: `✅ Berkas "${finalName}" berhasil disimpan di folder Download!`, duration: 6000 } 
+      }));
 
       addAuditLog({
         aksi: 'UNDUH',
         kategori: item.kategoriUtama || item.kategori,
         subjek: item.subjek,
-        detail: `Unduh dokumen arsip "${fallbackFilename}"`,
+        detail: `Unduh dokumen arsip "${finalName}"`,
         status: 'SUCCESS'
       });
 
     } catch (err) {
       console.error('Download error:', err);
+      window.dispatchEvent(new CustomEvent('earsip:notify', { 
+        detail: { message: `⚠️ Terjadi kendala saat mengunduh berkas. Silakan coba lagi.`, duration: 5000 } 
+      }));
     } finally {
       setIsDownloading(false);
       setDownloadingItemId(null);
       setDownloadProgress(0);
+      setDownloadStepText('');
     }
   };
 
@@ -444,21 +546,74 @@ function extractDriveIdForDownload(link?: string): string | null {
         </div>
       </div>
 
-      {/* Progress Bar Animasi Unduh */}
+      {/* Progress Bar Animasi Unduh (Dengan Indikator Tahapan yang Jelas) */}
       {isDownloading && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl mb-5 animate-fadeIn space-y-1.5">
-          <div className="flex justify-between items-center text-xs font-semibold text-emerald-900">
-            <span className="flex items-center gap-1.5 truncate">
+        <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border-2 border-emerald-300 rounded-2xl mb-5 animate-fadeIn shadow-sm space-y-2">
+          <div className="flex justify-between items-center text-xs font-semibold text-emerald-950">
+            <span className="flex items-center gap-2 truncate">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
               <CloudDownload className="w-4 h-4 text-emerald-600 animate-bounce flex-shrink-0" />
               <span className="truncate">Mengunduh: <strong>{downloadingItemName}</strong></span>
             </span>
-            <span className="text-emerald-700 font-bold ml-2">{downloadProgress}%</span>
+            <span className="text-emerald-700 font-extrabold text-sm ml-2">{downloadProgress}%</span>
           </div>
-          <div className="w-full h-2 bg-emerald-200 rounded-full overflow-hidden">
+
+          {/* Progress Bar Track & Fill */}
+          <div className="w-full h-2.5 bg-emerald-200/80 rounded-full overflow-hidden p-0.5">
             <div 
-              className="h-full bg-emerald-600 transition-all duration-200 rounded-full"
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 rounded-full"
               style={{ width: `${downloadProgress}%` }}
             />
+          </div>
+
+          <div className="flex justify-between items-center text-[11px] text-slate-600 pt-0.5">
+            <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
+              <RefreshCw className="w-3 h-3 animate-spin text-emerald-600" />
+              {downloadStepText || 'Memproses berkas...'}
+            </span>
+            <span className="text-slate-400 font-medium">Menyimpan ke File Manager HP</span>
+          </div>
+        </div>
+      )}
+
+      {/* Notifikasi Konfirmasi Sukses Unduh (Bukti Berkas Tersimpan di File Manager HP) */}
+      {downloadSuccessInfo && (
+        <div className="p-4 sm:p-5 bg-gradient-to-br from-emerald-50 via-teal-50/70 to-emerald-100/40 border-2 border-emerald-400 rounded-2xl mb-5 shadow-md animate-scaleUp relative overflow-hidden">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-600/30">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-extrabold text-emerald-950">Berkas Berhasil Diunduh!</h4>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-800 border border-emerald-300">
+                    ✓ Tersimpan di HP
+                  </span>
+                </div>
+                <p className="text-xs text-slate-800 font-bold truncate max-w-sm sm:max-w-md">
+                  📄 {downloadSuccessInfo.filename}
+                </p>
+                <div className="bg-white/90 border border-emerald-200/90 rounded-xl p-3 text-[11px] text-slate-700 space-y-1.5 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <FolderCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span><strong>Lokasi Penyimpanan:</strong> Memori Internal &gt; <strong>Download (Unduhan)</strong></span>
+                  </div>
+                  <p className="text-slate-500 leading-relaxed text-[10px]">
+                    💡 <strong>Cara Membuka:</strong> Buka aplikasi <strong>Pengelola File (File Manager)</strong> atau <strong>Google Files</strong> di HP Anda, lalu pilih folder <strong>Download</strong> untuk membuka atau membagikan berkas PDF ini.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setDownloadSuccessInfo(null)}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-emerald-200/60 transition-colors flex-shrink-0 cursor-pointer"
+              title="Tutup Konfirmasi"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}

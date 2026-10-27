@@ -1,7 +1,12 @@
 package com.alhikam.earsip;
 
 import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,9 +25,66 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+
+    private BroadcastReceiver onDownloadCompleteReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+            if (id != -1) {
+                try {
+                    DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                    if (dm != null) {
+                        DownloadManager.Query query = new DownloadManager.Query();
+                        query.setFilterById(id);
+                        try (Cursor cursor = dm.query(query)) {
+                            if (cursor != null && cursor.moveToFirst()) {
+                                int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                                int titleIndex = cursor.getColumnIndex(DownloadManager.COLUMN_TITLE);
+                                if (statusIndex != -1 && cursor.getInt(statusIndex) == DownloadManager.STATUS_SUCCESSFUL) {
+                                    final String title = (titleIndex != -1) ? cursor.getString(titleIndex) : "Dokumen";
+                                    Toast.makeText(getApplicationContext(), "✅ Selesai Diunduh!\nFile tersimpan di folder Download:\n" + title, Toast.LENGTH_LONG).show();
+
+                                    if (bridge != null && bridge.getWebView() != null) {
+                                        final WebView webView = bridge.getWebView();
+                                        webView.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                String safeTitle = title.replace("'", "\\'");
+                                                webView.evaluateJavascript(
+                                                    "window.dispatchEvent(new CustomEvent('earsip:native-download-complete', { detail: { filename: '" + safeTitle + "' } }));",
+                                                    null
+                                                );
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+    };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Minta izin Notifikasi untuk Android 13+ agar bar status download dan notifikasi selesai muncul resmi
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        // Daftarkan listener selesai download
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(onDownloadCompleteReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(onDownloadCompleteReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+            }
+        } catch (Exception ignored) {}
 
         // Pasang DownloadListener native Android agar WebView di APK dapat mengunduh berkas dengan notifikasi resmi
         try {
@@ -86,7 +148,7 @@ public class MainActivity extends BridgeActivity {
                             if (userAgent != null) {
                                 request.addRequestHeader("User-Agent", userAgent);
                             }
-                            request.setDescription("Mengunduh berkas e-Arsip Alhicam...");
+                            request.setDescription("Menyimpan berkas e-Arsip Alhicam ke folder Download...");
                             request.setTitle(filename);
                             request.allowScanningByMediaScanner();
                             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
@@ -95,7 +157,7 @@ public class MainActivity extends BridgeActivity {
                             DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
                             if (dm != null) {
                                 dm.enqueue(request);
-                                Toast.makeText(getApplicationContext(), "📥 Mengunduh: " + filename, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getApplicationContext(), "📥 Memulai Unduhan:\n" + filename, Toast.LENGTH_SHORT).show();
                             }
                         } catch (Exception e) {
                             Toast.makeText(getApplicationContext(), "Gagal mengunduh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -116,6 +178,14 @@ public class MainActivity extends BridgeActivity {
         WindowCompat.setDecorFitsSystemWindows(window, false);
         window.getDecorView().setBackgroundColor(android.graphics.Color.parseColor("#080E21"));
         hideSystemBars();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        try {
+            unregisterReceiver(onDownloadCompleteReceiver);
+        } catch (Exception ignored) {}
     }
 
     @Override
