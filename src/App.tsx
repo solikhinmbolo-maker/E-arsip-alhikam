@@ -2518,10 +2518,28 @@ function doGet(e) {
           window.print();
         }}
         onDownload={async (item) => {
-          // 1. If Google Drive link exists, open/download original full-res file from Google Drive
-          if (item.linkDrive && item.linkDrive.startsWith('http') && !item.linkDrive.includes('SSW-') && !item.linkDrive.includes('GRU-') && !item.linkDrive.includes('LYN-')) {
-            window.open(item.linkDrive, '_blank');
-            return;
+          let cleanFilename = (item.namaFileAsli || `${item.subjek}_${item.kategori.replace(/\s+/g, '_')}`).trim();
+          cleanFilename = cleanFilename.replace(/[/\\?%*:|"<>]/g, '_');
+          if (!/\.[a-zA-Z0-9]{2,5}$/.test(cleanFilename)) {
+            cleanFilename += '.pdf';
+          }
+
+          // 1. If Google Drive link exists, trigger direct download proxy with clean filename
+          if (item.linkDrive) {
+            const driveMatch = item.linkDrive.match(/\/file\/d\/([a-zA-Z0-9_-]{15,})/) ||
+                               item.linkDrive.match(/\/d\/([a-zA-Z0-9_-]{15,})/) ||
+                               item.linkDrive.match(/id=([a-zA-Z0-9_-]{15,})/);
+            const driveId = driveMatch ? driveMatch[1] : (item.linkDrive.startsWith('gdrive://') ? item.linkDrive.replace('gdrive://', '').trim() : null);
+            if (driveId) {
+              const proxyDownloadUrl = `/api/drive/download/${encodeURIComponent(cleanFilename)}?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
+              const element = document.createElement('a');
+              element.setAttribute('href', proxyDownloadUrl);
+              element.setAttribute('download', cleanFilename);
+              document.body.appendChild(element);
+              element.click();
+              document.body.removeChild(element);
+              return;
+            }
           }
 
           // 2. Fetch full resolution file blob from IndexedDB / Memory
@@ -2529,7 +2547,7 @@ function doGet(e) {
           if (fullResBlob) {
             const element = document.createElement('a');
             element.setAttribute('href', fullResBlob);
-            element.setAttribute('download', item.namaFileAsli || `${item.subjek}_${item.kategori}`);
+            element.setAttribute('download', cleanFilename);
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
@@ -2537,7 +2555,7 @@ function doGet(e) {
           }
 
           // 3. Fallback: Open folder Drive
-          if (item.linkDrive) {
+          if (item.linkDrive && item.linkDrive.startsWith('http')) {
             window.open(item.linkDrive, '_blank');
           }
         }}

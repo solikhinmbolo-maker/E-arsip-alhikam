@@ -168,86 +168,28 @@ function extractDriveIdForDownload(link?: string): string | null {
     setDownloadingItemName(item.namaFileAsli || item.subjek);
     setDownloadProgress(20);
 
-    const fallbackFilename = item.namaFileAsli || `${item.subjek}_${item.kategori.replace(/\s+/g, '_')}`;
+    let cleanFilename = (item.namaFileAsli || `${item.subjek}_${item.kategori.replace(/\s+/g, '_')}`).trim();
+    cleanFilename = cleanFilename.replace(/[/\\?%*:|"<>]/g, '_');
+    if (!/\.[a-zA-Z0-9]{2,5}$/.test(cleanFilename)) {
+      cleanFilename += '.pdf';
+    }
 
     try {
-      // 1. Check local base64attachment (IndexedDB / Memory Cache)
-      let fileContent = item.fileDataUrl || await getFileAttachment(item.id);
-      setDownloadProgress(50);
-
-      if (fileContent && fileContent.startsWith('data:')) {
-        const blob = dataUriToBlob(fileContent);
-        if (blob) {
-          setDownloadProgress(80);
-          const blobUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fallbackFilename;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          setDownloadProgress(100);
-          await new Promise(r => setTimeout(r, 200));
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
-          addAuditLog({
-            aksi: 'UNDUH',
-            kategori: item.kategoriUtama || item.kategori,
-            subjek: item.subjek,
-            detail: `Unduh berkas lokal "${fallbackFilename}" (${item.ukuran || '-'})`,
-            status: 'SUCCESS'
-          });
-          return;
-        }
-      }
-
-      // 2. Check Supabase Storage Bucket 'arsip'
-      const client = getSupabaseClient();
-      if (client) {
-        setDownloadProgress(60);
-        try {
-          const { data: supaBlob, error } = await client.storage.from('arsip').download(item.id);
-          if (!error && supaBlob) {
-            setDownloadProgress(90);
-            const blobUrl = URL.createObjectURL(supaBlob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = fallbackFilename;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            setDownloadProgress(100);
-            await new Promise(r => setTimeout(r, 200));
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-
-            addAuditLog({
-              aksi: 'UNDUH',
-              kategori: item.kategoriUtama || item.kategori,
-              subjek: item.subjek,
-              detail: `Unduh berkas Supabase "${fallbackFilename}" (${item.ukuran || '-'})`,
-              status: 'SUCCESS'
-            });
-            return;
-          }
-        } catch {}
-      }
-
-      // 3. Check Google Drive Direct Download via Server Proxy
+      // 1. Check Google Drive Direct Download via Server Proxy (Highest priority for real physical cloud files)
       const driveId = extractDriveIdForDownload(item.linkDrive);
       if (driveId) {
         setDownloadProgress(50);
-        const proxyDownloadUrl = `/api/drive/download?fileId=${driveId}&filename=${encodeURIComponent(fallbackFilename)}`;
+        // Include cleanFilename directly in the URL pathname so Android WebView & URLUtil.guessFileName extracts .pdf
+        const proxyDownloadUrl = `/api/drive/download/${encodeURIComponent(cleanFilename)}?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
         
         window.dispatchEvent(new CustomEvent('earsip:notify', { 
-          detail: { message: `📥 Mengunduh berkas "${fallbackFilename}"...`, duration: 4000 } 
+          detail: { message: `📥 Mengunduh berkas "${cleanFilename}"...`, duration: 4000 } 
         }));
 
         setDownloadProgress(90);
         const a = document.createElement('a');
         a.href = proxyDownloadUrl;
-        a.download = fallbackFilename;
+        a.download = cleanFilename;
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
@@ -261,10 +203,73 @@ function extractDriveIdForDownload(link?: string): string | null {
           aksi: 'UNDUH',
           kategori: item.kategoriUtama || item.kategori,
           subjek: item.subjek,
-          detail: `Unduh berkas Google Drive "${fallbackFilename}" (${item.ukuran || '-'})`,
+          detail: `Unduh berkas Google Drive "${cleanFilename}" (${item.ukuran || '-'})`,
           status: 'SUCCESS'
         });
         return;
+      }
+
+      // 2. Check local base64attachment (IndexedDB / Memory Cache)
+      let fileContent = item.fileDataUrl || await getFileAttachment(item.id);
+      setDownloadProgress(50);
+
+      if (fileContent && fileContent.startsWith('data:')) {
+        const blob = dataUriToBlob(fileContent);
+        if (blob) {
+          setDownloadProgress(80);
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = cleanFilename;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          setDownloadProgress(100);
+          await new Promise(r => setTimeout(r, 200));
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+          addAuditLog({
+            aksi: 'UNDUH',
+            kategori: item.kategoriUtama || item.kategori,
+            subjek: item.subjek,
+            detail: `Unduh berkas lokal "${cleanFilename}" (${item.ukuran || '-'})`,
+            status: 'SUCCESS'
+          });
+          return;
+        }
+      }
+
+      // 3. Check Supabase Storage Bucket 'arsip'
+      const client = getSupabaseClient();
+      if (client) {
+        setDownloadProgress(60);
+        try {
+          const { data: supaBlob, error } = await client.storage.from('arsip').download(item.id);
+          if (!error && supaBlob) {
+            setDownloadProgress(90);
+            const blobUrl = URL.createObjectURL(supaBlob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = cleanFilename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            setDownloadProgress(100);
+            await new Promise(r => setTimeout(r, 200));
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+            addAuditLog({
+              aksi: 'UNDUH',
+              kategori: item.kategoriUtama || item.kategori,
+              subjek: item.subjek,
+              detail: `Unduh berkas Supabase "${cleanFilename}" (${item.ukuran || '-'})`,
+              status: 'SUCCESS'
+            });
+            return;
+          }
+        } catch {}
       }
 
       // 4. Fallback text document file

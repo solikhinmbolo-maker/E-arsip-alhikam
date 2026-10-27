@@ -32,11 +32,52 @@ public class MainActivity extends BridgeActivity {
                     @Override
                     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
                         try {
-                            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-                            String filename = URLUtil.guessFileName(url, contentDisposition, mimeType);
+                            Uri uri = Uri.parse(url);
                             
-                            if (mimeType != null && !mimeType.isEmpty()) {
-                                request.setMimeType(mimeType);
+                            // 1. Ekstrak nama file asli dari query param atau path URL
+                            String filename = null;
+                            try {
+                                String qFilename = uri.getQueryParameter("filename");
+                                if (qFilename != null && !qFilename.trim().isEmpty()) {
+                                    filename = java.net.URLDecoder.decode(qFilename.trim(), "UTF-8");
+                                }
+                            } catch (Exception ignored) {}
+
+                            if (filename == null || filename.isEmpty()) {
+                                filename = URLUtil.guessFileName(url, contentDisposition, mimeType);
+                            }
+
+                            // 2. Mencegah nama berakhiran .bin atau tanpa ekstensi
+                            if (filename == null || filename.isEmpty() || filename.toLowerCase().endsWith(".bin") || !filename.contains(".")) {
+                                String base = (filename != null && !filename.isEmpty()) ? filename.replaceAll("(?i)\\.bin$", "") : "Dokumen_Arsip";
+                                if (mimeType != null && mimeType.equalsIgnoreCase("application/pdf")) {
+                                    filename = base + ".pdf";
+                                } else if (mimeType != null && mimeType.contains("image/")) {
+                                    String ext = mimeType.replace("image/", "");
+                                    filename = base + "." + (ext.equals("jpeg") ? "jpg" : ext);
+                                } else {
+                                    filename = base + ".pdf";
+                                }
+                            }
+
+                            // 3. Menentukan MIME type yang tepat agar Android langsung membuka berkas dengan aplikasi yang sesuai
+                            String resolvedMimeType = (mimeType != null && !mimeType.isEmpty() && !mimeType.equals("application/octet-stream")) ? mimeType : null;
+                            String lowerName = filename.toLowerCase();
+                            if (lowerName.endsWith(".pdf")) {
+                                resolvedMimeType = "application/pdf";
+                            } else if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
+                                resolvedMimeType = "image/jpeg";
+                            } else if (lowerName.endsWith(".png")) {
+                                resolvedMimeType = "image/png";
+                            } else if (lowerName.endsWith(".docx")) {
+                                resolvedMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                            } else if (lowerName.endsWith(".xlsx")) {
+                                resolvedMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                            }
+
+                            DownloadManager.Request request = new DownloadManager.Request(uri);
+                            if (resolvedMimeType != null) {
+                                request.setMimeType(resolvedMimeType);
                             }
                             String cookies = CookieManager.getInstance().getCookie(url);
                             if (cookies != null) {
@@ -56,7 +97,9 @@ public class MainActivity extends BridgeActivity {
                                 dm.enqueue(request);
                                 Toast.makeText(getApplicationContext(), "📥 Mengunduh: " + filename, Toast.LENGTH_SHORT).show();
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            Toast.makeText(getApplicationContext(), "Gagal mengunduh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
             }
