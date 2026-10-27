@@ -609,75 +609,10 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
       </section>
 
       {/* ============================================================== */}
-      {/* 2. MOBILE DASHBOARD EXECUTIVE OVERVIEW (CLEAN COMPACT WHITE)    */}
-      {/* ============================================================== */}
-      <section className="block sm:hidden space-y-2.5">
-        {/* Header & Status Badge */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Ringkasan E-Arsip</span>
-          </div>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200/80">
-            SMP Al-Hikam
-          </span>
-        </div>
-
-        {/* Widget: Recent Upload Activity Stream (Aktivitas Upload Terbaru - 5 Berkas) */}
-        <div className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">Log Berkas Masuk</span>
-              <h3 className="text-xs font-bold text-slate-900 mt-1">Aktivitas Upload Terbaru</h3>
-            </div>
-            <div className="p-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-200/60">
-              <FilePlus className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          {recentActivity.length > 0 ? (
-            <div className="space-y-1.5">
-              {recentActivity.map((item) => (
-                <div 
-                  key={item.id}
-                  className="p-2 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
-                      item.kategoriUtama === 'Arsip Siswa' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {item.kategoriUtama === 'Arsip Siswa' ? 'SSW' : 'GRU'}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-[11px] font-semibold text-slate-800 truncate leading-tight">{item.subjek}</h4>
-                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                        {item.kategori} • <span className="font-mono text-slate-600">{item.ukuran}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex-shrink-0 ml-1.5">
-                    ✓ Tersimpan
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-2.5 text-center text-xs text-slate-400">
-              Belum ada berkas diunggah.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ============================================================== */}
-      {/* 3. KPI METRIC CARDS (ELEGANT SOFT-TINTED GRADIENTS)            */}
+      {/* 2. KPI METRIC CARDS (DESKTOP ONLY - HIDDEN ON MOBILE)          */}
       {/* ============================================================== */}
       
-      {/* ============================================================== */}
-      {/* 3. KPI METRIC CARDS (DAPODIK STYLE WITH UNIQUE OVERLAY & SOFT TINTS) */}
-      {/* ============================================================== */}
-      
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+      <section className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         
         {/* Total Arsip (Ocean Blue Theme) */}
         <div className="bg-gradient-to-br from-blue-500/10 via-blue-50/80 to-sky-100/40 border border-blue-200/90 hover:border-blue-400 hover:shadow-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 relative overflow-hidden transition-all duration-300 group cursor-pointer">
@@ -751,6 +686,67 @@ function DashboardView({ onNavigate, dataVersion: dataVersionProp }: DashboardVi
           </span>
         </div>
 
+      </section>
+
+      {/* ============================================================== */}
+      {/* 3. MOBILE DASHBOARD EXECUTIVE OVERVIEW (RINGKASAN E-ARSIP)      */}
+      {/* ============================================================== */}
+      <section className="block sm:hidden space-y-2.5">
+        {/* Header & Status Badge */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Ringkasan E-Arsip</span>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200/80">
+            SMP Al-Hikam
+          </span>
+        </div>
+
+        {/* Widget: Recent Upload Activity Stream (Aktivitas Upload Terbaru - 5 Berkas) */}
+        <div className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block leading-none">Log Berkas Masuk</span>
+              <h3 className="text-xs font-bold text-slate-900 mt-1">Aktivitas Upload Terbaru</h3>
+            </div>
+            <div className="p-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-200/60">
+              <FilePlus className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          {recentActivity.length > 0 ? (
+            <div className="space-y-1.5">
+              {recentActivity.map((item) => (
+                <div 
+                  key={item.id}
+                  className="p-2 bg-slate-50 border border-slate-200/70 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                      item.kategoriUtama === 'Arsip Siswa' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {item.kategoriUtama === 'Arsip Siswa' ? 'SSW' : 'GRU'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-[11px] font-semibold text-slate-800 truncate leading-tight">{item.subjek}</h4>
+                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {item.kategori} • <span className="font-mono text-slate-600">{item.ukuran}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex-shrink-0 ml-1.5">
+                    ✓ Tersimpan
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-2.5 text-center text-xs text-slate-400">
+              Belum ada berkas diunggah.
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ============================================================== */}
