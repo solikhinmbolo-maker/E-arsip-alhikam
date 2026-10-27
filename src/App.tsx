@@ -800,12 +800,23 @@ export default function App() {
       }
     } catch {}
 
-    // Pull authoritative records from Supabase on startup
+    // Pull authoritative records from Supabase on startup & merge safely with local records
     fetchArsipFromSupabase().then(supaItems => {
       const deletedIds = getPermanentDeletedIds();
       if (Array.isArray(supaItems) && supaItems.length > 0) {
-        const validItems = supaItems.filter(it => !deletedIds.has(it.id));
-        const clean = validItems.map(it => {
+        const validCloudItems = supaItems.filter(it => !deletedIds.has(it.id));
+        const existingLocal = getAllRawArsip().filter(it => !deletedIds.has(it.id));
+        
+        const mergedMap = new Map<string, ArsipItem>();
+        validCloudItems.forEach(it => mergedMap.set(it.id, it));
+        existingLocal.forEach(it => {
+          if (!mergedMap.has(it.id)) {
+            mergedMap.set(it.id, it);
+          }
+        });
+
+        const mergedList = Array.from(mergedMap.values());
+        const clean = mergedList.map(it => {
           const copy = { ...it };
           delete copy.fileDataUrl;
           return copy;

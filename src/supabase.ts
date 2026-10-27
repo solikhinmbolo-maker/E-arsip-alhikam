@@ -302,21 +302,37 @@ export async function fetchArsipFromSupabase(): Promise<ArsipItem[] | null> {
 
     return allData
       .filter((row: any) => !row.id.startsWith('SYS_') && row.kategori_utama !== 'SystemRegistry')
-      .map((row: any) => ({
-        id: row.id,
-        tanggal: row.tanggal || '',
-        tahun: row.tahun || '',
-        identitas: row.identitas || '-',
-        subjek: row.subjek || '',
-        kategori: row.kategori || '',
-        kategoriUtama: row.kategori_utama || 'Arsip Siswa',
-        namaFileAsli: row.nama_file_asli || '',
-        ukuran: row.ukuran || '',
-        linkDrive: row.link_drive || '',
-        uploader: row.uploader || 'admin@alhicam.sch.id',
-        isTrash: Boolean(row.is_trash),
-        deletedAt: row.deleted_at || undefined
-      }));
+      .map((row: any) => {
+        const idUpper = String(row.id || '').toUpperCase();
+        const kuRaw = String(row.kategori_utama || '').trim();
+        let katUtama: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya' = 'Arsip Siswa';
+
+        if (idUpper.startsWith('GRU-') || kuRaw.includes('Guru') || kuRaw.includes('Tendik')) {
+          katUtama = 'Arsip Guru';
+        } else if (idUpper.startsWith('LAIN-') || idUpper.startsWith('SUR-') || kuRaw.includes('Lain')) {
+          katUtama = 'Arsip Lainnya';
+        } else if (idUpper.startsWith('SIS-') || idUpper.startsWith('S-') || kuRaw.includes('Siswa')) {
+          katUtama = 'Arsip Siswa';
+        } else if (kuRaw === 'Arsip Guru' || kuRaw === 'Arsip Lainnya' || kuRaw === 'Arsip Siswa') {
+          katUtama = kuRaw;
+        }
+
+        return {
+          id: row.id,
+          tanggal: row.tanggal || '',
+          tahun: row.tahun || '',
+          identitas: row.identitas || '-',
+          subjek: row.subjek || '',
+          kategori: row.kategori || '',
+          kategoriUtama: katUtama,
+          namaFileAsli: row.nama_file_asli || '',
+          ukuran: row.ukuran || '',
+          linkDrive: row.link_drive || '',
+          uploader: row.uploader || 'admin@alhicam.sch.id',
+          isTrash: Boolean(row.is_trash),
+          deletedAt: row.deleted_at || undefined
+        };
+      });
   } catch (err) {
     console.warn('Supabase fetch failed:', err);
     return null;

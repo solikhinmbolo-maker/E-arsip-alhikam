@@ -739,16 +739,31 @@ export function getStoredArsip(): ArsipItem[] {
     const subjekLower = (item.subjek || '').trim().toLowerCase();
     const catLower = (item.kategori || '').trim().toLowerCase();
     const catUtamaLower = (item.kategoriUtama || '').trim().toLowerCase();
+    const idUpper = (item.id || '').toUpperCase();
+
+    // 1. Authoritative check on item ID prefix or explicit kategoriUtama (e.g. GRU-1112)
+    if (idUpper.startsWith('GRU-') || catUtamaLower.includes('guru') || catUtamaLower.includes('tendik')) {
+      if (item.kategoriUtama !== 'Arsip Guru') return { ...item, kategoriUtama: 'Arsip Guru' };
+      return item;
+    }
+    if (idUpper.startsWith('LAIN-') || idUpper.startsWith('SUR-') || catUtamaLower.includes('lain')) {
+      if (item.kategoriUtama !== 'Arsip Lainnya') return { ...item, kategoriUtama: 'Arsip Lainnya' };
+      return item;
+    }
+    if (idUpper.startsWith('SIS-') || idUpper.startsWith('S-') || catUtamaLower.includes('siswa')) {
+      if (item.kategoriUtama !== 'Arsip Siswa') return { ...item, kategoriUtama: 'Arsip Siswa' };
+      return item;
+    }
 
     let resolved: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya' = item.kategoriUtama || 'Arsip Siswa';
 
-    // 1. Direct Subject Match against Master Data
-    if (siswaNamesSet.has(subjekLower)) {
-      resolved = 'Arsip Siswa';
-    } else if (guruNamesSet.has(subjekLower)) {
+    // 2. Direct Subject Match against Master Data
+    if (guruNamesSet.has(subjekLower)) {
       resolved = 'Arsip Guru';
+    } else if (siswaNamesSet.has(subjekLower)) {
+      resolved = 'Arsip Siswa';
     }
-    // 2. Keyword / category fallback matching
+    // 3. Keyword / category fallback matching
     else if (guruOnlyKeywords.some(kw => catLower.includes(kw))) {
       resolved = 'Arsip Guru';
     } else if (lainnyaOnlyKeywords.some(kw => catLower.includes(kw))) {
@@ -757,16 +772,10 @@ export function getStoredArsip(): ArsipItem[] {
       resolved = 'Arsip Siswa';
     } else if (katLainnyaSet.has(catLower)) {
       resolved = 'Arsip Lainnya';
-    } else if (catUtamaLower.includes('guru') || catUtamaLower.includes('tendik')) {
-      resolved = 'Arsip Guru';
-    } else if (catUtamaLower.includes('lain')) {
-      resolved = 'Arsip Lainnya';
-    } else if (catUtamaLower.includes('siswa')) {
-      resolved = 'Arsip Siswa';
-    } else if (katSiswaSet.has(catLower) && !katGuruSet.has(catLower)) {
-      resolved = 'Arsip Siswa';
     } else if (katGuruSet.has(catLower) && !katSiswaSet.has(catLower)) {
       resolved = 'Arsip Guru';
+    } else if (katSiswaSet.has(catLower) && !katGuruSet.has(catLower)) {
+      resolved = 'Arsip Siswa';
     }
 
     if (item.kategoriUtama !== resolved) {
