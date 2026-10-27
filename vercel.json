@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/drive/download/:match*",
+      "destination": "/api/drive/download"
+    }
+  ]
+}

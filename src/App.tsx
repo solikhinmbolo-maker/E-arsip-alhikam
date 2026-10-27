@@ -2531,7 +2531,7 @@ function doGet(e) {
                                item.linkDrive.match(/id=([a-zA-Z0-9_-]{15,})/);
             const driveId = driveMatch ? driveMatch[1] : (item.linkDrive.startsWith('gdrive://') ? item.linkDrive.replace('gdrive://', '').trim() : null);
             if (driveId) {
-              const proxyDownloadUrl = `/api/drive/download/${encodeURIComponent(cleanFilename)}?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
+              const proxyDownloadUrl = `/api/drive/download?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
               const element = document.createElement('a');
               element.setAttribute('href', proxyDownloadUrl);
               element.setAttribute('download', cleanFilename);

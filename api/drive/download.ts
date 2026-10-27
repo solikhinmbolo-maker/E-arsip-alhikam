@@ -55,7 +55,7 @@ export default async function handler(req: Request, res: Response) {
       return res.end(JSON.stringify({ success: false, error: 'File ID Google Drive tidak valid.' }));
     }
 
-    // Sanitize filename & ensure proper extension so Android DownloadManager never defaults to .bin
+    // Sanitize filename & ensure proper extension
     let safeFilename = (typeof filename === 'string' && filename.trim()) ? filename.trim() : `berkas_${fileId}.pdf`;
     safeFilename = safeFilename.replace(/[/\\?%*:|"<>]/g, '_');
     if (!/\.[a-zA-Z0-9]{2,5}$/.test(safeFilename)) {
@@ -63,9 +63,10 @@ export default async function handler(req: Request, res: Response) {
     }
 
     const resolvedMimeType = getMimeTypeFromFilename(safeFilename);
+    const asciiFilename = safeFilename.replace(/[^\x20-\x7E]/g, '_').replace(/"/g, '');
 
     const downloadUrls = [
-      `https://lh3.googleusercontent.com/d/${fileId}`,
+      `https://drive.usercontent.google.com/download?id=${fileId}&export=download`,
       `https://drive.google.com/uc?export=download&id=${fileId}`
     ];
 
@@ -73,37 +74,26 @@ export default async function handler(req: Request, res: Response) {
       try {
         const response = await fetch(url, { redirect: 'follow' });
         if (response.ok && response.body) {
-          // Send explicit MIME type (e.g. application/pdf) instead of generic application/octet-stream
-          res.setHeader('Content-Type', resolvedMimeType);
-          
-          // Set RFC-compliant Content-Disposition headers compatible with all Android WebViews and desktop browsers
-          const asciiFilename = safeFilename.replace(/[^\x20-\x7E]/g, '_');
-          res.setHeader(
-            'Content-Disposition',
-            `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(safeFilename)}`
-          );
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
 
-          const contentLength = response.headers.get('content-length');
-          if (contentLength) {
-            res.setHeader('Content-Length', contentLength);
+          if (buffer.length > 0) {
+            res.setHeader('Content-Type', resolvedMimeType);
+            res.setHeader(
+              'Content-Disposition',
+              `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(safeFilename)}`
+            );
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Content-Length', String(buffer.length));
+            return res.end(buffer);
           }
-
-          // Stream the file directly to client
-          const reader = response.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            res.write(value);
-          }
-          return res.end();
         }
       } catch (err) {
         console.error(`Download Attempt Failed for ${url}:`, err);
       }
     }
 
-    // Fallback: 302 redirect with explicit filename
+    // Direct fallback redirect
     res.writeHead(302, { Location: `https://drive.google.com/uc?export=download&id=${fileId}` });
     return res.end();
   } catch (error: any) {

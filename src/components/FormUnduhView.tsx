@@ -207,8 +207,8 @@ function extractDriveIdForDownload(link?: string): string | null {
         setDownloadProgress(70);
         setDownloadStepText('Mentransfer berkas ke perangkat...');
 
-        // Sertakan cleanFilename di pathname URL agar Android WebView langsung membaca .pdf
-        const proxyDownloadUrl = `/api/drive/download/${encodeURIComponent(cleanFilename)}?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
+        // Gunakan endpoint resmi /api/drive/download dengan query parameters agar dikenali 100% oleh Vercel & server
+        const proxyDownloadUrl = `/api/drive/download?fileId=${driveId}&filename=${encodeURIComponent(cleanFilename)}`;
         
         const a = document.createElement('a');
         a.href = proxyDownloadUrl;
