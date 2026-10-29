@@ -189,6 +189,19 @@ export default function App() {
     return () => window.removeEventListener('earsip:notify', handleGlobalNotify);
   }, []);
 
+  // Global drag-and-drop safety: Mencegah browser membuka preview tab ketika file diseret di luar dropzone
+  useEffect(() => {
+    const handleDragPrevent = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('dragover', handleDragPrevent);
+    window.addEventListener('drop', handleDragPrevent);
+    return () => {
+      window.removeEventListener('dragover', handleDragPrevent);
+      window.removeEventListener('drop', handleDragPrevent);
+    };
+  }, []);
+
   // Logout loading transition state
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 

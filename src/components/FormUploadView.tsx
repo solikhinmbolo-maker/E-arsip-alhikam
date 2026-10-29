@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   CloudUpload, 
   FileText, 
@@ -94,6 +94,24 @@ export default function FormUploadView({
   const [kategori, setKategori] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileBase64, setFileBase64] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Mencegah browser membuka preview tab ketika file ditarik/dilepas di luar dropzone
+  useEffect(() => {
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    const handleWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, []);
 
   // Kolektif Upload Files mapping
   const [kolektifFiles, setKolektifFiles] = useState<{ [category: string]: { file: File; base64: string } }>({});
@@ -330,30 +348,38 @@ export default function FormUploadView({
     return file;
   };
 
-  // File dropzone handler
+  // Process selected file (dari klik file input maupun drag and drop)
+  const processSelectedFile = (file: File) => {
+    const maxMb = getMaxUploadMb();
+    
+    if (file.size > maxMb * 1024 * 1024) {
+      setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal ${maxMb} MB.`);
+      return;
+    }
+    
+    setSelectedFile(file);
+    setErrorMessage('');
+
+    // Auto-fill namaDokumen if empty
+    if (!namaDokumen && namaSubjek) {
+      setNamaDokumen(`${kategori || 'Dokumen'} - ${namaSubjek} (${tahun || new Date().getFullYear()})`);
+    } else if (!namaDokumen && !namaSubjek) {
+      // Rekomendasi nama dokumen dari nama file tanpa ekstensi
+      const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      setNamaDokumen(baseName);
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // File input change handler
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const maxMb = getMaxUploadMb();
-      
-      if (file.size > maxMb * 1024 * 1024) {
-        setErrorMessage(`Ukuran berkas (${(file.size / (1024 * 1024)).toFixed(1)} MB) melebihi batas maksimal ${maxMb} MB.`);
-        return;
-      }
-      
-      setSelectedFile(file);
-      setErrorMessage('');
-
-      // Auto-fill namaDokumen if empty
-      if (!namaDokumen && namaSubjek) {
-        setNamaDokumen(`${kategori || 'Dokumen'} - ${namaSubjek} (${tahun || new Date().getFullYear()})`);
-      }
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFileBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      processSelectedFile(e.target.files[0]);
     }
   };
 
@@ -1133,25 +1159,87 @@ export default function FormUploadView({
               </label>
               
               {!selectedFile ? (
-                <label className="group flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed border-blue-200 hover:border-blue-500 bg-blue-50/40 hover:bg-blue-50/70 rounded-3xl cursor-pointer transition-all text-center">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                      processSelectedFile(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`group flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all text-center select-none ${
+                    isDragging
+                      ? 'border-blue-600 bg-blue-100/90 ring-4 ring-blue-500/25 scale-[1.01] shadow-md'
+                      : 'border-blue-300 hover:border-blue-500 bg-blue-50/40 hover:bg-blue-50/70'
+                  }`}
+                >
                   <input 
+                    ref={fileInputRef}
                     type="file" 
                     onChange={handleFileChange} 
                     className="hidden" 
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                   />
-                  <div className="w-12 h-12 rounded-2xl bg-white text-blue-600 flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm mb-2 transition-all ${
+                    isDragging 
+                      ? 'bg-blue-600 text-white scale-110 shadow-md' 
+                      : 'bg-white text-blue-600 group-hover:scale-110'
+                  }`}>
                     <CloudUpload className="w-6 h-6" />
                   </div>
                   <strong className="text-xs sm:text-sm text-slate-800 font-bold block">
-                    Sentuh untuk Pilih File Dokumen
+                    {isDragging ? 'Lepaskan Berkas di Sini untuk Mengunggah' : 'Sentuh / Klik atau Seret & Lepas Berkas di Sini'}
                   </strong>
                   <span className="text-[11px] text-slate-500 mt-1 block">
-                    Format: PDF, Foto Scan (JPG/PNG), Word (Maks. 50MB)
+                    Bisa klik atau seret langsung file dari komputer/HP (PDF, Foto Scan, Word Maks. 50MB)
                   </span>
-                </label>
+                </div>
               ) : (
-                <div className="space-y-2.5">
+                <div 
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                      processSelectedFile(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  className={`space-y-2.5 transition-all ${
+                    isDragging ? 'ring-2 ring-blue-500 rounded-2xl p-1 bg-blue-50/70' : ''
+                  }`}
+                >
                   <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
@@ -1160,7 +1248,7 @@ export default function FormUploadView({
                       <div className="min-w-0">
                         <strong className="text-xs sm:text-sm font-bold text-slate-900 block truncate">{selectedFile.name}</strong>
                         <span className="text-[10px] text-emerald-700 font-semibold block">
-                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Berkas Terlampir
+                          {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Berkas Terlampir {isDragging && '(Lepas untuk mengganti berkas)'}
                         </span>
                       </div>
                     </div>
@@ -1219,8 +1307,19 @@ export default function FormUploadView({
                 return (
                   <div 
                     key={kat} 
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                        handleKolektifFile(kat, e.dataTransfer.files[0]);
+                      }
+                    }}
                     className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
-                      isAttached ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200/90'
+                      isAttached ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200/90 hover:border-blue-300 hover:bg-blue-50/40'
                     }`}
                   >
                     <div className="min-w-0 flex-1">
