@@ -35,8 +35,19 @@ import {
   Server,
   Smartphone,
   ShieldCheck,
-  Edit3
+  Edit3,
+  Volume2,
+  Play,
+  Crown,
+  Music,
+  Bell
 } from 'lucide-react';
+import { 
+  UPLOAD_SOUND_OPTIONS, 
+  getActiveUploadSound, 
+  saveActiveUploadSound, 
+  playUploadSuccessSound 
+} from '../utils/audioNotification';
 import { 
   GoogleSyncConfig, 
   getStoredSyncConfig, 
@@ -154,7 +165,7 @@ export default function SettingsView({
     currentUser?.email?.toLowerCase() === 'admin@alhicam.sch.id';
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'preferensi' | 'kategori' | 'legalisir' | 'cloud' | 'backup' | 'keamanan' | 'diagnostik' | 'info'>('preferensi');
+  const [activeTab, setActiveTab] = useState<'preferensi' | 'notifikasi' | 'kategori' | 'legalisir' | 'cloud' | 'backup' | 'keamanan' | 'diagnostik' | 'info'>('preferensi');
 
   // Update Checker State
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
@@ -187,6 +198,43 @@ export default function SettingsView({
     localStorage.setItem('EARSIP_SOUND_ENABLED', val.toString());
     if (val) playSystemSound('test');
     showNotification(val ? '✓ Efek audio aktif' : 'Audio dinonaktifkan');
+  };
+
+  // Opsi Suara Notifikasi Upload Berhasil (Khusus Super Administrator, Sinkron ke semua akun)
+  const [activeUploadSound, setActiveUploadSound] = useState<string>(() => getActiveUploadSound());
+  const [isSavingSound, setIsSavingSound] = useState(false);
+  const [playingSoundId, setPlayingSoundId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleSoundSync = (e: any) => {
+      if (e.detail?.soundId) {
+        setActiveUploadSound(e.detail.soundId);
+      }
+    };
+    window.addEventListener('earsip:upload-sound-updated', handleSoundSync);
+    return () => window.removeEventListener('earsip:upload-sound-updated', handleSoundSync);
+  }, []);
+
+  const handleSelectUploadSound = async (soundId: string) => {
+    if (!isSuperAdmin) return;
+    setActiveUploadSound(soundId);
+    setPlayingSoundId(soundId);
+    playUploadSuccessSound(soundId);
+    setTimeout(() => setPlayingSoundId(null), 1200);
+
+    setIsSavingSound(true);
+    await saveActiveUploadSound(soundId, true);
+    setIsSavingSound(false);
+
+    const soundObj = UPLOAD_SOUND_OPTIONS.find(s => s.id === soundId);
+    showNotification(`✓ Suara notifikasi upload diubah ke "${soundObj?.name || soundId}" & disinkronkan ke seluruh akun.`);
+  };
+
+  const handlePreviewSound = (e: React.MouseEvent, soundId: string) => {
+    e.stopPropagation();
+    setPlayingSoundId(soundId);
+    playUploadSuccessSound(soundId);
+    setTimeout(() => setPlayingSoundId(null), 1200);
   };
 
   // 2. Kategori & Format Berkas
@@ -736,6 +784,7 @@ export default function SettingsView({
 
   const navTabs = isSuperAdmin ? [
     { id: 'preferensi', label: 'Tampilan & Sistem', shortLabel: 'Tampilan', icon: Palette },
+    { id: 'notifikasi', label: 'Suara Notifikasi', shortLabel: 'Notifikasi', icon: Bell, badge: 'Baru' },
     { id: 'kategori', label: 'Kategori & Dokumen', shortLabel: 'Kategori', icon: FileText },
     { id: 'legalisir', label: 'Legalisir & Stempel', shortLabel: 'Legalisir', icon: Stamp },
     { id: 'cloud', label: 'Server & Cloud (Supabase)', shortLabel: 'Supabase Cloud', icon: Cloud, badge: 'Pro' },
@@ -986,6 +1035,149 @@ export default function SettingsView({
                 </button>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB NOTIFIKASI: SUARA NOTIFIKASI UPLOAD (KHUSUS SUPER ADMIN)             */}
+      {/* ========================================================================= */}
+      {activeTab === 'notifikasi' && (
+        <div className="space-y-4 sm:space-y-6 animate-fadeIn w-full min-w-0">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-6 w-full max-w-full min-w-0 overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-slate-100">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/20">
+                  <Bell className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900">
+                      Suara Notifikasi Upload Berhasil
+                    </h2>
+                    {isSuperAdmin ? (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold border border-amber-200">
+                        👑 Super Admin
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200">
+                        🔒 Dikelola Super Admin
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Sinkron Real-Time ke Seluruh Akun & Cloud
+                    </span>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                    Koleksi nada notifikasi profesional terinspirasi dari aplikasi ternama (iOS, Slack, Telegram, WhatsApp, Android Pixel).
+                  </p>
+                </div>
+              </div>
+
+              {isSavingSound && (
+                <span className="text-[11px] font-semibold text-blue-600 flex items-center gap-1.5 self-start sm:self-auto bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  Menyimpan & menyinkronkan...
+                </span>
+              )}
+            </div>
+
+            {/* Banner Informasi Sinkronisasi */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-slate-50 border border-blue-100 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs mt-0.5">
+                <Music className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-xs font-bold text-slate-900">
+                  Sinkronisasi Otomatis Seluruh Pengguna
+                </h4>
+                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                  Pilihan suara dari Super Admin akan langsung disinkronkan ke seluruh akun staf, guru, dan aplikasi APK Android. Setiap kali berkas berhasil diunggah, nada pilihan ini yang akan berbunyi di perangkat masing-masing pengguna.
+                </p>
+              </div>
+            </div>
+
+            {/* Grid Opsi Suara Notifikasi Pro */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+              {UPLOAD_SOUND_OPTIONS.map((opt) => {
+                const isSelected = activeUploadSound === opt.id;
+                const isPlaying = playingSoundId === opt.id;
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => isSuperAdmin && handleSelectUploadSound(opt.id)}
+                    className={`p-4 rounded-2xl border transition-all relative flex flex-col justify-between text-left group ${
+                      isSuperAdmin ? 'cursor-pointer active:scale-[0.99]' : 'cursor-default'
+                    } ${
+                      isSelected
+                        ? 'bg-blue-50/90 border-blue-600 ring-2 ring-blue-600/20 shadow-md shadow-blue-600/10'
+                        : 'bg-white hover:bg-slate-50/80 border-slate-200/90 hover:border-slate-300 shadow-2xs'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors flex-shrink-0 ${
+                            isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white group-hover:border-slate-400'
+                          }`}>
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <strong className={`text-xs font-bold truncate ${isSelected ? 'text-blue-900' : 'text-slate-800'}`}>
+                            {opt.name}
+                          </strong>
+                        </div>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md flex-shrink-0 ${
+                          isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {opt.tag}
+                        </span>
+                      </div>
+
+                      <div className="pl-6.5">
+                        <span className="inline-block text-[10px] font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md mb-1.5">
+                          Inspirasi: {opt.appReference}
+                        </span>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                          {opt.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3.5 pt-2.5 border-t border-slate-100/90 flex items-center justify-between pl-6.5">
+                      <span className="text-[10px] font-mono text-slate-400 truncate max-w-[130px]" title={opt.notesSummary}>
+                        {opt.notesSummary}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handlePreviewSound(e, opt.id)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer active:scale-95 ${
+                          isPlaying
+                            ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                            : isSelected
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xs'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        }`}
+                        title="Dengarkan contoh suara ini"
+                      >
+                        {isPlaying ? (
+                          <>
+                            <Volume2 className="w-3 h-3 animate-pulse" />
+                            <span>Memutar...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-2.5 h-2.5 fill-current" />
+                            <span>Tes Suara</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

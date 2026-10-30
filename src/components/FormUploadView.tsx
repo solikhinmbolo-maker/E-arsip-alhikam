@@ -52,6 +52,7 @@ import {
   getCurrentOperatorEmail
 } from '../data/mockDatabase';
 import { uploadFileToSupabaseStorage, uploadFileToGoogleDriveApi, saveArsipToSupabase } from '../supabase';
+import { playUploadSuccessSound } from '../utils/audioNotification';
 
 interface FormUploadViewProps {
   initialJenis?: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -408,45 +409,11 @@ export default function FormUploadView({
     });
   };
 
-  // Sound effect with Web Audio API synthesized chime fallback
+  // Play synchronized upload success sound
   const playSuccessSound = () => {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        if (ctx.state === 'suspended') {
-          ctx.resume().catch(() => {});
-        }
-        const now = ctx.currentTime;
-        const notes = [
-          { freq: 523.25, time: now, duration: 0.15 },        // C5
-          { freq: 659.25, time: now + 0.1, duration: 0.2 },   // E5
-          { freq: 783.99, time: now + 0.22, duration: 0.45 }  // G5
-        ];
-
-        notes.forEach(({ freq, time, duration }) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, time);
-
-          gain.gain.setValueAtTime(0.35, time);
-          gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-
-          osc.start(time);
-          osc.stop(time + duration);
-        });
-      }
-    } catch {
-      try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(() => {});
-      } catch {}
-    }
+      playUploadSuccessSound();
+    } catch {}
   };
 
   // Pre-fetch drive config on mount for zero-latency uploads

@@ -109,6 +109,7 @@ import {
   fetchConfigFromServer,
   subscribeToSupabaseAuditLogs
 } from './supabase';
+import { initUploadSoundSync } from './utils/audioNotification';
 
 type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah' | 'pengaturan';
 type SubKategori = 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
@@ -187,6 +188,14 @@ export default function App() {
     };
     window.addEventListener('earsip:notify', handleGlobalNotify);
     return () => window.removeEventListener('earsip:notify', handleGlobalNotify);
+  }, []);
+
+  // Sinkronisasi real-time pengaturan suara notifikasi upload antar perangkat & akun
+  useEffect(() => {
+    const cleanup = initUploadSoundSync();
+    return () => {
+      cleanup();
+    };
   }, []);
 
   // Global drag-and-drop safety: Mencegah browser membuka preview tab ketika file diseret di luar dropzone
