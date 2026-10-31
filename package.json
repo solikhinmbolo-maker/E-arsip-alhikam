@@ -1,7 +1,10 @@
 {
-  "name": "react-example",
+  "name": "e-arsip-alhikam",
+  "productName": "E-Arsip SMP Al-Hikam",
+  "description": "Aplikasi Manajemen E-Arsip Digital SMP Al-Hikam Sendang Mulyo",
+  "author": "SMP Al-Hikam Sendang Mulyo",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -77,7 +80,7 @@
           ]
         }
       ],
-      "icon": "public/icon.png"
+      "icon": "public/icon.ico"
     },
     "nsis": {
       "oneClick": false,
