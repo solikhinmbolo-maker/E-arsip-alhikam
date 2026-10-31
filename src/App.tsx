@@ -2650,58 +2650,137 @@ function doGet(e) {
       {/* 10. FULL-SCREEN UPLOAD SUCCESS MODAL (RICH BLUR & CENTERED LAYOUT) */}
       {uploadSuccessModal && (
         <div className="fixed inset-0 z-[100001] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-2xl animate-fadeIn">
-          <div className="bg-white border border-slate-200/90 rounded-[32px] p-7 sm:p-9 max-w-md sm:max-w-lg w-full text-center shadow-2xl animate-scaleUp text-slate-800 relative overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-[32px] p-7 sm:p-9 max-w-[460px] w-full text-center shadow-2xl animate-scaleUp text-slate-800 relative overflow-hidden">
             
-            {/* Dynamic Green Verification Checkmark Icon (Exact Match to User Sample) */}
-            <div className="flex justify-center mb-5">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center animate-check-pop">
-                <svg className="w-full h-full drop-shadow-sm" viewBox="0 0 100 100">
-                  {/* Bold Green Circular Ring */}
-                  <circle 
-                    cx="50" 
-                    cy="50" 
-                    r="38" 
-                    fill="none" 
-                    stroke="#22C55E" 
-                    strokeWidth="9" 
-                    strokeLinecap="round" 
-                    className="animate-check-ring"
-                  />
-                  {/* Bold Dynamic Checkmark Swoosh */}
-                  <path 
-                    d="M30 48 L46 68 L84 26" 
-                    fill="none" 
-                    stroke="#22C55E" 
-                    strokeWidth="12.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="animate-check-swoosh"
-                  />
-                </svg>
+            {/* Elegant Sparse Batik Vector Watermark Elements (Arang-arang, Minimal Opacity, Dominan Putih) */}
+            <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0" aria-hidden="true">
+              {/* Top-Right: Indonesian Batik Kawung & Floral Medallion Accent */}
+              <svg 
+                className="absolute -top-12 -right-12 w-48 h-48 text-indigo-950 opacity-[0.05]" 
+                viewBox="0 0 120 120" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1.2"
+              >
+                <circle cx="60" cy="60" r="54" strokeDasharray="3 3" />
+                <circle cx="60" cy="60" r="42" />
+                <circle cx="60" cy="60" r="26" />
+                <circle cx="60" cy="60" r="10" />
+                {/* 4 Petals Kawung Interlocking Motifs */}
+                <ellipse cx="60" cy="35" rx="14" ry="22" />
+                <ellipse cx="60" cy="85" rx="14" ry="22" />
+                <ellipse cx="35" cy="60" rx="22" ry="14" />
+                <ellipse cx="85" cy="60" rx="22" ry="14" />
+                {/* Diagonal Diamond Accents */}
+                <path d="M42 42 L78 78 M42 78 L78 42" strokeWidth="0.8" />
+                <circle cx="60" cy="60" r="4" fill="currentColor" />
+              </svg>
+
+              {/* Bottom-Left: Indonesian Batik Kawung & Traditional Nusantara Curve */}
+              <svg 
+                className="absolute -bottom-14 -left-14 w-52 h-52 text-blue-950 opacity-[0.05]" 
+                viewBox="0 0 120 120" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1.2"
+              >
+                <circle cx="60" cy="60" r="54" strokeDasharray="3 3" />
+                <circle cx="60" cy="60" r="38" />
+                <ellipse cx="60" cy="35" rx="14" ry="22" />
+                <ellipse cx="60" cy="85" rx="14" ry="22" />
+                <ellipse cx="35" cy="60" rx="22" ry="14" />
+                <ellipse cx="85" cy="60" rx="22" ry="14" />
+                <circle cx="60" cy="60" r="12" />
+                <path d="M60 10 L60 110 M10 60 L110 60" strokeDasharray="2 2" strokeWidth="0.8" />
+              </svg>
+
+              {/* Top-Left & Bottom-Right Subtle Sparse Geometric Accents */}
+              <svg 
+                className="absolute top-6 left-6 w-14 h-14 text-slate-800 opacity-[0.04]" 
+                viewBox="0 0 40 40" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1"
+              >
+                <path d="M0 20 Q10 0 20 0 Q30 0 40 20 Q30 40 20 40 Q10 40 0 20 Z" />
+                <circle cx="20" cy="20" r="5" />
+              </svg>
+              <svg 
+                className="absolute bottom-6 right-6 w-14 h-14 text-slate-800 opacity-[0.04]" 
+                viewBox="0 0 40 40" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1"
+              >
+                <path d="M20 0 Q40 10 40 20 Q40 30 20 40 Q0 30 0 20 Q0 10 20 0 Z" />
+                <circle cx="20" cy="20" r="5" />
+              </svg>
+            </div>
+            
+            {/* Dynamic Green Verification Checkmark Icon with Smooth Slow Entrance & Subtle Alive Idle Movement */}
+            <div className="flex justify-center mb-5 relative z-10">
+              <div className="animate-check-pop-slow">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center animate-check-idle">
+                  <svg className="w-full h-full" viewBox="0 0 100 100">
+                    {/* Bold Green Circular Ring */}
+                    <circle 
+                      cx="50" 
+                      cy="50" 
+                      r="38" 
+                      fill="none" 
+                      stroke="#22C55E" 
+                      strokeWidth="9" 
+                      strokeLinecap="round" 
+                      className="animate-check-ring-smooth"
+                    />
+                    {/* Bold Dynamic Checkmark Swoosh */}
+                    <path 
+                      d="M30 48 L46 68 L84 26" 
+                      fill="none" 
+                      stroke="#22C55E" 
+                      strokeWidth="12.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      className="animate-check-swoosh-smooth"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
             
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-1 drop-shadow-sm">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-1 drop-shadow-sm relative z-10">
               Berhasil Mengunggah Berkas!
             </h3>
-            <p className="text-xs text-slate-500 font-medium mb-6">
+            <p className="text-xs text-slate-500 font-medium mb-6 relative z-10">
               Arsip digital telah berhasil disimpan & diverifikasi
             </p>
             
-            <div className="bg-white/95 border border-slate-200/80 rounded-2xl p-5 mb-7 text-left space-y-3.5 shadow-sm backdrop-blur-sm">
+            {/* Information Card Container with Fixed Inner Proportions */}
+            <div className="bg-white/95 border border-slate-200/80 rounded-2xl p-5 mb-7 text-left space-y-3.5 shadow-sm backdrop-blur-sm relative z-10">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Subjek / Nama Berkas:</span>
-                <strong className="text-sm sm:text-base text-blue-600 font-extrabold block break-words mt-1 line-clamp-3 leading-snug">
+                <strong 
+                  className="text-sm sm:text-base text-blue-600 font-extrabold block truncate mt-1 leading-snug"
+                  title={uploadSuccessModal.name}
+                >
                   {uploadSuccessModal.name}
                 </strong>
               </div>
 
               {uploadSuccessModal.categories && uploadSuccessModal.categories.length > 0 && (
                 <div className="pt-3 border-t border-slate-100">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-2">
-                    Keterangan Berkas Terunggah ({uploadSuccessModal.count} dokumen):
-                  </span>
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                      Keterangan Berkas Terunggah ({uploadSuccessModal.count} dokumen):
+                    </span>
+                    {uploadSuccessModal.categories.length > 1 && (
+                      <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                        Gulir ke bawah
+                      </span>
+                    )}
+                  </div>
+                  {/* Fixed list height identical to 1 file so the modal size NEVER changes whether 1 or many files */}
+                  <div className="space-y-1.5 h-[58px] max-h-[58px] overflow-y-auto pr-1 modal-list-scroll overscroll-contain">
                     {uploadSuccessModal.categories.map((cat, idx) => {
                       const parts = cat.split(' — ');
                       const categoryName = parts[0];
@@ -2715,8 +2794,8 @@ function doGet(e) {
                             ✓
                           </span>
                           <div className="flex-1 min-w-0">
-                            <span className="font-extrabold text-slate-900 block leading-tight">{categoryName}</span>
-                            {fileInfo && <span className="text-slate-500 text-[11px] block mt-0.5 break-all leading-normal">{fileInfo}</span>}
+                            <span className="font-extrabold text-slate-900 block leading-tight truncate">{categoryName}</span>
+                            {fileInfo && <span className="text-slate-500 text-[11px] block mt-0.5 truncate leading-normal">{fileInfo}</span>}
                           </div>
                         </div>
                       );
@@ -2740,7 +2819,7 @@ function doGet(e) {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center relative z-10">
               <button
                 type="button"
                 onClick={() => setUploadSuccessModal(null)}

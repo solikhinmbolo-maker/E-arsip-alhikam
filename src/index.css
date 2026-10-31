@@ -171,17 +171,46 @@ body {
   }
 }
 
-@keyframes checkIconPopSpring {
+/* Dynamic Green Verification Checkmark Animations (Slow, Silky Smooth Entrance & Subtle Alive Idle) */
+@keyframes checkRingDrawSmooth {
   0% {
-    transform: scale(0.4);
+    stroke-dashoffset: 240;
     opacity: 0;
   }
-  55% {
-    transform: scale(1.08);
+  15% {
     opacity: 1;
   }
-  78% {
-    transform: scale(0.97);
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes checkSwooshDrawSmooth {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes checkmarkEntranceSlow {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.985);
   }
   100% {
     transform: scale(1);
@@ -189,21 +218,75 @@ body {
   }
 }
 
+/* Subtle, gentle, elegant idle movement while modal is open (Micro-breathing & soft float) */
+@keyframes checkIdleGentleFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 3px 8px rgba(34, 197, 94, 0.2));
+  }
+  50% {
+    transform: translateY(-3.5px) scale(1.025);
+    filter: drop-shadow(0 7px 16px rgba(34, 197, 94, 0.35));
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 3px 8px rgba(34, 197, 94, 0.2));
+  }
+}
+
+.animate-check-pop-slow {
+  transform-origin: center;
+  animation: checkmarkEntranceSlow 1.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-check-idle {
+  animation: checkIdleGentleFloat 3.8s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+.animate-check-ring-smooth {
+  stroke-dasharray: 240;
+  stroke-dashoffset: 240;
+  animation: checkRingDrawSmooth 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-check-swoosh-smooth {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: checkSwooshDrawSmooth 1.25s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s forwards;
+}
+
+/* Custom slim scrollbar for modal document list */
+.modal-list-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.modal-list-scroll::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 9999px;
+}
+.modal-list-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 9999px;
+}
+.modal-list-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}
+
 .animate-check-pop {
   transform-origin: center;
-  animation: checkIconPopSpring 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: checkmarkEntranceSlow 1.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-check-ring {
   stroke-dasharray: 240;
   stroke-dashoffset: 240;
-  animation: checkRingDraw 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: checkRingDrawSmooth 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .animate-check-swoosh {
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  animation: checkSwooshDraw 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.35s forwards;
+  animation: checkSwooshDrawSmooth 1.25s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s forwards;
 }
 
 .animate-checkmark {
@@ -215,3 +298,4 @@ body {
 .animate-circle-pop {
   animation: successCirclePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+
