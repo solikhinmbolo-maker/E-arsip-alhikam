@@ -425,8 +425,8 @@ export default function FormUploadView({
     if (!selectedFile) return;
 
     setIsUploading(true);
-    setProgressPercent(20);
-    setProgressStatus(replaceExistingId ? 'Memperbarui...' : 'Mengirim ke Google Drive...');
+    setProgressPercent(5);
+    setProgressStatus(replaceExistingId ? 'Memperbarui berkas...' : 'Mempersiapkan berkas...');
 
     const prefix = jenisArsip === 'Arsip Siswa' ? 'SSW' : jenisArsip === 'Arsip Guru' ? 'GRU' : 'LYN';
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -537,15 +537,29 @@ export default function FormUploadView({
     }
 
     setIsUploading(true);
-    setProgressPercent(20);
-    setProgressStatus(`Mengunggah ${count} berkas secara paralel ke Google Drive...`);
+    setProgressPercent(5);
+    setProgressStatus(`Menyiapkan ${count} berkas untuk diunggah...`);
 
     const categories = Object.keys(kolektifFiles);
     const todayStr = new Date().toLocaleDateString('id-ID');
     const prefix = jenisArsip === 'Arsip Siswa' ? 'SSW' : jenisArsip === 'Arsip Guru' ? 'GRU' : 'LYN';
     const currentArsip = getStoredArsip();
 
+    // Map each category to its current progress percentage for smooth overall progress
+    const fileProgressMap: Record<string, number> = {};
+    categories.forEach(k => {
+      fileProgressMap[k] = 5;
+    });
+
     let completedCount = 0;
+
+    const updateCollectiveProgress = (activeKey: string, percent: number, statusText: string) => {
+      fileProgressMap[activeKey] = percent;
+      const sum = Object.values(fileProgressMap).reduce((a, b) => a + b, 0);
+      const overall = Math.min(98, Math.max(5, Math.round(sum / count)));
+      setProgressPercent(overall);
+      setProgressStatus(`(${completedCount}/${count} selesai) ${statusText}`);
+    };
 
     // Run parallel high-speed batch uploads
     const uploadPromises = categories.map(async (katKey, idx) => {
@@ -590,7 +604,7 @@ export default function FormUploadView({
           customFilename
         },
         (p, status) => {
-          setProgressStatus(`[${katKey}] ${status}`);
+          updateCollectiveProgress(katKey, p, `[${katKey}] ${status}`);
         }
       );
 
@@ -620,8 +634,11 @@ export default function FormUploadView({
       } catch {}
 
       completedCount++;
-      setProgressPercent(Math.round((completedCount / count) * 90) + 10);
-      setProgressStatus(`Selesai ${completedCount} dari ${count} berkas...`);
+      fileProgressMap[katKey] = 100;
+      const sum = Object.values(fileProgressMap).reduce((a, b) => a + b, 0);
+      const overall = Math.min(99, Math.round(sum / count));
+      setProgressPercent(overall);
+      setProgressStatus(`Selesai ${completedCount} dari ${count} berkas (${overall}%)`);
     });
 
     try {

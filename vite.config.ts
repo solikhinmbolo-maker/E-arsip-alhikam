@@ -41,6 +41,17 @@ function globalServerConfigPlugin() {
         }
       });
 
+      server.middlewares.use('/api/drive/config', async (req: any, res: any) => {
+        try {
+          const { default: handler } = await import('./api/drive/config');
+          await handler(req, res);
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+
       server.middlewares.use('/api/server-config', (req: any, res: any) => {
         const filePath = path.resolve(__dirname, 'public/supabase-config.json');
         if (req.method === 'GET') {

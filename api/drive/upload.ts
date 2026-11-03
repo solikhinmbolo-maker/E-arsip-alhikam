@@ -57,7 +57,7 @@ function parseMultipartForm(req: any): Promise<{ fields: Record<string, string>;
   });
 }
 
-async function fetchWithRetry(url: string, options: any, retries = 3, delayMs = 2500): Promise<Response> {
+async function fetchWithRetry(url: string, options: any, retries = 2, delayMs = 800): Promise<Response> {
   let lastError: any;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -75,7 +75,7 @@ async function fetchWithRetry(url: string, options: any, retries = 3, delayMs = 
       }
     }
   }
-  throw lastError || new Error('Gagal terhubung ke Google Apps Script setelah beberapa kali percobaan (Cold Start timeout).');
+  throw lastError || new Error('Gagal terhubung ke Google Apps Script setelah beberapa kali percobaan.');
 }
 
 export default async function handler(req: any, res: any) {
@@ -86,20 +86,20 @@ export default async function handler(req: any, res: any) {
     return res.end(JSON.stringify({ success: false, error: 'Method Not Allowed. Gunakan POST.' }));
   }
 
-  const scriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL?.trim();
-  const scriptSecret = process.env.GOOGLE_APPS_SCRIPT_SECRET?.trim() || 'eArsipSecretAlHikam2026_SecureKey';
-
-  if (!scriptUrl) {
-    res.statusCode = 200;
-    return res.end(JSON.stringify({
-      success: false,
-      error: 'Google Drive belum dikonfigurasi.',
-      message: '⚠️ GOOGLE_APPS_SCRIPT_URL belum disetel pada Environment Variables server Vercel.'
-    }));
-  }
-
   try {
     const { fields, file } = await parseMultipartForm(req);
+
+    const scriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL?.trim() || fields.scriptUrl?.trim() || fields.webhookUrl?.trim();
+    const scriptSecret = process.env.GOOGLE_APPS_SCRIPT_SECRET?.trim() || fields.scriptSecret?.trim() || 'eArsipSecretAlHikam2026_SecureKey';
+
+    if (!scriptUrl) {
+      res.statusCode = 200;
+      return res.end(JSON.stringify({
+        success: false,
+        error: 'Google Drive belum dikonfigurasi.',
+        message: '⚠️ GOOGLE_APPS_SCRIPT_URL belum disetel pada Environment Variables server Vercel maupun Pengaturan Aplikasi.'
+      }));
+    }
 
     if (!file || !file.buffer || file.buffer.length === 0) {
       res.statusCode = 400;
@@ -110,6 +110,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const desiredFilename = fields.customFilename || fields.namaFileAsli || file.filename || `arsip_${Date.now()}`;
+    const base64Data = file.buffer.toString('base64');
 
     // Payload for Google Apps Script Web App (executed server-to-server)
     const payload = {
@@ -123,8 +124,8 @@ export default async function handler(req: any, res: any) {
       namaFileAsli: desiredFilename,
       namaFile: desiredFilename,
       mimeType: file.mimeType,
-      fileBase64: file.buffer.toString('base64'),
-      fileData: file.buffer.toString('base64'),
+      fileBase64: base64Data,
+      fileData: base64Data,
       kategori: fields.kategori || '',
       kategoriUtama: fields.kategoriUtama || '',
       tahun: fields.tahun || '',
