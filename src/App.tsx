@@ -38,7 +38,8 @@ import {
   Laptop,
   Bell,
   Key,
-  Cloud
+  Cloud,
+  ClipboardCheck
 } from 'lucide-react';
 import LoginPage from './components/LoginPage';
 import SplashScreen from './components/SplashScreen';
@@ -53,6 +54,7 @@ import TongSampahView from './components/TongSampahView';
 import SettingsView from './components/SettingsView';
 import PreviewModal from './components/PreviewModal';
 import UserManagementModal from './components/UserManagementModal';
+import RekapDokumen from './components/RekapDokumen';
 import { 
   ArsipItem, 
   DB_KEYS, 
@@ -111,7 +113,7 @@ import {
 } from './supabase';
 import { initUploadSoundSync } from './utils/audioNotification';
 
-type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah' | 'pengaturan';
+type ActivePage = 'dashboard' | 'upload' | 'unduh' | 'rekap' | 'buku-induk' | 'legalisir' | 'audit-log' | 'laporan' | 'sampah' | 'pengaturan';
 type SubKategori = 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya';
 
 // Isolated live clock component so ticking every second doesn't re-render entire page/charts
@@ -1641,6 +1643,7 @@ function doGet(e) {
     dashboard: 'Dashboard Executive',
     upload: `Upload Dokumen (${activeSubKategori})`,
     unduh: `Unduh Dokumen (${activeSubKategori})`,
+    rekap: 'Rekap Dokumen & Kelengkapan Berkas',
     'buku-induk': 'Master Data (Siswa & Guru)',
     legalisir: 'Verifikasi & Legalisir Digital',
     'audit-log': 'Log & Jejak Audit Pengarsipan',
@@ -1808,6 +1811,22 @@ function doGet(e) {
               </div>
             )}
           </div>
+
+          {/* Rekap Dokumen (Tepat di Bawah Menu Unduh) */}
+          <button
+            onClick={() => {
+              setActivePage('rekap');
+              setMobileSidebarOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activePage === 'rekap'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4 text-cyan-300" />
+            <span className="font-semibold">Rekap Dokumen</span>
+          </button>
 
           {/* Verifikasi & Legalisir */}
           <button
@@ -2166,6 +2185,16 @@ function doGet(e) {
               kategoriMenu={activeSubKategori}
               initialSearch={unduhInitialSearch}
               onPreview={(item) => setPreviewItem(item)}
+            />
+          )}
+
+          {activePage === 'rekap' && (
+            <RekapDokumen
+              onPreview={(item) => setPreviewItem(item)}
+              onNavigateToUpload={(sub, nama) => {
+                setActivePage('upload');
+                setActiveSubKategori(sub);
+              }}
             />
           )}
 
