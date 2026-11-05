@@ -1,12 +1,10 @@
-import React, { useState, useMemo, useEffect, useTransition } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   ChevronDown, 
   X, 
-  Check, 
   Printer, 
   Copy, 
-  Eye, 
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -24,10 +22,10 @@ interface RekapDokumenProps {
   onNavigateToUpload?: (kategori: 'Arsip Siswa' | 'Arsip Guru' | 'Arsip Lainnya', nama: string) => void;
 }
 
-// Ultra-fast inline SVG icons (renders in <0.001ms instead of heavy React Lucide wrappers)
+// Ultra-fast inline SVG icons (scalable & responsive: w-4 h-4 on mobile, w-5 h-5 on desktop)
 function IconCheck() {
   return (
-    <svg className="w-5 h-5 text-emerald-600 inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
@@ -35,7 +33,7 @@ function IconCheck() {
 
 function IconCross() {
   return (
-    <svg className="w-5 h-5 text-rose-500 inline-block opacity-90 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 inline-block opacity-90 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
@@ -322,53 +320,53 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
   };
 
   return (
-    <div className="w-full max-w-full space-y-6 pb-20">
-      {/* Outer White Card Container matching Image Exactly */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+    <div className="w-full max-w-full space-y-3.5 sm:space-y-6 pb-20">
+      {/* Outer White Card Container: compact on mobile, spacious on desktop */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 lg:p-8 border border-slate-200/80 shadow-xs sm:shadow-sm space-y-3 sm:space-y-6">
         
-        {/* Title Header matching Image */}
-        <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+        {/* Title Header: sleek on mobile, bold on desktop */}
+        <div className="flex flex-col sm:block">
+          <h2 className="text-base sm:text-2xl font-bold sm:font-extrabold text-slate-900 tracking-tight">
             Matriks Rekap Kelengkapan
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-[11px] sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
             Pantau status kelengkapan dokumen yang sudah dan belum diunggah.
           </p>
         </div>
 
-        {/* Filter Controls Card matching Image */}
-        <div className="bg-[#F8FAFC] rounded-2xl p-4 sm:p-5 border border-slate-100">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+        {/* Filter Controls Card: ultra-compact grid on mobile, classic layout on desktop */}
+        <div className="bg-[#F8FAFC] rounded-xl sm:rounded-2xl p-2.5 sm:p-5 border border-slate-100/90 space-y-2 sm:space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-4 items-end">
             
             {/* Filter Target Kelompok */}
-            <div className="lg:col-span-6 space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">
+            <div className="lg:col-span-6 space-y-1 sm:space-y-1.5">
+              <label className="hidden sm:block text-xs font-bold text-slate-700">
                 Filter Target Kelompok
               </label>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2">
                 {/* Select Kelompok (Siswa / Guru / Lainnya) */}
-                <div className="relative flex-1 min-w-[140px]">
+                <div className="relative">
                   <select
                     value={targetKelompok}
                     onChange={(e) => {
                       setTargetKelompok(e.target.value as any);
                     }}
-                    className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
+                    className="w-full pl-2.5 sm:pl-3.5 pr-7 sm:pr-8 py-2 sm:py-2.5 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium sm:font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer shadow-2xs"
                   >
                     <option value="Siswa">Siswa</option>
                     <option value="Guru">Guru & PTK</option>
                     <option value="Lainnya">Dokumen Lainnya</option>
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
 
                 {/* Filter Tahun Angkatan (Khusus Siswa) */}
                 {targetKelompok === 'Siswa' && (
-                  <div className="relative flex-1 min-w-[140px]">
+                  <div className="relative">
                     <select
                       value={selectedTahun}
                       onChange={(e) => setSelectedTahun(e.target.value)}
-                      className="w-full pl-3.5 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer"
+                      className="w-full pl-2.5 sm:pl-3.5 pr-7 sm:pr-8 py-2 sm:py-2.5 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium sm:font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all appearance-none cursor-pointer shadow-2xs"
                       title="Filter Tahun Angkatan Siswa"
                     >
                       <option value="SEMUA">Semua Tahun</option>
@@ -378,17 +376,17 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 )}
 
-                {/* Tombol "Tampilkan Matriks" exactly as in screenshot */}
+                {/* Tombol "Tampilkan Matriks" */}
                 <button
                   type="button"
                   onClick={() => {
                     setDataVersion(v => v + 1);
                   }}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap active:scale-95"
+                  className="col-span-2 sm:col-span-1 px-3 sm:px-5 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold sm:font-bold rounded-lg sm:rounded-xl shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95 text-center"
                 >
                   Tampilkan Matriks
                 </button>
@@ -396,23 +394,23 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
             </div>
 
             {/* Cari Nama Siswa/Guru */}
-            <div className="lg:col-span-6 space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">
+            <div className="lg:col-span-6 space-y-1 sm:space-y-1.5">
+              <label className="hidden sm:block text-xs font-bold text-slate-700">
                 {targetKelompok === 'Siswa' ? 'Cari Nama Siswa' : targetKelompok === 'Guru' ? 'Cari Nama Guru' : 'Cari Dokumen'}
               </label>
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute left-2.5 sm:left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ketik nama di sini..."
-                  className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder={targetKelompok === 'Siswa' ? 'Cari nama siswa...' : 'Cari nama di sini...'}
+                  className="w-full pl-8 sm:pl-10 pr-7 sm:pr-9 py-2 sm:py-2.5 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-normal sm:font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-2xs"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -422,49 +420,49 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
 
           </div>
 
-          {/* Quick Bar: Total Count, Pagination Option & Action Buttons */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-200/60 text-xs text-slate-600">
-            <div className="flex items-center gap-3 flex-wrap">
-              <span>
-                Total Data: <strong className="text-slate-900 font-bold">{totalItems}</strong> {targetKelompok}
+          {/* Quick Bar: Total Count, Pagination Option & Action Buttons (Compact on mobile) */}
+          <div className="flex items-center justify-between gap-2 pt-2 sm:pt-3 border-t border-slate-200/60 text-[11px] sm:text-xs text-slate-600">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap">
+              <span className="bg-slate-200/70 text-slate-800 px-2 py-0.5 rounded-md font-semibold text-[10.5px] sm:text-xs">
+                {totalItems} {targetKelompok}
               </span>
-              <span className="text-slate-300">•</span>
-              <span className="text-slate-500">
-                Tanda: <span className="font-bold text-rose-500">✖ (Belum Diunggah)</span> / <span className="font-bold text-emerald-600">✔ (Sudah Diunggah)</span>
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <span className="text-slate-500 text-[10.5px] sm:text-xs">
+                <span className="font-bold text-rose-500">✖ Belum</span> • <span className="font-bold text-emerald-600">✔ Ada</span>
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
               {/* Page size selector */}
-              <div className="flex items-center gap-1.5 mr-2">
-                <span className="text-slate-400 text-[11px]">Tampil:</span>
+              <div className="flex items-center gap-1">
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer"
+                  className="px-1.5 sm:px-2 py-1 bg-white border border-slate-200 rounded-md sm:rounded-lg text-[10.5px] sm:text-xs font-medium sm:font-semibold text-slate-700 cursor-pointer shadow-2xs"
                 >
-                  <option value={30}>30 per hal</option>
-                  <option value={50}>50 per hal</option>
-                  <option value={100}>100 per hal</option>
-                  <option value={0}>Semua Data</option>
+                  <option value={30}>30/hal</option>
+                  <option value={50}>50/hal</option>
+                  <option value={100}>100/hal</option>
+                  <option value={0}>Semua</option>
                 </select>
               </div>
 
               <button
                 onClick={handleCopySummary}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium sm:font-semibold transition-all cursor-pointer shadow-xs text-[10.5px] sm:text-xs"
                 title="Salin rekap ringkasan teks"
               >
-                <Copy className="w-3.5 h-3.5 text-blue-600" />
-                <span>{copiedNotice ? 'Tersalin!' : 'Salin Rekap'}</span>
+                <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
+                <span className="hidden sm:inline">{copiedNotice ? 'Tersalin!' : 'Salin Rekap'}</span>
+                <span className="sm:hidden">{copiedNotice ? 'OK!' : 'Salin'}</span>
               </button>
 
               <button
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium sm:font-semibold transition-all cursor-pointer shadow-xs text-[10.5px] sm:text-xs"
                 title="Cetak tabel matriks"
               >
-                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                <Printer className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-600" />
                 <span>Cetak</span>
               </button>
             </div>
@@ -472,29 +470,30 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
         </div>
 
         {/* ============================================================== */}
-        {/* MATRIKS TABLE VIEW (EXACTLY AS IN SCREENSHOT - HIGH PERFORMANCE) */}
+        {/* MATRIKS TABLE VIEW (ELEGANT ON MOBILE, STICKY NAME, REFINED FONT) */}
         {/* ============================================================== */}
-        <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+        <div className="border border-slate-200 rounded-xl sm:rounded-2xl overflow-hidden shadow-xs">
           <div className="w-full overflow-x-auto">
 
             {/* 1. SISWA TABLE */}
             {targetKelompok === 'Siswa' && (
-              <table className="w-full text-left border-collapse min-w-[950px]">
+              <table className="w-full text-left border-collapse min-w-[720px] sm:min-w-[950px]">
                 <thead>
                   <tr className="border-b border-slate-200 bg-[#FAFBFD]">
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider w-12">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider w-8 sm:w-12">
                       NO
                     </th>
-                    <th className="py-4 px-4 text-left text-xs font-extrabold text-slate-700 uppercase tracking-wider min-w-[200px]">
+                    {/* Sticky Name column on mobile so users never lose context when swiping checklist columns! */}
+                    <th className="sticky left-0 bg-[#FAFBFD] z-20 py-2.5 sm:py-4 px-2.5 sm:px-4 text-left text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider min-w-[140px] sm:min-w-[200px] border-r border-slate-200/60 sm:border-r-0 shadow-[2px_0_4px_rgba(0,0,0,0.03)] sm:shadow-none">
                       NAMA SISWA
                     </th>
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider min-w-[90px]">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider min-w-[65px] sm:min-w-[90px]">
                       TAHUN LULUS
                     </th>
                     {kategoriSiswaList.map((kat, kIdx) => (
                       <th 
                         key={kIdx} 
-                        className="py-4 px-2 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider max-w-[110px]"
+                        className="py-2.5 sm:py-4 px-1.5 sm:px-2 text-center text-[9.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider max-w-[85px] sm:max-w-[110px]"
                       >
                         <div className="leading-tight break-words">
                           {kat}
@@ -506,7 +505,7 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {paginatedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={3 + kategoriSiswaList.length} className="py-12 text-center text-slate-400">
+                      <td colSpan={3 + kategoriSiswaList.length} className="py-8 sm:py-12 text-center text-xs sm:text-sm text-slate-400">
                         Tidak ada data siswa ditemukan untuk kriteria pencarian ini.
                       </td>
                     </tr>
@@ -516,38 +515,38 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                       return (
                         <tr 
                           key={siswa.id || idx}
-                          className="hover:bg-slate-50/70 transition-colors"
+                          className="hover:bg-slate-50/70 transition-colors group"
                         >
                           {/* NO */}
-                          <td className="py-4 px-3 text-center font-semibold text-slate-600">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center text-[11px] sm:text-sm font-medium sm:font-semibold text-slate-400 sm:text-slate-600">
                             {absoluteIndex}
                           </td>
 
-                          {/* NAMA SISWA */}
-                          <td className="py-4 px-4 text-left font-bold text-slate-800 tracking-tight">
+                          {/* NAMA SISWA: Refined font (removed harsh chunky bold on mobile), sticky on mobile */}
+                          <td className="sticky left-0 bg-white group-hover:bg-slate-50 z-10 py-2 sm:py-4 px-2.5 sm:px-4 text-left text-xs sm:text-sm font-medium sm:font-bold text-slate-700 sm:text-slate-800 tracking-tight border-r border-slate-100 sm:border-r-0 shadow-[2px_0_4px_rgba(0,0,0,0.025)] sm:shadow-none truncate max-w-[150px] sm:max-w-none">
                             {siswa.nama}
                           </td>
 
                           {/* TAHUN LULUS */}
-                          <td className="py-4 px-3 text-center font-medium text-slate-600">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center text-[11px] sm:text-sm font-normal sm:font-medium text-slate-500 sm:text-slate-600">
                             {siswa.tahun}
                           </td>
 
                           {/* STATUS TIAP KATEGORI */}
                           {siswa.statusPerCategory.map((sc, sIdx) => (
-                            <td key={sIdx} className="py-4 px-2 text-center align-middle">
+                            <td key={sIdx} className="py-2 sm:py-4 px-1 sm:px-2 text-center align-middle">
                               {sc.isUploaded && sc.arsipItem ? (
                                 <button
                                   type="button"
                                   onClick={() => onPreview && onPreview(sc.arsipItem!)}
-                                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-transform active:scale-95 cursor-pointer"
+                                  className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-transform active:scale-95 cursor-pointer"
                                   title={`Sudah diunggah: ${sc.categoryName} (${sc.arsipItem.namaFileAsli}). Klik untuk melihat.`}
                                 >
                                   <IconCheck />
                                 </button>
                               ) : (
                                 <span 
-                                  className="inline-flex items-center justify-center w-7 h-7 text-rose-500"
+                                  className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 text-rose-500"
                                   title={`Belum diunggah: ${sc.categoryName}`}
                                 >
                                   <IconCross />
@@ -565,22 +564,22 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
 
             {/* 2. GURU TABLE */}
             {targetKelompok === 'Guru' && (
-              <table className="w-full text-left border-collapse min-w-[950px]">
+              <table className="w-full text-left border-collapse min-w-[720px] sm:min-w-[950px]">
                 <thead>
                   <tr className="border-b border-slate-200 bg-[#FAFBFD]">
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider w-12">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider w-8 sm:w-12">
                       NO
                     </th>
-                    <th className="py-4 px-4 text-left text-xs font-extrabold text-slate-700 uppercase tracking-wider min-w-[200px]">
+                    <th className="sticky left-0 bg-[#FAFBFD] z-20 py-2.5 sm:py-4 px-2.5 sm:px-4 text-left text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider min-w-[140px] sm:min-w-[200px] border-r border-slate-200/60 sm:border-r-0 shadow-[2px_0_4px_rgba(0,0,0,0.03)] sm:shadow-none">
                       NAMA GURU
                     </th>
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider min-w-[130px]">
-                      JABATAN / NUPTK
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider min-w-[90px] sm:min-w-[130px]">
+                      JABATAN
                     </th>
                     {kategoriGuruList.map((kat, kIdx) => (
                       <th 
                         key={kIdx} 
-                        className="py-4 px-2 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider max-w-[120px]"
+                        className="py-2.5 sm:py-4 px-1.5 sm:px-2 text-center text-[9.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider max-w-[85px] sm:max-w-[120px]"
                       >
                         <div className="leading-tight break-words">
                           {kat}
@@ -592,7 +591,7 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {paginatedTeachers.length === 0 ? (
                     <tr>
-                      <td colSpan={3 + kategoriGuruList.length} className="py-12 text-center text-slate-400">
+                      <td colSpan={3 + kategoriGuruList.length} className="py-8 sm:py-12 text-center text-xs sm:text-sm text-slate-400">
                         Tidak ada data guru ditemukan untuk kriteria pencarian ini.
                       </td>
                     </tr>
@@ -602,34 +601,34 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                       return (
                         <tr 
                           key={guru.id || idx}
-                          className="hover:bg-slate-50/70 transition-colors"
+                          className="hover:bg-slate-50/70 transition-colors group"
                         >
-                          <td className="py-4 px-3 text-center font-semibold text-slate-600">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center text-[11px] sm:text-sm font-medium sm:font-semibold text-slate-400 sm:text-slate-600">
                             {absoluteIndex}
                           </td>
-                          <td className="py-4 px-4 text-left font-bold text-slate-800 tracking-tight">
+                          <td className="sticky left-0 bg-white group-hover:bg-slate-50 z-10 py-2 sm:py-4 px-2.5 sm:px-4 text-left text-xs sm:text-sm font-medium sm:font-bold text-slate-700 sm:text-slate-800 tracking-tight border-r border-slate-100 sm:border-r-0 shadow-[2px_0_4px_rgba(0,0,0,0.025)] sm:shadow-none truncate max-w-[150px] sm:max-w-none">
                             {guru.nama}
                           </td>
-                          <td className="py-4 px-3 text-center font-medium text-slate-600 text-xs">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-normal sm:font-medium text-slate-500 sm:text-slate-600">
                             {guru.jabatan}
                             {guru.nuptk && guru.nuptk !== '-' && (
-                              <div className="text-[10px] text-slate-400 mt-0.5">{guru.nuptk}</div>
+                              <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">{guru.nuptk}</div>
                             )}
                           </td>
                           {guru.statusPerCategory.map((gc, gIdx) => (
-                            <td key={gIdx} className="py-4 px-2 text-center align-middle">
+                            <td key={gIdx} className="py-2 sm:py-4 px-1 sm:px-2 text-center align-middle">
                               {gc.isUploaded && gc.arsipItem ? (
                                 <button
                                   type="button"
                                   onClick={() => onPreview && onPreview(gc.arsipItem!)}
-                                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-transform active:scale-95 cursor-pointer"
+                                  className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-transform active:scale-95 cursor-pointer"
                                   title={`Sudah diunggah: ${gc.categoryName}. Klik untuk melihat.`}
                                 >
                                   <IconCheck />
                                 </button>
                               ) : (
                                 <span 
-                                  className="inline-flex items-center justify-center w-7 h-7 text-rose-500"
+                                  className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 text-rose-500"
                                   title={`Belum diunggah: ${gc.categoryName}`}
                                 >
                                   <IconCross />
@@ -647,25 +646,25 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
 
             {/* 3. LAINNYA TABLE */}
             {targetKelompok === 'Lainnya' && (
-              <table className="w-full text-left border-collapse min-w-[700px]">
+              <table className="w-full text-left border-collapse min-w-[600px] sm:min-w-[700px]">
                 <thead>
                   <tr className="border-b border-slate-200 bg-[#FAFBFD]">
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider w-12">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider w-8 sm:w-12">
                       NO
                     </th>
-                    <th className="py-4 px-4 text-left text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                    <th className="py-2.5 sm:py-4 px-2.5 sm:px-4 text-left text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider">
                       SUBJEK / NAMA BERKAS
                     </th>
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider">
                       KATEGORI
                     </th>
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider">
                       TAHUN
                     </th>
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider">
                       STATUS
                     </th>
-                    <th className="py-4 px-3 text-center text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                    <th className="py-2.5 sm:py-4 px-2 sm:px-3 text-center text-[10.5px] sm:text-xs font-semibold sm:font-extrabold text-slate-600 sm:text-slate-700 uppercase tracking-wider">
                       AKSI
                     </th>
                   </tr>
@@ -673,7 +672,7 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {paginatedLainnya.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                      <td colSpan={6} className="py-8 sm:py-12 text-center text-xs sm:text-sm text-slate-400">
                         Tidak ada arsip dokumen lainnya tersimpan.
                       </td>
                     </tr>
@@ -682,31 +681,31 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                       const absoluteIndex = pageSize > 0 ? (safeCurrentPage - 1) * pageSize + idx + 1 : idx + 1;
                       return (
                         <tr key={item.id || idx} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-4 px-3 text-center font-semibold text-slate-600">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center text-[11px] sm:text-sm font-medium sm:font-semibold text-slate-400 sm:text-slate-600">
                             {absoluteIndex}
                           </td>
-                          <td className="py-4 px-4 font-bold text-slate-800">
+                          <td className="py-2 sm:py-4 px-2.5 sm:px-4 font-medium sm:font-bold text-xs sm:text-sm text-slate-700 sm:text-slate-800">
                             {item.subjek || item.identitas}
-                            <div className="text-xs font-normal text-slate-500 mt-0.5">{item.namaFileAsli}</div>
+                            <div className="text-[10.5px] sm:text-xs font-normal text-slate-400 sm:text-slate-500 mt-0.5">{item.namaFileAsli}</div>
                           </td>
-                          <td className="py-4 px-3 text-center">
-                            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold text-xs">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center">
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-[10.5px] sm:text-xs">
                               {item.kategori}
                             </span>
                           </td>
-                          <td className="py-4 px-3 text-center font-medium text-slate-600">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center font-normal sm:font-medium text-[11px] sm:text-sm text-slate-500 sm:text-slate-600">
                             {item.tahun || '-'}
                           </td>
-                          <td className="py-4 px-3 text-center">
-                            <span className="inline-flex items-center gap-1 text-emerald-600 font-bold text-xs bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                              <Check className="w-3.5 h-3.5 stroke-[3]" /> Terunggah
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center">
+                            <span className="inline-flex items-center gap-1 text-emerald-600 font-medium sm:font-bold text-[10.5px] sm:text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              Terunggah
                             </span>
                           </td>
-                          <td className="py-4 px-3 text-center">
+                          <td className="py-2 sm:py-4 px-2 sm:px-3 text-center">
                             {onPreview && (
                               <button
                                 onClick={() => onPreview(item)}
-                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                                className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md text-[11px] sm:text-xs font-semibold transition-colors cursor-pointer"
                               >
                                 Buka
                               </button>
@@ -722,43 +721,43 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
 
           </div>
 
-          {/* Pagination Navigation Bar */}
+          {/* Pagination Navigation Bar: Compact on mobile */}
           {pageSize > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3.5 bg-[#FAFBFD] border-t border-slate-200 text-xs text-slate-600">
-              <div>
-                Menampilkan halaman <strong className="text-slate-800">{safeCurrentPage}</strong> dari <strong className="text-slate-800">{totalPages}</strong> (Total {totalItems} data)
+            <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 bg-[#FAFBFD] border-t border-slate-200 text-[11px] sm:text-xs text-slate-600">
+              <div className="truncate max-w-[140px] sm:max-w-none">
+                Hal. <strong className="text-slate-800">{safeCurrentPage}</strong> / {totalPages} ({totalItems} data)
               </div>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={safeCurrentPage <= 1}
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-slate-200 hover:bg-white text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   title="Halaman Sebelumnya"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
 
-                {/* Page numbers */}
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                {/* Page numbers (only 3 numbers on mobile to prevent wrapping, up to 5 on desktop) */}
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                   let pageNum: number;
-                  if (totalPages <= 5) {
+                  if (totalPages <= 3) {
                     pageNum = i + 1;
-                  } else if (safeCurrentPage <= 3) {
+                  } else if (safeCurrentPage <= 2) {
                     pageNum = i + 1;
-                  } else if (safeCurrentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
+                  } else if (safeCurrentPage >= totalPages - 1) {
+                    pageNum = totalPages - 2 + i;
                   } else {
-                    pageNum = safeCurrentPage - 2 + i;
+                    pageNum = safeCurrentPage - 1 + i;
                   }
                   return (
                     <button
                       key={pageNum}
                       type="button"
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg text-[10.5px] sm:text-xs font-bold transition-colors cursor-pointer ${
                         safeCurrentPage === pageNum 
-                          ? 'bg-blue-600 text-white' 
+                          ? 'bg-blue-600 text-white shadow-2xs' 
                           : 'border border-slate-200 hover:bg-white text-slate-700'
                       }`}
                     >
@@ -771,10 +770,10 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
                   type="button"
                   disabled={safeCurrentPage >= totalPages}
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-slate-200 hover:bg-white text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   title="Halaman Selanjutnya"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               </div>
             </div>
