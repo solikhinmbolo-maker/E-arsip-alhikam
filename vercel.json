@@ -3,6 +3,14 @@
     {
       "source": "/api/drive/download/:match*",
       "destination": "/api/drive/download"
+    },
+    {
+      "source": "/api/export/excel",
+      "destination": "/api/export/excel"
+    },
+    {
+      "source": "/api/export/excel/:match*",
+      "destination": "/api/export/excel"
     }
   ]
 }

@@ -8,6 +8,17 @@ function globalServerConfigPlugin() {
   return {
     name: 'global-server-config',
     configureServer(server: any) {
+      server.middlewares.use('/api/export/excel', async (req: any, res: any) => {
+        try {
+          const { default: handler } = await import('./api/export/excel');
+          await handler(req, res);
+        } catch (err: any) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ success: false, error: err.message }));
+        }
+      });
+
       server.middlewares.use('/api/drive/upload', async (req: any, res: any) => {
         try {
           const { default: handler } = await import('./api/drive/upload');

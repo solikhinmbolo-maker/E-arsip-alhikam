@@ -135,6 +135,12 @@ public class MainActivity extends BridgeActivity {
                                 resolvedMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
                             } else if (lowerName.endsWith(".xlsx")) {
                                 resolvedMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                            } else if (lowerName.endsWith(".xls")) {
+                                resolvedMimeType = "application/vnd.ms-excel";
+                            }
+
+                            if (url == null || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+                                return;
                             }
 
                             DownloadManager.Request request = new DownloadManager.Request(uri);

@@ -47,6 +47,7 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
   const [dataVersion, setDataVersion] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(30); // 30 per page for blazing fast 0ms renders
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // Auto sync listeners
   useEffect(() => {
@@ -487,15 +488,58 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
       </html>
     `;
 
-    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = fileName;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-    URL.revokeObjectURL(url);
+    setIsExporting(true);
+
+    const triggerBrowserBlobDownload = () => {
+      try {
+        const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = fileName;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } catch (err) {
+        console.error('Blob download failed:', err);
+      } finally {
+        setIsExporting(false);
+      }
+    };
+
+    // Primary route: Use real HTTPS API endpoint so Android's native DownloadManager
+    // handles the download seamlessly into /sdcard/Download/ without throwing "Can not handle uri: blob:..."
+    fetch('/api/export/excel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filename: fileName,
+        html: excelTemplate,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('API server export error');
+        const data = await res.json();
+        if (data && data.success && data.downloadUrl) {
+          const directHttpsUrl = `${window.location.origin}${data.downloadUrl}`;
+          const downloadLink = document.createElement('a');
+          downloadLink.href = directHttpsUrl;
+          downloadLink.setAttribute('download', fileName);
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          setTimeout(() => setIsExporting(false), 1200);
+        } else {
+          triggerBrowserBlobDownload();
+        }
+      })
+      .catch((err) => {
+        console.warn('Fallback to local blob download:', err);
+        triggerBrowserBlobDownload();
+      });
   };
 
   return (
@@ -628,12 +672,20 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
 
               <button
                 type="button"
+                disabled={isExporting}
                 onClick={handleExportExcel}
-                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md sm:rounded-lg shadow-xs transition-all cursor-pointer text-[11px] sm:text-xs active:scale-95 whitespace-nowrap"
+                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 ${isExporting ? 'bg-emerald-700 opacity-80 cursor-wait' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95 cursor-pointer'} text-white font-semibold rounded-md sm:rounded-lg shadow-xs transition-all text-[11px] sm:text-xs whitespace-nowrap`}
                 title="Ekspor data sesuai filter ke format Excel dengan tabel dan garis rapi"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-100" />
-                <span>Ekspor Excel</span>
+                {isExporting ? (
+                  <svg className="animate-spin w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                ) : (
+                  <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-100" />
+                )}
+                <span>{isExporting ? 'Mengekspor...' : 'Ekspor Excel'}</span>
               </button>
             </div>
           </div>
