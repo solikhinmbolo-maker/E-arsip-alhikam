@@ -3,8 +3,7 @@ import {
   Search, 
   ChevronDown, 
   X, 
-  Printer, 
-  Copy, 
+  FileSpreadsheet, 
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -46,7 +45,6 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
   const [selectedTahun, setSelectedTahun] = useState<string>('SEMUA');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dataVersion, setDataVersion] = useState<number>(0);
-  const [copiedNotice, setCopiedNotice] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(30); // 30 per page for blazing fast 0ms renders
 
@@ -297,26 +295,207 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
     return filteredLainnya.slice(start, start + pageSize);
   }, [filteredLainnya, safeCurrentPage, pageSize]);
 
-  // Helper copy summary
-  const handleCopySummary = () => {
-    let text = `*REKAPITULASI KELENGKAPAN DOKUMEN (${targetKelompok.toUpperCase()})*\n`;
+  // Export to Real Styled Excel Spreadsheet (.xls with borders, header styling, and colors)
+  // Perfectly matching the active group, year filter (e.g. 2025), and search keyword
+  const handleExportExcel = () => {
+    const todayStr = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    let titleText = `MATRIKS REKAP KELENGKAPAN DOKUMEN`;
+    let subTitle = `SMP AL-HIKAM SENDANG MULYO`;
+    let filterDetail = `Kelompok: ${targetKelompok}`;
+    let fileName = `Rekap_Dokumen_${targetKelompok}`;
+
     if (targetKelompok === 'Siswa') {
-      text += `Tahun: ${selectedTahun === 'SEMUA' ? 'Semua Angkatan' : selectedTahun}\n`;
-      text += `Total Siswa: ${filteredStudents.length}\n\n`;
-      filteredStudents.forEach((s, idx) => {
-        const missing = s.statusPerCategory.filter(sc => !sc.isUploaded).map(sc => sc.categoryName);
-        text += `${idx + 1}. ${s.nama} (${s.tahun}): ${missing.length === 0 ? 'LENGKAP (✓)' : `Belum: ${missing.join(', ')} (✗)`}\n`;
-      });
+      const yearText = selectedTahun === 'SEMUA' ? 'Semua Angkatan' : `Angkatan ${selectedTahun}`;
+      filterDetail += ` | ${yearText}`;
+      if (searchQuery.trim()) filterDetail += ` | Pencarian: "${searchQuery}"`;
+      fileName = `Rekap_Dokumen_Siswa_${selectedTahun === 'SEMUA' ? 'Semua_Angkatan' : `Angkatan_${selectedTahun}`}`;
     } else if (targetKelompok === 'Guru') {
-      text += `Total Guru: ${filteredTeachers.length}\n\n`;
-      filteredTeachers.forEach((g, idx) => {
-        const missing = g.statusPerCategory.filter(gc => !gc.isUploaded).map(gc => gc.categoryName);
-        text += `${idx + 1}. ${g.nama}: ${missing.length === 0 ? 'LENGKAP (✓)' : `Belum: ${missing.join(', ')} (✗)`}\n`;
-      });
+      if (searchQuery.trim()) filterDetail += ` | Pencarian: "${searchQuery}"`;
+      fileName = `Rekap_Dokumen_Guru_dan_PTK`;
+    } else {
+      if (searchQuery.trim()) filterDetail += ` | Pencarian: "${searchQuery}"`;
+      fileName = `Rekap_Dokumen_Lainnya`;
     }
-    navigator.clipboard.writeText(text);
-    setCopiedNotice(true);
-    setTimeout(() => setCopiedNotice(false), 2500);
+
+    fileName += `_${new Date().toISOString().slice(0, 10)}.xls`;
+
+    let tableHeaderHtml = '';
+    let tableRowsHtml = '';
+
+    if (targetKelompok === 'Siswa') {
+      tableHeaderHtml = `
+        <tr>
+          <th style="width: 50px;">NO</th>
+          <th style="min-width: 220px; text-align: left;">NAMA SISWA</th>
+          <th style="width: 100px;">TAHUN LULUS</th>
+          ${kategoriSiswaList.map(kat => `<th style="min-width: 130px;">${kat}</th>`).join('')}
+        </tr>
+      `;
+
+      tableRowsHtml = filteredStudents.map((siswa, idx) => {
+        const bgClass = idx % 2 === 1 ? 'background-color: #F8FAFC;' : 'background-color: #FFFFFF;';
+        return `
+          <tr style="${bgClass}">
+            <td style="text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
+            <td style="text-align: left; font-weight: bold; color: #0F172A;">${siswa.nama}</td>
+            <td style="text-align: center; color: #334155;">${siswa.tahun}</td>
+            ${siswa.statusPerCategory.map(sc => {
+              if (sc.isUploaded) {
+                return `<td style="text-align: center; color: #166534; background-color: #DCFCE7; font-weight: bold;">&#10004; ADA</td>`;
+              } else {
+                return `<td style="text-align: center; color: #991B1B; background-color: #FEE2E2; font-weight: bold;">&#10008; BELUM</td>`;
+              }
+            }).join('')}
+          </tr>
+        `;
+      }).join('');
+    } else if (targetKelompok === 'Guru') {
+      tableHeaderHtml = `
+        <tr>
+          <th style="width: 50px;">NO</th>
+          <th style="min-width: 220px; text-align: left;">NAMA GURU</th>
+          <th style="width: 150px;">JABATAN</th>
+          <th style="width: 130px;">NUPTK</th>
+          ${kategoriGuruList.map(kat => `<th style="min-width: 130px;">${kat}</th>`).join('')}
+        </tr>
+      `;
+
+      tableRowsHtml = filteredTeachers.map((guru, idx) => {
+        const bgClass = idx % 2 === 1 ? 'background-color: #F8FAFC;' : 'background-color: #FFFFFF;';
+        return `
+          <tr style="${bgClass}">
+            <td style="text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
+            <td style="text-align: left; font-weight: bold; color: #0F172A;">${guru.nama}</td>
+            <td style="text-align: center; color: #334155;">${guru.jabatan}</td>
+            <td style="text-align: center; color: #64748B;">${guru.nuptk || '-'}</td>
+            ${guru.statusPerCategory.map(gc => {
+              if (gc.isUploaded) {
+                return `<td style="text-align: center; color: #166534; background-color: #DCFCE7; font-weight: bold;">&#10004; ADA</td>`;
+              } else {
+                return `<td style="text-align: center; color: #991B1B; background-color: #FEE2E2; font-weight: bold;">&#10008; BELUM</td>`;
+              }
+            }).join('')}
+          </tr>
+        `;
+      }).join('');
+    } else {
+      tableHeaderHtml = `
+        <tr>
+          <th style="width: 50px;">NO</th>
+          <th style="min-width: 240px; text-align: left;">SUBJEK / NAMA DOKUMEN</th>
+          <th style="width: 140px;">KATEGORI</th>
+          <th style="width: 100px;">TAHUN</th>
+          <th style="min-width: 200px; text-align: left;">NAMA FILE ASLI</th>
+          <th style="width: 120px;">STATUS</th>
+        </tr>
+      `;
+
+      tableRowsHtml = filteredLainnya.map((item, idx) => {
+        const bgClass = idx % 2 === 1 ? 'background-color: #F8FAFC;' : 'background-color: #FFFFFF;';
+        return `
+          <tr style="${bgClass}">
+            <td style="text-align: center; font-weight: bold; color: #475569;">${idx + 1}</td>
+            <td style="text-align: left; font-weight: bold; color: #0F172A;">${item.subjek || item.identitas}</td>
+            <td style="text-align: center; color: #334155;">${item.kategori}</td>
+            <td style="text-align: center; color: #334155;">${item.tahun || '-'}</td>
+            <td style="text-align: left; color: #64748B;">${item.namaFileAsli}</td>
+            <td style="text-align: center; color: #166534; background-color: #DCFCE7; font-weight: bold;">&#10004; TERUNGGAH</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    const colCount = targetKelompok === 'Siswa' 
+      ? 3 + kategoriSiswaList.length 
+      : targetKelompok === 'Guru' 
+      ? 4 + kategoriGuruList.length 
+      : 6;
+
+    const excelTemplate = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Matriks Kelengkapan</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; }
+          table { border-collapse: collapse; width: 100%; mso-displayed-decimal-separator:"\\."; mso-displayed-thousand-separator:"\\,"; }
+          th {
+            background-color: #1D4ED8;
+            color: #FFFFFF;
+            font-size: 11pt;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #0F172A;
+            padding: 10px 8px;
+          }
+          td {
+            border: 1px solid #CBD5E1;
+            padding: 8px 10px;
+            font-size: 10.5pt;
+            vertical-align: middle;
+          }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <td colspan="${colCount}" style="font-size: 16pt; font-weight: bold; color: #1E3A8A; text-align: left; border: none; padding-bottom: 2px;">
+              ${titleText}
+            </td>
+          </tr>
+          <tr>
+            <td colspan="${colCount}" style="font-size: 11pt; font-weight: bold; color: #334155; text-align: left; border: none; padding-bottom: 2px;">
+              ${subTitle}
+            </td>
+          </tr>
+          <tr>
+            <td colspan="${colCount}" style="font-size: 10pt; color: #64748B; text-align: left; border: none; padding-bottom: 2px;">
+              ${filterDetail} | Total Data: ${totalItems} orang
+            </td>
+          </tr>
+          <tr>
+            <td colspan="${colCount}" style="font-size: 9.5pt; color: #94A3B8; text-align: left; border: none; padding-bottom: 12px;">
+              Waktu Ekspor: ${todayStr} • Status: &#10004; ADA (Sudah Diunggah) / &#10008; BELUM (Belum Diunggah)
+            </td>
+          </tr>
+          <tr>
+            <td colspan="${colCount}" style="border: none; height: 8px;"></td>
+          </tr>
+          ${tableHeaderHtml}
+          ${tableRowsHtml}
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = fileName;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -448,22 +627,13 @@ export default function RekapDokumen({ onPreview, onNavigateToUpload }: RekapDok
               </div>
 
               <button
-                onClick={handleCopySummary}
-                className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium sm:font-semibold transition-all cursor-pointer shadow-xs text-[10.5px] sm:text-xs"
-                title="Salin rekap ringkasan teks"
+                type="button"
+                onClick={handleExportExcel}
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md sm:rounded-lg shadow-xs transition-all cursor-pointer text-[11px] sm:text-xs active:scale-95 whitespace-nowrap"
+                title="Ekspor data sesuai filter ke format Excel dengan tabel dan garis rapi"
               >
-                <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
-                <span className="hidden sm:inline">{copiedNotice ? 'Tersalin!' : 'Salin Rekap'}</span>
-                <span className="sm:hidden">{copiedNotice ? 'OK!' : 'Salin'}</span>
-              </button>
-
-              <button
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md sm:rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium sm:font-semibold transition-all cursor-pointer shadow-xs text-[10.5px] sm:text-xs"
-                title="Cetak tabel matriks"
-              >
-                <Printer className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-600" />
-                <span>Cetak</span>
+                <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-100" />
+                <span>Ekspor Excel</span>
               </button>
             </div>
           </div>
