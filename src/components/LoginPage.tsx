@@ -10,10 +10,35 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPageProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(() => {
+    try {
+      const saved = localStorage.getItem('EARSIP_REMEMBERED_CREDS');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.username || '';
+      }
+    } catch {}
+    return '';
+  });
+  const [password, setPassword] = useState(() => {
+    try {
+      const saved = localStorage.getItem('EARSIP_REMEMBERED_CREDS');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.password || '';
+      }
+    } catch {}
+    return '';
+  });
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(() => {
+    try {
+      const saved = localStorage.getItem('EARSIP_REMEMBERED_CREDS');
+      return saved !== null ? true : true;
+    } catch {
+      return true;
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -86,6 +111,19 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
           saveAvatarForUser('master-superadmin', directResult.user.avatarUrl);
         }
       }
+      if (rememberMe) {
+        try {
+          localStorage.setItem('EARSIP_REMEMBERED_CREDS', JSON.stringify({
+            username: email.trim(),
+            password: password
+          }));
+        } catch {}
+      } else {
+        try {
+          localStorage.removeItem('EARSIP_REMEMBERED_CREDS');
+        } catch {}
+      }
+
       setLoadingStatus('Mengalihkan...');
       await new Promise(r => setTimeout(r, 400));
       setLoading(false);
@@ -158,6 +196,19 @@ export default function LoginPage({ onLoginSuccess, sessionNotice }: LoginPagePr
       const validPassword = matchedUser.password || (matchedUser.id === 'master-superadmin' ? 'superadmin123' : '');
 
       if (password.trim() === (validPassword || '').trim()) {
+        if (rememberMe) {
+          try {
+            localStorage.setItem('EARSIP_REMEMBERED_CREDS', JSON.stringify({
+              username: email.trim(),
+              password: password
+            }));
+          } catch {}
+        } else {
+          try {
+            localStorage.removeItem('EARSIP_REMEMBERED_CREDS');
+          } catch {}
+        }
+
         addAuditLog({
           aksi: 'AUTH',
           kategori: 'Autentikasi Pengguna',
@@ -397,14 +448,10 @@ _# Digital E Arsip Alhicam_`;
               <input
                 type="text"
                 name="portal_user_id"
-                autoComplete="off"
+                autoComplete="username"
                 autoCorrect="off"
                 autoCapitalize="none"
                 spellCheck="false"
-                data-lpignore="true"
-                data-form-type="other"
-                readOnly
-                onFocus={(e) => e.target.removeAttribute('readonly')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="User Name"
@@ -424,12 +471,7 @@ _# Digital E Arsip Alhicam_`;
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="portal_auth_code"
-                autoComplete="new-password"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-form-type="other"
-                readOnly
-                onFocus={(e) => e.target.removeAttribute('readonly')}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Kata sandi"
