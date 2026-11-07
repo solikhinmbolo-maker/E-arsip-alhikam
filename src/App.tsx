@@ -42,7 +42,6 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import LoginPage from './components/LoginPage';
-import SplashScreen from './components/SplashScreen';
 import DashboardView from './components/DashboardView';
 import FormUploadView from './components/FormUploadView';
 import FormUnduhView from './components/FormUnduhView';
@@ -215,53 +214,6 @@ export default function App() {
 
   // Logout loading transition state
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
-
-  // Durasi Splash Screen Pintar:
-  // - Awal membuka APK / cold start / sesi baru: 8 detik (sesuai konsep awal)
-  // - Refresh halaman (F5, Hard Refresh, Browser Reload): 3.5 detik (3-4 detik, tidak terlalu lama)
-  const [splashDuration] = useState<number>(() => {
-    if (typeof window === 'undefined') return 8000;
-    try {
-      let isReload = false;
-
-      // 1. Modern Performance Navigation Timing API (Mendeteksi F5, Ctrl+F5 / Hard Refresh, Reload)
-      const navEntries = performance.getEntriesByType('navigation');
-      if (navEntries && navEntries.length > 0) {
-        const navTiming = navEntries[0] as PerformanceNavigationTiming;
-        if (navTiming.type === 'reload') {
-          isReload = true;
-        }
-      }
-
-      // 2. Fallback legacy Performance Navigation API
-      if (!isReload && (performance as any)?.navigation?.type === 1) {
-        isReload = true;
-      }
-
-      // 3. Session tracking: Jika halaman sudah pernah dimuat sebelumnya di tab/sesi ini
-      const hasInitialized = sessionStorage.getItem('EARSIP_APP_SESSION_INITIALIZED');
-      if (hasInitialized === 'true') {
-        isReload = true;
-      }
-
-      // Tandai bahwa aplikasi sudah pernah dimuat dalam sesi ini
-      sessionStorage.setItem('EARSIP_APP_SESSION_INITIALIZED', 'true');
-
-      // Jika reload/F5: 3.5 detik (3-4 dtk). Jika awal buka: 8 detik.
-      return isReload ? 3500 : 8000;
-    } catch {
-      return 8000;
-    }
-  });
-
-  // Universal Launch Splash Screen: Muncul setiap kali aplikasi/website dibuka di desktop maupun ponsel.
-  const [showSplash, setShowSplash] = useState<boolean>(() => {
-    return typeof window !== 'undefined';
-  });
-
-  const handleSplashComplete = () => {
-    setShowSplash(false);
-  };
 
   // Auth state: Keamanan Maksimal.
   // Sesi akun hanya hidup selama browser/APK sedang aktif (sessionStorage).
@@ -1629,12 +1581,7 @@ function doGet(e) {
 
   if (!currentUser) {
     return (
-      <>
-        <LoginPage onLoginSuccess={handleLoginSuccess} sessionNotice={sessionExpiredNotice} />
-        {showSplash && (
-          <SplashScreen onComplete={handleSplashComplete} durationMs={splashDuration} />
-        )}
-      </>
+      <LoginPage onLoginSuccess={handleLoginSuccess} sessionNotice={sessionExpiredNotice} />
     );
   }
 
@@ -2861,10 +2808,6 @@ function doGet(e) {
         </div>
       )}
 
-      {showSplash && (
-        <SplashScreen onComplete={handleSplashComplete} durationMs={splashDuration} />
-      )}
-
-    </div>
-  );
-}
+      </div>
+    );
+  }
